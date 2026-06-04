@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .session-banner {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border: 2px solid #3b82f6;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .session-info h2 {
+        color: #f8fafc;
+        margin-bottom: 5px;
+    }
+    .session-info p {
+        color: #94a3b8;
+    }
+    .session-badge {
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    .status-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .status-paused { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    
+    .parallel-notice {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .parallel-notice strong {
+        font-size: 1.1rem;
+    }
+    
+    .bid-panel {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .bid-panel h3 {
+        color: #3b82f6;
+        margin-bottom: 15px;
+    }
+    
+    .player-select {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .player-option {
+        background: #0f172a;
+        border: 2px solid #334155;
+        border-radius: 12px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .player-option:hover {
+        border-color: #3b82f6;
+    }
+    .player-option.selected {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.1);
+    }
+    
+    .bid-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .bid-controls select, .bid-controls input {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        padding: 12px;
+        border-radius: 10px;
+        width: 100%;
+    }
+    
+    .bid-btn-lg {
+        width: 100%;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .bid-btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+    }
+    
+    .current-bid-display {
+        background: linear-gradient(135deg, #064e3b, #065f46);
+        border-radius: 16px;
+        padding: 25px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .current-bid-display h4 {
+        color: #86efac;
+        margin-bottom: 10px;
+    }
+    .current-bid-display .amount {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #22c55e;
+    }
+    
+    .bid-history {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .bid-history-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+        border-bottom: 1px solid #1e293b;
+    }
+    .bid-history-item:last-child {
+        border-bottom: none;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        color: #94a3b8;
+        text-decoration: none;
+    }
+    .back-link:hover {
+        color: #3b82f6;
+    }
+</style>
+
+<a href="/auction/{{ session.auction_id }}/sessions" class="back-link">← Back to Sessions</a>
+
+<div class="session-banner">
+    <div class="session-info">
+        <h2>🎯 {{ session.session_name }}</h2>
+        <p>Session #{{ session.id }} | Auction #{{ session.auction_id }}</p>
+    </div>
+    <div class="session-badge status-{{ session.status }}">
+        {{ session.status.upper() }}
+    </div>
+</div>
+
+<div class="parallel-notice">
+    <strong>⚡ Parallel Auction Mode</strong><br>
+    <small>Bids from other sessions are merged. System auto-counters across sessions!</small>
+</div>
+
+<!-- Current Bid Display -->
+<div class="current-bid-display">
+    <h4>CURRENT BID IN THIS SESSION</h4>
+    <div class="amount" id="sessionBid">₹{{ "%.2f"|format(session.current_bid or 0) }}Cr</div>
+    <p style="color: #86efac; margin-top: 10px;" id="sessionBidder">
+        {% if session.current_bidder_id %}
+        By Team #{{ session.current_bidder_id }}
+        {% else %}
+        No bids yet
+        {% endif %}
+    </p>
+</div>
+
+<!-- Player Selection -->
+<div class="bid-panel">
+    <h3>🏏 Select Player to Bid</h3>
+    <div class="player-select" id="playerSelect">
+        {% for player in players %}
+        <div class="player-option" 
+             onclick="selectPlayer({{ player.id }}, '{{ player.name }}')"
+             data-id="{{ player.id }}"
+             data-name="{{ player.name }}"
+             data-base="{{ player.base_price }}">
+            <h4>{{ player.name }}</h4>
+            <p style="color: #94a3b8; font-size: 0.9rem;">
+                {{ player.category.replace('_', ' ').title() }}
+                {% if player.overseas %}| 🌍 Overseas{% endif %}
+            </p>
+            <p style="color: #22c55e; font-weight: 700;">Base: ₹{{ player.base_price }}Cr</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Bid Controls -->
+<div class="bid-panel">
+    <h3>💰 Place Bid</h3>
+    <div class="bid-controls">
+        <div>
+            <label style="color: #94a3b8; display: block; margin-bottom: 8px;">Your Team</label>
+            <select id="teamSelect">
+                {% for team in teams %}
+                <option value="{{ team.id }}">{{ team.name }} (₹{{ "%.2f"|format(team.purse - team.spent - team.reserved) }}Cr)</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="color: #94a3b8; display: block; margin-bottom: 8px;">Bid Amount (Cr)</label>
+            <input type="number" id="bidAmount" placeholder="Enter amount" step="0.5" min="0.5">
+        </div>
+    </div>
+    <button onclick="placeSessionBid()" class="bid-btn-lg">🚀 PLACE BID</button>
+    <div id="bidStatus" style="margin-top: 15px; text-align: center; color: #94a3b8;"></div>
+</div>
+
+<!-- Bid History -->
+<div class="bid-panel">
+    <h3>📜 Session Bid History</h3>
+    <div class="bid-history">
+        {% for bid in session_bids %}
+        <div class="bid-history-item">
+            <span>
+                <strong style="color: #3b82f6;">{{ bid.team_name }}</strong>
+                <span style="color: #64748b;"> → </span>
+                <span style="color: #f8fafc;">{{ bid.player_name }}</span>
+            </span>
+            <span style="color: #22c55e; font-weight: 700;">₹{{ "%.2f"|format(bid.amount) }}Cr</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+let selectedPlayerId = null;
+let selectedPlayerName = '';
+let sessionId = {{ session.id }};
+
+function selectPlayer(id, name) {
+    document.querySelectorAll('.player-option').forEach(p => p.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    selectedPlayerId = id;
+    selectedPlayerName = name;
+    document.getElementById('bidStatus').textContent = `Selected: ${name}`;
+}
+
+function placeSessionBid() {
+    if (!selectedPlayerId) {
+        alert('Select a player first!');
+        return;
+    }
+    
+    const teamId = document.getElementById('teamSelect').value;
+    const amount = parseFloat(document.getElementById('bidAmount').value);
+    
+    if (!amount || amount <= 0) {
+        alert('Enter valid bid amount');
+        return;
+    }
+    
+    fetch('/auction/session/' + sessionId + '/bid', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            player_id: selectedPlayerId,
+            team_id: teamId,
+            amount: amount
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('sessionBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
+            document.getElementById('sessionBidder').textContent = 'By ' + data.bidder;
+            document.getElementById('bidStatus').textContent = '✅ Bid placed successfully!';
+            document.getElementById('bidStatus').style.color = '#22c55e';
+        } else {
+            document.getElementById('bidStatus').textContent = '❌ ' + data.error;
+            document.getElementById('bidStatus').style.color = '#ef4444';
+        }
+    });
+}
+
+// Auto-refresh session status
+setInterval(() => {
+    fetch('/auction/session/' + sessionId + '/status')
+    .then(r => r.json())
+    .then(data => {
+        if (data.current_bid > 0) {
+            document.getElementById('sessionBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
+            document.getElementById('sessionBidder').textContent = 'By ' + (data.current_bidder || 'Unknown');
+        }
+    });
+}, 3000);
+</script>
+{% endblock %}

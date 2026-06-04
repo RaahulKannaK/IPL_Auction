@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .input-group { margin-bottom: 18px; }
+    .input-group label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .input-group input, .input-group select {
+        width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-primary); padding: 14px 18px; border-radius: 14px; font-size: 1rem; outline: none; transition: all 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus { border-color: var(--cosmic-purple-light); box-shadow: 0 0 20px rgba(124, 77, 255, 0.1); }
+
+    .btn {
+        padding: 12px 24px; border-radius: 14px; border: none; font-weight: 700; font-size: 0.9rem;
+        cursor: pointer; transition: all 0.3s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.5px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; position: relative; overflow: hidden;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+    .btn-success { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .btn-success:hover { background: rgba(34, 197, 94, 0.25); }
+    .btn-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .btn-warning:hover { background: rgba(245, 158, 11, 0.25); }
+
+    .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 25px; }
+
+    .team-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px; padding: 24px; transition: all 0.4s; position: relative; overflow: hidden;
+    }
+    .team-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue), var(--gold)); opacity: 0.6;
+    }
+    .team-card:hover { border-color: rgba(124, 77, 255, 0.25); transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+    .team-logo {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-family: 'Space Grotesk'; font-weight: 700; color: white;
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.3);
+    }
+    .team-name { font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+    .team-owner { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 18px; }
+
+    .purse-bar {
+        background: rgba(0, 0, 0, 0.3); height: 28px; border-radius: 14px;
+        overflow: hidden; position: relative; margin-bottom: 8px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); border: 1px solid rgba(100, 120, 200, 0.1);
+    }
+    .purse-spent { height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); float: left; transition: width 0.5s; }
+    .purse-reserved { height: 100%; background: linear-gradient(90deg, var(--cosmic-purple), var(--cosmic-purple-dark)); float: left; transition: width 0.5s; }
+    .purse-available { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); float: left; transition: width 0.5s; }
+    .purse-labels { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 15px; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+    .stat-item { background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid rgba(100, 120, 200, 0.08); }
+    .stat-value { font-family: 'JetBrains Mono'; font-size: 1.1rem; font-weight: 700; }
+    .stat-label { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .team-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(7, 11, 22, 0.9); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+    .modal-box { background: var(--bg-panel); backdrop-filter: blur(30px);
+        border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 24px; padding: 35px;
+        max-width: 450px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .modal-title { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
+    .modal-close { font-size: 1.5rem; color: var(--text-dim); cursor: pointer; transition: color 0.3s; }
+    .modal-close:hover { color: #ef4444; }
+</style>
+
+<h1>👥 Team Management</h1>
+
+<!-- Create Team -->
+<div class="glass-panel" style="max-width: 500px; margin-bottom: 30px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>➕ Create Team</h2>
+    <form method="POST" action="/admin/teams/create">
+        <div class="input-group">
+            <label>Team Name</label>
+            <input type="text" name="team_name" placeholder="e.g., Mumbai Indians" required>
+        </div>
+        <div class="input-group">
+            <label>Purse Limit (Cr)</label>
+            <input type="number" name="purse_limit" value="100" step="0.5" min="10">
+        </div>
+        <button type="submit" class="btn btn-primary">Create Team</button>
+    </form>
+</div>
+
+<!-- Teams Grid -->
+<div class="teams-grid">
+    {% for team in teams %}
+    <div class="team-card glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+            <div class="team-logo">{{ team.team_name[:2].upper() }}</div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.8rem; color: var(--text-dim);">Squad</div>
+                <div style="font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--text-primary);">{{ team.squad_count or 0 }}/{{ team.squad_size or 18 }}</div>
+            </div>
+        </div>
+        
+        <div class="team-name">{{ team.team_name }}</div>
+        <div class="team-owner">
+            {% if team.owner_name %}
+            👤 {{ team.owner_name }} <span style="color: #22c55e;">✓ Assigned</span>
+            {% else %}
+            <span style="color: #f59e0b;">⚠ Unassigned</span>
+            {% endif %}
+        </div>
+        
+        <div class="purse-bar">
+            {% set spent_pct = (team.spent / team.purse_limit * 100) if team.purse_limit and team.purse_limit > 0 else 0 %}
+            {% set reserved_pct = (team.reserved / team.purse_limit * 100) if team.purse_limit and team.purse_limit > 0 else 0 %}
+            {% set available_pct = 100 - spent_pct - reserved_pct %}
+            <div class="purse-spent" style="width: {{ spent_pct }}%;"></div>
+            <div class="purse-reserved" style="width: {{ reserved_pct }}%;"></div>
+            <div class="purse-available" style="width: {{ available_pct }}%;"></div>
+        </div>
+        <div class="purse-labels">
+            <span style="color: #ef4444;">● Spent ₹{{ "%.2f"|format(team.spent or 0) }}Cr</span>
+            <span style="color: var(--cosmic-purple-light);">● Reserved ₹{{ "%.2f"|format(team.reserved or 0) }}Cr</span>
+            <span style="color: #22c55e;">● Available ₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0) - (team.reserved or 0)) }}Cr</span>
+        </div>
+        
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value" style="color: #ef4444;">₹{{ "%.2f"|format(team.spent or 0) }}</div>
+                <div class="stat-label">Spent</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--cosmic-purple-light);">₹{{ "%.2f"|format(team.reserved or 0) }}</div>
+                <div class="stat-label">Reserved</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: #22c55e;">₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0) - (team.reserved or 0)) }}</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: var(--ice-blue);">{{ team.purse_limit or 100 }}</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+        
+        <div class="team-actions">
+            <button class="btn btn-success" onclick="viewSquad({{ team.id }})">👥 Squad</button>
+            <button class="btn btn-success" onclick="viewPurse({{ team.id }})">💰 Purse</button>
+            {% if team.owner_name %}
+            <button class="btn btn-warning" onclick="removeOwner({{ team.id }})">👤 Remove Owner</button>
+            {% else %}
+            <button class="btn btn-primary" onclick="openAssignModal({{ team.id }}, '{{ team.team_name }}')">👤 Assign Owner</button>
+            {% endif %}
+            <button class="btn btn-success" onclick="editTeam({{ team.id }})">✏️ Edit</button>
+        </div>
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align: center; padding: 60px;">
+        <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.2;">👥</div>
+        <h3 style="color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk';">No Teams Yet</h3>
+        <p style="color: var(--text-dim);">Create your first team above</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Assign Owner Modal -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">👤 Assign Owner</div>
+            <span class="modal-close" onclick="closeAssignModal()">&times;</span>
+        </div>
+        <p style="color: var(--text-dim); margin-bottom: 20px;" id="modalTeamName"></p>
+        <form method="POST" id="assignForm">
+            <input type="hidden" name="team_id" id="assignTeamId">
+            <div class="input-group">
+                <label>Select Owner</label>
+                <select name="user_id" id="ownerSelect" required>
+                    <option value="">-- Select User --</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Assign Owner</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAssignModal(teamId, teamName) {
+    document.getElementById('assignTeamId').value = teamId;
+    document.getElementById('modalTeamName').textContent = 'Team: ' + teamName;
+    document.getElementById('assignForm').action = '/admin/teams/assign_owner/' + teamId;
+    document.getElementById('assignModal').style.display = 'flex';
+    
+    fetch('/teams/available_owners')
+    .then(r => r.json())
+    .then(data => {
+        const select = document.getElementById('ownerSelect');
+        select.innerHTML = '<option value="">-- Select User --</option>';
+        data.users.forEach(user => {
+            select.innerHTML += `<option value="${user.id}">${user.username} (${user.role})</option>`;
+        });
+    });
+}
+
+function closeAssignModal() {
+    document.getElementById('assignModal').style.display = 'none';
+}
+
+function removeOwner(teamId) {
+    if (!confirm('Remove owner from this team?')) return;
+    fetch('/admin/teams/remove_owner/' + teamId, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => location.reload());
+}
+
+function viewSquad(teamId) {
+    fetch('/admin/teams/squad/' + teamId)
+    .then(r => r.json())
+    .then(data => {
+        let html = '<h3 style="color: var(--text-primary); margin-bottom: 15px;">👥 Squad</h3>';
+        if (data.players.length > 0) {
+            html += '<table style="width:100%; border-collapse: collapse;">';
+            html += '<tr style="border-bottom: 2px solid rgba(124,77,255,0.3);">';
+            html += '<th style="text-align:left; padding:12px; color:var(--cosmic-purple-light);">Player</th>';
+            html += '<th style="text-align:left; padding:12px; color:var(--cosmic-purple-light);">Category</th>';
+            html += '<th style="text-align:right; padding:12px; color:var(--cosmic-purple-light);">Price</th></tr>';
+            data.players.forEach(p => {
+                html += `<tr style="border-bottom: 1px solid rgba(100,120,200,0.1);">
+                    <td style="padding:12px; color:var(--text-primary);">${p.player_name}</td>
+                    <td style="padding:12px;"><span style="padding:4px 12px; border-radius:20px; font-size:0.75rem; background:rgba(124,77,255,0.12); color:var(--cosmic-purple-light); border:1px solid rgba(124,77,255,0.2);">${p.category}</span></td>
+                    <td style="padding:12px; text-align:right; color:var(--gold-light); font-family:JetBrains Mono; font-weight:700;">₹${parseFloat(p.sold_price).toFixed(2)}Cr</td>
+                </tr>`;
+            });
+            html += '</table>';
+        } else {
+            html += '<p style="color:var(--text-dim); text-align:center; padding:30px;">No players in squad</p>';
+        }
+        alert(html.replace(/<[^>]*>/g, ' ')); // Simple alert for now - replace with proper modal
+    });
+}
+
+function viewPurse(teamId) {
+    fetch('/admin/teams/purse/' + teamId)
+    .then(r => r.json())
+    .then(data => {
+        alert(`Purse Breakdown for ${data.team_name}:\n\nTotal: ₹${data.purse_limit.toFixed(2)}Cr\nSpent: ₹${data.spent.toFixed(2)}Cr\nReserved: ₹${data.reserved.toFixed(2)}Cr\nAvailable: ₹${data.available.toFixed(2)}Cr`);
+    });
+}
+
+function editTeam(teamId) {
+    const newName = prompt('Enter new team name:');
+    if (!newName) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/teams/edit/' + teamId;
+    form.innerHTML = `<input name="team_name" value="${newName}"><input name="purse_limit" value="100">`;
+    document.body.appendChild(form);
+    form.submit();
+}
+
+window.onclick = function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

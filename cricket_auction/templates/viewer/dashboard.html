@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .status-live { display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); box-shadow: 0 0 20px rgba(34, 197, 94, 0.15); }
+    .status-paused { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 15px #22c55e; animation: livePulse 2s infinite; }
+    @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+
+    .current-auction {
+        text-align: center; padding: 40px 30px;
+        background: linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(0, 212, 255, 0.05));
+        border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px;
+    }
+    .current-auction .league { font-family: 'Space Grotesk'; font-size: 1.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+    .current-auction .player { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 15px; }
+    .current-auction .bid {
+        font-family: 'JetBrains Mono'; font-size: 3rem; font-weight: 700;
+        background: linear-gradient(135deg, var(--gold), var(--gold-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 25px; }
+
+    .team-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px; padding: 22px; transition: all 0.4s;
+    }
+    .team-card:hover { border-color: rgba(124, 77, 255, 0.2); }
+    .team-card .name { font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .team-card .owner { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px; }
+    .team-card .spent { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 700; margin-bottom: 12px; }
+    .squad-mini { display: flex; flex-wrap: wrap; gap: 6px; }
+    .squad-mini span {
+        padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.15);
+    }
+
+    .sold-table { width: 100%; border-collapse: collapse; }
+    .sold-table th {
+        text-align: left; padding: 12px 14px; color: var(--cosmic-purple-light);
+        font-family: 'Space Grotesk'; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+        border-bottom: 2px solid rgba(124, 77, 255, 0.3);
+    }
+    .sold-table td { padding: 12px 14px; color: var(--text-primary); border-bottom: 1px solid rgba(100, 120, 200, 0.08); }
+    .sold-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
+
+    .nav-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px; padding: 20px; text-decoration: none; color: var(--text-secondary);
+        transition: all 0.3s; display: flex; align-items: center; gap: 12px;
+    }
+    .nav-card:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(124, 77, 255, 0.1); }
+    .nav-card .icon { font-size: 1.8rem; }
+    .nav-card .text { font-weight: 600; font-size: 0.95rem; }
+
+    .viewer-badge {
+        display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+        border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px;
+        text-transform: uppercase; background: rgba(100, 116, 139, 0.12);
+        color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+</style>
+
+<h1>👁️ Viewer Dashboard</h1>
+<div class="viewer-badge" style="margin-bottom: 25px;">👁 Read-Only Mode</div>
+
+<!-- Current Auction -->
+<div class="glass-panel" style="margin-bottom: 25px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">League</div>
+            <div style="font-family: 'Space Grotesk'; font-size: 1.6rem; font-weight: 700; color: var(--text-primary);">{{ league_name }}</div>
+        </div>
+        <div>
+            {% if current_session == 'live' %}
+            <div class="status-live"><span class="live-dot"></span> Live</div>
+            {% elif current_session == 'paused' %}
+            <div class="status-live status-paused">⏸ Paused</div>
+            {% else %}
+            <div class="status-live" style="background: rgba(100,116,139,0.12); color: #64748b; border: 1px solid rgba(100,116,139,0.25);">○ No Session</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if current_player %}
+    <div class="current-auction">
+        <div class="league">{{ current_player.player_name }}</div>
+        <div class="player">Current Player</div>
+        <div class="bid">₹{{ "%.2f"|format(current_bid) }}Cr</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Links -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+    <a href="/viewer/auction" class="nav-card">
+        <span class="icon">🔨</span>
+        <span class="text">Auction Room</span>
+    </a>
+    <a href="/viewer/teams" class="nav-card">
+        <span class="icon">👥</span>
+        <span class="text">View Teams</span>
+    </a>
+</div>
+
+<!-- Teams Overview -->
+<div class="glass-panel" style="margin-bottom: 25px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>👥 Teams</h2>
+    <div class="teams-grid" style="margin-top: 20px;">
+        {% for team in teams %}
+        <div class="team-card">
+            <div class="name">{{ team.team_name }}</div>
+            <div class="owner">{% if team.owner_name %}👤 {{ team.owner_name }}{% else %}No Owner{% endif %}</div>
+            <div class="spent">💰 Spent: ₹{{ "%.2f"|format(team.spent) }}Cr</div>
+            <div class="squad-mini">
+                {% for player in team.squad[:5] %}
+                <span>{{ player.player_name }}</span>
+                {% endfor %}
+                {% if team.squad|length > 5 %}
+                <span>+{{ team.squad|length - 5 }} more</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Sold Players History -->
+<div class="glass-panel">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>✓ Sold Players</h2>
+    <div style="overflow-x: auto;">
+        <table class="sold-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Team</th>
+                    <th>Sold Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in sold_players %}
+                <tr>
+                    <td style="font-weight: 600;">{{ player.player_name }} {% if player.overseas %}<<span style="color: var(--gold);">🌍</span>{% endif %}</td>
+                    <td style="color: var(--text-secondary);">{{ player.team_name }}</td>
+                    <td style="font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 700;">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

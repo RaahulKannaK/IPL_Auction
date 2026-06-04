@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+
+    .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; }
+
+    .team-card {
+        position: relative; padding: 30px;
+        display: flex; flex-direction: column; gap: 15px;
+    }
+    .team-card .league {
+        font-size: 0.8rem; color: var(--text-dim);
+        text-transform: uppercase; letter-spacing: 2px;
+    }
+    .team-card .name {
+        font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700;
+        color: var(--text-primary);
+    }
+    .team-card .status {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.8rem; font-weight: 600;
+    }
+    .status-live { color: #22c55e; }
+    .status-paused { color: #f59e0b; }
+    .status-pending { color: var(--text-dim); }
+    .status-completed { color: var(--cosmic-purple-light); }
+
+    .stats-row {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+        margin: 10px 0;
+    }
+    .stat-mini {
+        text-align: center; padding: 12px;
+        background: rgba(0,0,0,0.2); border-radius: 12px;
+    }
+    .stat-mini .value {
+        font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700;
+    }
+    .stat-mini .label {
+        font-size: 0.7rem; color: var(--text-dim);
+        text-transform: uppercase; letter-spacing: 1px;
+        margin-top: 4px;
+    }
+
+    .category-tags {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .cat-tag {
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600;
+        background: rgba(124, 77, 255, 0.1);
+        color: var(--cosmic-purple-light);
+        border: 1px solid rgba(124, 77, 255, 0.15);
+    }
+
+    .action-btn {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 14px 24px; border-radius: 16px;
+        text-decoration: none; font-weight: 600; font-size: 0.9rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid; cursor: pointer; margin-top: auto;
+    }
+    .btn-primary {
+        background: rgba(124, 77, 255, 0.08);
+        border-color: rgba(124, 77, 255, 0.25);
+        color: var(--cosmic-purple-light);
+    }
+    .btn-primary:hover {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 25px rgba(124, 77, 255, 0.2);
+        transform: translateY(-2px);
+    }
+    .btn-disabled {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.15);
+        color: var(--text-dim);
+        cursor: not-allowed;
+    }
+
+    .empty-state {
+        text-align: center; padding: 60px 20px;
+    }
+    .empty-state .icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+    .empty-state h3 { color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk'; }
+    .empty-state p { color: var(--text-dim); }
+</style>
+
+<h1>⚡ My Teams</h1>
+
+{% if teams %}
+<div class="teams-grid">
+    {% for team in teams %}
+    <div class="glass-panel team-card">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        
+        <div class="league">{{ team.league_name }}</div>
+        <div class="name">{{ team.team_name }}</div>
+        
+        <div class="status 
+            {% if team.auction_status == 'live' %}status-live{% 
+            elif team.auction_status == 'paused' %}status-paused{% 
+            elif team.auction_status == 'completed' %}status-completed{% 
+            else %}status-pending{% endif %}">
+            {% if team.auction_status == 'live' %}🔴{% 
+            elif team.auction_status == 'paused' %}⏸{% 
+            elif team.auction_status == 'completed' %}✓{% 
+            else %}○{% endif %}
+            {{ team.auction_status.upper() }}
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-mini">
+                <div class="value" style="color: var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
+                <div class="label">Available</div>
+            </div>
+            <div class="stat-mini">
+                <div class="value" style="color: var(--ice-blue);">{{ team.squad_count }}</div>
+                <div class="label">Squad</div>
+            </div>
+            <div class="stat-mini">
+                <div class="value" style="color: var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
+                <div class="label">Purse</div>
+            </div>
+        </div>
+        
+        <div class="category-tags">
+            <span class="cat-tag">🏏 {{ team.batsmen }} Batsmen</span>
+            <span class="cat-tag">🎯 {{ team.bowlers }} Bowlers</span>
+            <span class="cat-tag">⚡ {{ team.all_rounders }} All-Rounders</span>
+            <span class="cat-tag">🧤 {{ team.wicket_keepers }} Keepers</span>
+            <span class="cat-tag">🌍 {{ team.overseas }} Overseas</span>
+        </div>
+        
+        {% if team.auction_status in ['live', 'paused'] %}
+        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-primary">
+            Enter Auction Room →
+        </a>
+        {% elif team.auction_status == 'completed' %}
+        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-primary" style="background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.25); color: #22c55e;">
+            View Results →
+        </a>
+        {% else %}
+        <div class="action-btn btn-disabled">
+            Auction Not Started
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="icon">🏏</div>
+    <h3>No Teams Assigned</h3>
+    <p>You don't own any teams in active auctions. Contact an admin.</p>
+</div>
+{% endif %}
+{% endblock %}

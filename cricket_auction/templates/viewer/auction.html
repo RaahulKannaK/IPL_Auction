@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+
+    .status-live { display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); box-shadow: 0 0 20px rgba(34, 197, 94, 0.15); }
+    .status-paused { display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 15px #22c55e; animation: livePulse 2s infinite; }
+    @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+
+    .viewer-badge {
+        display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+        border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px;
+        text-transform: uppercase; background: rgba(100, 116, 139, 0.12);
+        color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+
+    .current-player {
+        text-align: center; padding: 50px 30px;
+        background: linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(0, 212, 255, 0.05));
+        border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px; margin-bottom: 25px;
+    }
+    .current-player .name { font-family: 'Space Grotesk'; font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+    .current-player .meta { color: var(--text-secondary); font-size: 1rem; margin-bottom: 20px; }
+    .current-player .price {
+        font-family: 'JetBrains Mono'; font-size: 4rem; font-weight: 700;
+        background: linear-gradient(135deg, var(--gold), var(--gold-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .waiting-player {
+        text-align: center; padding: 50px 30px;
+    }
+    .waiting-player .icon { font-size: 5rem; margin-bottom: 25px; opacity: 0.2; }
+    .waiting-player h2 { color: var(--text-secondary); margin-bottom: 15px; font-family: 'Space Grotesk'; font-size: 1.8rem; }
+    .waiting-player p { color: var(--text-dim); }
+
+    .history-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 18px; border-radius: 12px; margin-bottom: 8px;
+        background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(100, 120, 200, 0.05);
+        transition: all 0.3s;
+    }
+    .history-item:hover { background: rgba(124, 77, 255, 0.04); border-color: rgba(124, 77, 255, 0.1); }
+    .history-bidder { color: var(--text-secondary); font-weight: 500; font-size: 0.95rem; }
+    .history-amount { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 600; font-size: 1.1rem; }
+
+    .empty-auction { text-align: center; padding: 80px 30px; }
+    .empty-auction .icon { font-size: 5rem; margin-bottom: 25px; opacity: 0.2; }
+    .empty-auction h2 { color: var(--text-secondary); margin-bottom: 15px; font-family: 'Space Grotesk'; font-size: 1.8rem; }
+    .empty-auction p { color: var(--text-dim); }
+
+    .sync-indicator {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600;
+        transition: all 0.3s; margin-bottom: 15px;
+    }
+    .sync-active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .sync-pending { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+</style>
+
+<h1>🔨 Auction Room</h1>
+<div class="viewer-badge" style="margin-bottom: 25px;">👁 View Only - No Bidding</div>
+
+{% if auction %}
+<div class="glass-panel" id="auctionPanel">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <div id="statusBadge" class="{% if auction.status == 'live' %}status-live{% else %}status-paused{% endif %}">
+            {% if auction.status == 'live' %}<span class="live-dot"></span> Live{% else %}⏸ Paused{% endif %}
+        </div>
+        <div style="color: var(--text-dim); font-size: 0.9rem;">{{ auction.league_name }}</div>
+    </div>
+    
+    <div id="playerDisplay">
+        {% if current_player %}
+        <div class="current-player" id="currentPlayerBox">
+            <div class="name" id="playerName">{{ current_player.player_name }}</div>
+            <div class="meta" id="playerMeta">
+                {{ current_player.category.replace('_', ' ').title() }} | 
+                Base: ₹{{ "%.2f"|format(current_player.base_price or 0.5) }}Cr
+                {% if current_player.overseas %}| <span style="color: var(--gold);">🌍 Overseas</span>{% endif %}
+            </div>
+            <div class="price" id="currentBid">₹{{ "%.2f"|format(auction.current_bid or 0) }}Cr</div>
+        </div>
+        {% else %}
+        <div class="waiting-player" id="waitingBox">
+            <div class="icon">⏳</div>
+            <h2>Waiting for Player</h2>
+            <p>The auctioneer will select a player soon</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="glass-panel" style="margin-top: 25px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2 style="font-family: 'Space Grotesk'; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px;">📜 Bid History</h2>
+    <div id="bidHistory" style="max-height: 400px; overflow-y: auto;">
+        {% for bid in bid_history %}
+        <div class="history-item">
+            <div class="history-bidder">{{ bid.team_name }} on {{ bid.player_name }}</div>
+            <div class="history-amount">₹{{ "%.2f"|format(bid.bid_amount) }}Cr</div>
+        </div>
+        {% else %}
+        <p style="color: var(--text-dim); text-align: center; padding: 30px;" id="noBidsMsg">No bids yet</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="sync-indicator sync-active" id="syncIndicator" style="margin-top: 15px;">
+    <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+    Live Sync
+</div>
+
+<script>
+let currentAuctionId = {{ auction.id }};
+let lastPlayerId = {% if current_player %}{{ current_player.auction_player_id or 'null' }}{% else %}null{% endif %};
+let currentBid = {{ auction.current_bid or 0 }};
+let bidHistory = [];
+
+{% for bid in bid_history %}
+bidHistory.push({
+    team_name: '{{ bid.team_name }}',
+    player_name: '{{ bid.player_name }}',
+    bid_amount: {{ bid.bid_amount }}
+});
+{% endfor %}
+
+function updatePlayerDisplay(data) {
+    const display = document.getElementById('playerDisplay');
+    
+    if (data.current_player && data.auction_player_id) {
+        let overseasHtml = '';
+        if (data.overseas) {
+            overseasHtml = '| <span style="color: var(--gold);">🌍 Overseas</span>';
+        }
+        
+        display.innerHTML = `
+            <div class="current-player" id="currentPlayerBox">
+                <div class="name" id="playerName">${data.current_player}</div>
+                <div class="meta" id="playerMeta">
+                    ${data.player_category ? data.player_category.replace('_', ' ').toUpperCase() : '--'} | 
+                    Base: ₹${data.base_price ? data.base_price.toFixed(2) : '0.00'}Cr
+                    ${overseasHtml}
+                </div>
+                <div class="price" id="currentBid">₹${data.current_bid ? data.current_bid.toFixed(2) : '0.00'}Cr</div>
+            </div>
+        `;
+    } else {
+        display.innerHTML = `
+            <div class="waiting-player" id="waitingBox">
+                <div class="icon">⏳</div>
+                <h2>Waiting for Player</h2>
+                <p>The auctioneer will select a player soon</p>
+            </div>
+        `;
+    }
+}
+
+function updateStatusBadge(status) {
+    const badge = document.getElementById('statusBadge');
+    if (status === 'live') {
+        badge.className = 'status-live';
+        badge.innerHTML = '<span class="live-dot"></span> Live';
+    } else if (status === 'paused') {
+        badge.className = 'status-paused';
+        badge.innerHTML = '⏸ Paused';
+    }
+}
+
+function addBidToHistory(team, player, amount) {
+    const container = document.getElementById('bidHistory');
+    const noBidsMsg = document.getElementById('noBidsMsg');
+    if (noBidsMsg) noBidsMsg.style.display = 'none';
+    
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+        <div class="history-bidder">${team} on ${player}</div>
+        <div class="history-amount">₹${amount.toFixed(2)}Cr</div>
+    `;
+    container.insertBefore(item, container.firstChild);
+}
+
+function updateSyncIndicator(active) {
+    const indicator = document.getElementById('syncIndicator');
+    if (active) {
+        indicator.className = 'sync-indicator sync-active';
+        indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Live Sync';
+    } else {
+        indicator.className = 'sync-indicator sync-pending';
+        indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block; animation: livePulse 1s infinite;"></span> Reconnecting...';
+    }
+}
+
+setInterval(() => {
+    fetch('/auction/status?auction_id=' + currentAuctionId)
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'none') return;
+        
+        updateSyncIndicator(true);
+        updateStatusBadge(data.status);
+        
+        const playerId = data.auction_player_id;
+        if (playerId !== lastPlayerId) {
+            lastPlayerId = playerId;
+            updatePlayerDisplay(data);
+        }
+        
+        if (data.current_bid !== currentBid) {
+            currentBid = data.current_bid;
+            const bidEl = document.getElementById('currentBid');
+            if (bidEl) bidEl.textContent = '₹' + currentBid.toFixed(2) + 'Cr';
+        }
+    })
+    .catch(() => {
+        updateSyncIndicator(false);
+    });
+}, 500);
+
+</script>
+
+{% else %}
+<div class="glass-panel empty-auction">
+    <div class="icon">⏳</div>
+    <h2>No Live Auction</h2>
+    <p>The auction is currently not live. Check back later.</p>
+</div>
+{% endif %}
+{% endblock %}

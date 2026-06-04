@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .input-group { margin-bottom: 18px; }
+    .input-group label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .input-group input, .input-group select {
+        width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-primary); padding: 14px 18px; border-radius: 14px; font-size: 1rem; outline: none; transition: all 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus { border-color: var(--cosmic-purple-light); box-shadow: 0 0 20px rgba(124, 77, 255, 0.1); }
+
+    .btn {
+        padding: 12px 24px; border-radius: 14px; border: none; font-weight: 700; font-size: 0.9rem;
+        cursor: pointer; transition: all 0.3s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.5px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; position: relative; overflow: hidden;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+    .btn-success { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .btn-success:hover { background: rgba(34, 197, 94, 0.25); }
+    .btn-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .btn-warning:hover { background: rgba(245, 158, 11, 0.25); }
+
+    .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 25px; }
+
+    .session-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px; padding: 24px; transition: all 0.4s; position: relative; overflow: hidden;
+    }
+    .session-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue), var(--gold)); opacity: 0.6;
+    }
+    .session-card:hover { border-color: rgba(124, 77, 255, 0.25); transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+    .session-name { font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+    .session-league { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 15px; }
+
+    .status-badge {
+        display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+        border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .badge-active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .badge-completed { background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); }
+
+    .session-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+</style>
+
+<h1>📅 Session Management</h1>
+
+<!-- Create Session -->
+<div class="glass-panel" style="max-width: 600px; margin-bottom: 30px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>➕ Create Session</h2>
+    <form method="POST" action="/admin/sessions/create">
+        <div class="input-group">
+            <label>Auction</label>
+            <select name="auction_id" required>
+                {% for auction in auctions %}
+                <option value="{{ auction.id }}">{{ auction.league_name }} ({{ auction.status }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Session Name</label>
+            <input type="text" name="session_name" placeholder="e.g., Weekend Session 1" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Session</button>
+    </form>
+</div>
+
+<!-- Sessions List -->
+<div class="sessions-grid">
+    {% for sess in sessions %}
+    <div class="session-card glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+            <div class="session-name">{{ sess.session_name }}</div>
+            {% if sess.status == 'active' %}
+            <span class="status-badge badge-active">● Active</span>
+            {% else %}
+            <span class="status-badge badge-completed">✓ Completed</span>
+            {% endif %}
+        </div>
+        <div class="session-league">{{ sess.league_name }}</div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 10px; text-align: center; border: 1px solid rgba(100,120,200,0.08);">
+                <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--ice-blue);">{{ sess.start_time.strftime('%Y-%m-%d') if sess.start_time else 'N/A' }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Started</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 10px; text-align: center; border: 1px solid rgba(100,120,200,0.08);">
+                <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--gold);">{{ sess.end_time.strftime('%Y-%m-%d') if sess.end_time else 'Active' }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Ended</div>
+            </div>
+        </div>
+        
+        <div class="session-actions">
+            {% if sess.status == 'active' %}
+            <button class="btn btn-danger" onclick="closeSession({{ sess.id }})">🔒 Close</button>
+            {% else %}
+            <button class="btn btn-warning" onclick="continueSession({{ sess.id }})">▶ Continue</button>
+            {% endif %}
+            <a href="/auction/session/{{ sess.id }}" class="btn btn-success">🔨 Enter</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align: center; padding: 60px;">
+        <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.2;">📅</div>
+        <h3 style="color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk';">No Sessions Yet</h3>
+        <p style="color: var(--text-dim);">Create your first session above</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function closeSession(id) {
+    if (!confirm('Close this session?')) return;
+    fetch('/admin/sessions/close/' + id, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => location.reload());
+}
+
+function continueSession(id) {
+    if (!confirm('Continue this session next weekend?')) return;
+    fetch('/admin/sessions/continue/' + id, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => location.reload());
+}
+</script>
+{% endblock %}

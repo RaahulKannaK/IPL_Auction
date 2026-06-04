@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .pitch {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(6, 78, 59, 0.2));
+        border: 2px solid rgba(34, 197, 94, 0.2); border-radius: 20px;
+        padding: 30px; min-height: 400px; position: relative;
+    }
+
+    .player-slot {
+        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
+        border-radius: 14px; padding: 14px 18px; margin-bottom: 10px;
+        cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 12px;
+    }
+    .player-slot:hover { border-color: var(--cosmic-purple); background: rgba(124, 77, 255, 0.05); }
+    .player-slot.selected {
+        border-color: #22c55e; background: rgba(6, 78, 59, 0.3);
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    }
+    .player-slot .avatar {
+        width: 40px; height: 40px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+    }
+    .player-slot .name { font-weight: 600; color: var(--text-primary); flex: 1; }
+    .player-slot .role { font-size: 0.8rem; color: var(--text-dim); }
+    .player-slot .captain-badge {
+        padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+        background: rgba(247, 181, 0, 0.15); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.25);
+    }
+    .player-slot .vice-badge {
+        padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+        background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+
+    .btn {
+        padding: 14px 28px; border-radius: 14px; border: none; font-weight: 700; font-size: 0.95rem;
+        cursor: pointer; transition: all 0.3s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.5px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; position: relative; overflow: hidden;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
+
+    .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    @media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
+</style>
+
+<h1>🏏 Playing XI Builder</h1>
+
+<div class="section-grid">
+    <!-- Available Players -->
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>👥 Squad Players</h2>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px;">Click to add to Playing XI</p>
+        
+        <div id="squadList" style="max-height: 500px; overflow-y: auto;">
+            {% for player in squad %}
+            <div class="player-slot" onclick="addToXI({{ player.id }}, '{{ player.player_name }}', '{{ player.category }}')">
+                <div class="avatar">🏏</div>
+                <div class="name">{{ player.player_name }}</div>
+                <div class="role">{{ player.category.replace('_', ' ').title() }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Playing XI -->
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>⭐ Playing XI</h2>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px;">Select 11 players. Click C for Captain, VC for Vice Captain.</p>
+        
+        <div class="pitch" id="playingXI">
+            <!-- Selected players appear here -->
+            {% for p in playing11 %}
+            <div class="player-slot selected" data-id="{{ p.id }}">
+                <div class="avatar">⭐</div>
+                <div class="name">{{ p.player_name }}</div>
+                <div class="role">{{ p.position }}</div>
+                {% if p.is_captain %}
+                <span class="captain-badge">C</span>
+                {% elif p.is_vice_captain %}
+                <span class="vice-badge">VC</span>
+                {% endif %}
+                <button onclick="removeFromXI({{ p.id }})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;">✕</button>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn btn-primary" onclick="savePlaying11()">💾 Save Playing XI</button>
+            <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);" onclick="clearXI()">Clear</button>
+        </div>
+        
+        <div id="xiCount" style="margin-top: 10px; color: var(--text-dim); font-size: 0.9rem;">
+            Selected: <span style="color: var(--cosmic-purple-light); font-weight: 700;">{{ playing11|length }}</span> / 11
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedPlayers = {{ playing11|map(attribute='id')|list|tojson }};
+let playerData = {};
+
+function addToXI(id, name, category) {
+    if (selectedPlayers.includes(id)) {
+        alert('Player already in XI');
+        return;
+    }
+    if (selectedPlayers.length >= 11) {
+        alert('Playing XI is full (11 players)');
+        return;
+    }
+    
+    selectedPlayers.push(id);
+    playerData[id] = { name, category, is_captain: false, is_vice_captain: false };
+    renderXI();
+}
+
+function removeFromXI(id) {
+    selectedPlayers = selectedPlayers.filter(p => p !== id);
+    delete playerData[id];
+    renderXI();
+}
+
+function setCaptain(id) {
+    Object.keys(playerData).forEach(k => playerData[k].is_captain = false);
+    playerData[id].is_captain = true;
+    playerData[id].is_vice_captain = false;
+    renderXI();
+}
+
+function setViceCaptain(id) {
+    Object.keys(playerData).forEach(k => playerData[k].is_vice_captain = false);
+    playerData[id].is_vice_captain = true;
+    playerData[id].is_captain = false;
+    renderXI();
+}
+
+function renderXI() {
+    const container = document.getElementById('playingXI');
+    container.innerHTML = '';
+    
+    selectedPlayers.forEach(id => {
+        const p = playerData[id];
+        if (!p) return;
+        
+        const div = document.createElement('div');
+        div.className = 'player-slot selected';
+        div.innerHTML = `
+            <div class="avatar">⭐</div>
+            <div class="name">${p.name}</div>
+            <div class="role">${p.category.replace('_', ' ').title()}</div>
+            ${p.is_captain ? '<span class="captain-badge">C</span>' : `<button onclick="setCaptain(${id})" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:0.8rem;">C?</button>`}
+            ${p.is_vice_captain ? '<span class="vice-badge">VC</span>' : `<button onclick="setViceCaptain(${id})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;">VC?</button>`}
+            <button onclick="removeFromXI(${id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.2rem;">✕</button>
+        `;
+        container.appendChild(div);
+    });
+    
+    document.getElementById('xiCount').innerHTML = `Selected: <span style="color: var(--cosmic-purple-light); font-weight: 700;">${selectedPlayers.length}</span> / 11`;
+}
+
+function savePlaying11() {
+    if (selectedPlayers.length !== 11) {
+        alert('Please select exactly 11 players');
+        return;
+    }
+    
+    const hasCaptain = Object.values(playerData).some(p => p.is_captain);
+    const hasVice = Object.values(playerData).some(p => p.is_vice_captain);
+    
+    if (!hasCaptain) { alert('Please select a Captain'); return; }
+    if (!hasVice) { alert('Please select a Vice Captain'); return; }
+    
+    const players = selectedPlayers.map((id, index) => ({
+        player_id: id,
+        position: index + 1,
+        is_captain: playerData[id].is_captain,
+        is_vice_captain: playerData[id].is_vice_captain
+    }));
+    
+    fetch('/team-owner/playing11/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ team_id: {{ team_id }}, players })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) alert('Playing XI saved!');
+    });
+}
+
+function clearXI() {
+    selectedPlayers = [];
+    playerData = {};
+    renderXI();
+}
+
+// Initialize existing playing11 data
+{% for p in playing11 %}
+playerData[{{ p.id }}] = {
+    name: '{{ p.player_name }}',
+    category: '{{ p.category }}',
+    is_captain: {{ 'true' if p.is_captain else 'false' }},
+    is_vice_captain: {{ 'true' if p.is_vice_captain else 'false' }}
+};
+{% endfor %}
+</script>
+{% endblock %}

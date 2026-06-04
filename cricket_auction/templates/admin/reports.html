@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    @media (max-width: 900px) { .reports-grid { grid-template-columns: 1fr; } }
+
+    .report-table { width: 100%; border-collapse: collapse; }
+    .report-table th {
+        text-align: left; padding: 12px 14px; color: var(--cosmic-purple-light);
+        font-family: 'Space Grotesk'; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+        border-bottom: 2px solid rgba(124, 77, 255, 0.3);
+    }
+    .report-table td { padding: 12px 14px; color: var(--text-primary); border-bottom: 1px solid rgba(100, 120, 200, 0.08); }
+    .report-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
+
+    .bar-container { background: rgba(0,0,0,0.3); height: 20px; border-radius: 10px; overflow: hidden; width: 100px; }
+    .bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+    .bar-red { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .bar-purple { background: linear-gradient(90deg, var(--cosmic-purple), var(--cosmic-purple-dark)); }
+    .bar-green { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
+    .top-buy { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; margin-bottom: 8px;
+        background: rgba(0,0,0,0.15); border: 1px solid rgba(100, 120, 200, 0.05); transition: all 0.3s; }
+    .top-buy:hover { background: rgba(124, 77, 255, 0.04); border-color: rgba(124, 77, 255, 0.1); }
+    .top-rank { font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; color: var(--gold); width: 30px; }
+    .top-name { color: var(--text-primary); font-weight: 600; flex: 1; }
+    .top-team { color: var(--text-secondary); font-size: 0.85rem; }
+    .top-price { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 700; }
+</style>
+
+<h1>📊 Reports</h1>
+
+<div class="reports-grid">
+    <!-- Team Spending -->
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>💰 Team Spending</h2>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Spent</th>
+                    <th>% Used</th>
+                    <th>Remaining</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in team_spending %}
+                <tr>
+                    <td style="font-weight: 600;">{{ team.team_name }}</td>
+                    <td style="font-family: 'JetBrains Mono'; color: #ef4444;">₹{{ "%.2f"|format(team.spent or 0) }}Cr</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="bar-container">
+                                <div class="bar-fill bar-red" style="width: {{ team.spent_pct|default(0) }}%;"></div>
+                            </div>
+                            <span style="font-size: 0.85rem; color: var(--text-dim);">{{ "%.1f"|format(team.spent_pct|default(0)) }}%</span>
+                        </div>
+                    </td>
+                    <td style="font-family: 'JetBrains Mono'; color: #22c55e;">₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0)) }}Cr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Top Buys -->
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>🔥 Top Buys</h2>
+        {% for player in auction_history[:10] %}
+        <div class="top-buy">
+            <div class="top-rank">#{{ loop.index }}</div>
+            <div class="top-name">{{ player.player_name }}</div>
+            <div class="top-team">{{ player.team_name }}</div>
+            <div class="top-price">₹{{ "%.2f"|format(player.sold_price) }}Cr</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Sold Players -->
+<div class="glass-panel" style="margin-bottom: 25px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>✓ Sold Players</h2>
+    <div style="overflow-x: auto;">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Category</th>
+                    <th>Team</th>
+                    <th>Sold Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in sold_players %}
+                <tr>
+                    <td style="font-weight: 600;">{{ player.player_name }} {% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% endif %}</td>
+                    <td><span style="padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; background: rgba(124,77,255,0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(124,77,255,0.2);">{{ player.category }}</span></td>
+                    <td style="color: var(--text-secondary);">{{ player.team_name }}</td>
+                    <td style="font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 700;">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Unsold Players -->
+<div class="glass-panel">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <h2>○ Unsold Players</h2>
+    <div style="overflow-x: auto;">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Category</th>
+                    <th>Base Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in unsold_players %}
+                <tr>
+                    <td style="font-weight: 600;">{{ player.player_name }} {% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% endif %}</td>
+                    <td><span style="padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; background: rgba(124,77,255,0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(124,77,255,0.2);">{{ player.category }}</span></td>
+                    <td style="font-family: 'JetBrains Mono'; color: var(--ice-blue);">₹{{ "%.2f"|format(player.base_price or 0.5) }}Cr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

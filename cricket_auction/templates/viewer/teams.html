@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
+
+    .viewer-badge {
+        display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+        border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px;
+        text-transform: uppercase; background: rgba(100, 116, 139, 0.12);
+        color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+
+    .teams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 25px; }
+
+    .team-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px; padding: 24px; transition: all 0.4s; position: relative; overflow: hidden;
+    }
+    .team-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue), var(--gold)); opacity: 0.6;
+    }
+    .team-card:hover { border-color: rgba(124, 77, 255, 0.25); transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+
+    .team-logo {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; font-family: 'Space Grotesk'; font-weight: 700; color: white;
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.3);
+    }
+    .team-name { font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+    .team-owner { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 15px; }
+
+    .purse-bar {
+        background: rgba(0, 0, 0, 0.3); height: 24px; border-radius: 12px;
+        overflow: hidden; position: relative; margin-bottom: 8px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); border: 1px solid rgba(100, 120, 200, 0.1);
+    }
+    .purse-spent { height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); float: left; }
+    .purse-available { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); float: left; }
+
+    .squad-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .squad-table th {
+        text-align: left; padding: 10px 12px; color: var(--cosmic-purple-light);
+        font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+        border-bottom: 1px solid rgba(124, 77, 255, 0.2);
+    }
+    .squad-table td { padding: 10px 12px; color: var(--text-primary); border-bottom: 1px solid rgba(100, 120, 200, 0.05); font-size: 0.9rem; }
+    .squad-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
+
+    .price-tag { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 600; font-size: 0.9rem; }
+</style>
+
+<h1>👥 Teams</h1>
+<div class="viewer-badge" style="margin-bottom: 25px;">👁 View Only</div>
+
+<div class="teams-grid">
+    {% for team in teams %}
+    <div class="team-card glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+            <div class="team-logo">{{ team.team_name[:2].upper() }}</div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.8rem; color: var(--text-dim);">Squad</div>
+                <div style="font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">{{ team.squad|length }}/{{ team.squad_size or 18 }}</div>
+            </div>
+        </div>
+        
+        <div class="team-name">{{ team.team_name }}</div>
+        <div class="team-owner">{% if team.owner_name %}👤 {{ team.owner_name }}{% else %}No Owner{% endif %}</div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;">
+            <span>Purse</span>
+            <span style="font-family: 'JetBrains Mono';">₹{{ "%.2f"|format(team.purse_limit or 100) }}Cr Total</span>
+        </div>
+        <div class="purse-bar">
+            {% set spent_pct = (team.spent / team.purse_limit * 100) if team.purse_limit and team.purse_limit > 0 else 0 %}
+            <div class="purse-spent" style="width: {{ spent_pct }}%;"></div>
+            <div class="purse-available" style="width: {{ 100 - spent_pct }}%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 15px;">
+            <span style="color: #ef4444;">● Spent ₹{{ "%.2f"|format(team.spent) }}Cr</span>
+            <span style="color: #22c55e;">● Available ₹{{ "%.2f"|format((team.purse_limit or 100) - team.spent) }}Cr</span>
+        </div>
+        
+        {% if team.squad %}
+        <table class="squad-table">
+            <thead>
+                <tr><th>Player</th><th>Category</th><th>Price</th></tr>
+            </thead>
+            <tbody>
+                {% for player in team.squad %}
+                <tr>
+                    <td style="font-weight: 500;">{{ player.player_name }} {% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% endif %}</td>
+                    <td><span style="padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; background: rgba(124,77,255,0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(124,77,255,0.15);">{{ player.category }}</span></td>
+                    <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--text-dim); text-align: center; padding: 20px; font-size: 0.9rem;">No players in squad yet</p>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="glass-panel" style="text-align: center; padding: 60px;">
+        <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.2;">👥</div>
+        <h3 style="color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk';">No Teams Yet</h3>
+        <p style="color: var(--text-dim);">Teams will appear here once created</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

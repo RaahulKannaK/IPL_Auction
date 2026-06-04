@@ -2,18 +2,380 @@
 <html>
 <head>
     <title>Cricket Auction Platform</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+            --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+            --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+            --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+            --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+            --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Lava Background */
+        .lava-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; overflow: hidden;
+        }
+        .lava-blob {
+            position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.08;
+            animation: lavaFloat 25s ease-in-out infinite;
+        }
+        .lava-blob:nth-child(1) {
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, #ff2a00 0%, #ff6b00 50%, transparent 70%);
+            top: -15%; left: -10%; animation-duration: 30s;
+        }
+        .lava-blob:nth-child(2) {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, #ff6b00 0%, #ffcc00 50%, transparent 70%);
+            bottom: -20%; right: -15%; animation-duration: 35s; animation-direction: reverse;
+        }
+        .lava-blob:nth-child(3) {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #ff4500 0%, #ff2a00 50%, transparent 70%);
+            top: 50%; left: 50%; animation-duration: 28s; animation-delay: -12s;
+        }
+        @keyframes lavaFloat {
+            0%, 100% { transform: translate(0,0) scale(1); opacity: 0.06; }
+            50% { transform: translate(50px,-40px) scale(1.15); opacity: 0.12; }
+        }
+
+        /* Ember Particles */
+        .ember-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; overflow: hidden;
+        }
+        .ember {
+            position: absolute; width: 3px; height: 3px;
+            background: var(--lava-orange); border-radius: 50%; opacity: 0;
+            animation: emberRise 18s infinite;
+            box-shadow: 0 0 8px var(--lava-red), 0 0 16px var(--lava-orange);
+        }
+        @keyframes emberRise {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            15% { opacity: 0.9; }
+            85% { opacity: 0.7; }
+            100% { opacity: 0; transform: translateY(-15vh) scale(0); }
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(7, 11, 22, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+            padding: 16px 30px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        nav a:hover {
+            color: var(--cosmic-purple-light);
+            background: rgba(124, 77, 255, 0.08);
+            box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
+        }
+        nav a.active {
+            color: var(--ice-blue-light);
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+        }
+        .nav-separator {
+            width: 1px;
+            height: 24px;
+            background: rgba(100, 120, 200, 0.15);
+            margin: 0 8px;
+        }
+        .nav-user {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .role-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .role-owner { background: rgba(247, 181, 0, 0.15); color: var(--gold); border: 1px solid rgba(247, 181, 0, 0.2); }
+        .role-admin { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .role-auctioneer { background: rgba(0, 212, 255, 0.15); color: var(--ice-blue); border: 1px solid rgba(0, 212, 255, 0.2); }
+        .role-team_owner { background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
+        .role-viewer { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
+
+        /* Auction Context Badge */
+        .auction-context {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(247, 181, 0, 0.1);
+            border: 1px solid rgba(247, 181, 0, 0.2);
+            color: var(--gold-light);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .auction-context .exit {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-decoration: none;
+            margin-left: 8px;
+        }
+        .auction-context .exit:hover {
+            color: #ef4444;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Flash Messages */
+        .flash {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(127, 29, 29, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 14px 24px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: flashSlide 0.4s ease;
+        }
+        .flash-success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 78, 59, 0.1));
+            border-color: rgba(34, 197, 94, 0.25);
+            color: #86efac;
+        }
+        .flash-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(127, 29, 29, 0.1));
+            border-color: rgba(245, 158, 11, 0.25);
+            color: #fcd34d;
+        }
+        @keyframes flashSlide {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Login Page */
+        .login-box {
+            max-width: 420px;
+            margin: 80px auto;
+            background: var(--bg-panel);
+            backdrop-filter: blur(24px);
+            padding: 45px;
+            border-radius: 24px;
+            border: 1px solid rgba(100, 120, 200, 0.1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+        .login-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+            opacity: 0.5;
+        }
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 35px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .login-box input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(100, 120, 200, 0.15);
+            color: var(--text-primary);
+            padding: 14px 18px;
+            border-radius: 14px;
+            width: 100%;
+            margin-bottom: 18px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .login-box input:focus {
+            border-color: var(--cosmic-purple-light);
+            box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
+        }
+        .login-box button {
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+            color: white;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-box button::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        .login-box button:hover::before { left: 100%; }
+        .login-box button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cosmic-purple-light); }
+    </style>
 </head>
 <body>
+    <!-- Lava Background -->
+    <div class="lava-bg">
+        <div class="lava-blob"></div>
+        <div class="lava-blob"></div>
+        <div class="lava-blob"></div>
+    </div>
+    
+    <!-- Ember Particles -->
+    <div class="ember-particles" id="emberContainer"></div>
+
+    {% if session.get('user_id') %}
     <nav>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/teams">Teams</a>
-        <a href="/players">Players</a>
-        <a href="/auction">Auction Room</a>
-        <a href="/logout">Logout</a>
+        <!-- ========== ADMIN ========== -->
+        {% if session.role == 'admin' %}
+            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+            <a href="/admin/teams" {% if request.path.startswith('/admin/teams') %}class="active"{% endif %}>👥 Teams</a>
+            <a href="/admin/players" {% if request.path.startswith('/admin/players') %}class="active"{% endif %}>🏏 Players</a>
+            <a href="/admin/sessions" {% if request.path.startswith('/admin/sessions') %}class="active"{% endif %}>📅 Sessions</a>
+            <a href="/admin/reports" {% if request.path.startswith('/admin/reports') %}class="active"{% endif %}>📊 Reports</a>
+            {% if session.get('active_auction_id') %}
+                <span class="nav-separator"></span>
+                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+
+        <!-- ========== AUCTIONEER ========== -->
+        {% elif session.role == 'auctioneer' %}
+            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                <a href="/auction/history" {% if request.path.startswith('/auction/history') %}class="active"{% endif %}>📜 History</a>
+            {% endif %}
+
+        <!-- ========== TEAM OWNER (includes owner) ========== -->
+        {% elif session.role in ['team_owner', 'owner'] %}
+            <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
+                <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
+                <span class="nav-separator"></span>
+                <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+
+        <!-- ========== VIEWER ========== -->
+        {% elif session.role == 'viewer' %}
+            <a href="/viewer/dashboard" {% if request.path == '/viewer/dashboard' %}class="active"{% endif %}>👁️ Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/viewer/teams" {% if request.path.startswith('/viewer/teams') %}class="active"{% endif %}>👥 Teams</a>
+                <span class="nav-separator"></span>
+                <a href="/viewer/auction" {% if request.path.startswith('/viewer/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+        {% endif %}
+        
+        <!-- Auction Context Badge -->
+        {% if session.get('active_league_name') %}
+            <div class="auction-context" style="margin-left: auto;">
+                🔸 {{ session.active_league_name }}
+                {% if session.role in ['team_owner', 'owner'] %}
+                    <a href="/team-owner/exit-auction" class="exit">✕ Exit</a>
+                {% elif session.role == 'viewer' %}
+                    <a href="/viewer/exit-auction" class="exit">✕ Exit</a>
+                {% elif session.role in ['admin', 'auctioneer'] %}
+                    <a href="/admin/exit-auction" class="exit">✕ Exit</a>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <div class="nav-user">
+            <span class="role-badge role-{{ session.role }}">{{ session.role.replace('_', ' ') }}</span>
+            <a href="/logout" style="padding: 8px 16px; font-size: 0.85rem;">🚪 Logout ({{ session.username }})</a>
+        </div>
     </nav>
+    {% endif %}
+    
     <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <div class="flash {% if category == 'success' %}flash-success{% elif category == 'warning' %}flash-warning{% endif %}">
+                        {{ msg }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        // Generate ember particles
+        const emberContainer = document.getElementById('emberContainer');
+        for (let i = 0; i < 30; i++) {
+            const ember = document.createElement('div');
+            ember.className = 'ember';
+            ember.style.left = Math.random() * 100 + '%';
+            ember.style.animationDelay = (Math.random() * 18) + 's';
+            ember.style.animationDuration = (12 + Math.random() * 10) + 's';
+            emberContainer.appendChild(ember);
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .mock-banner {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    .mock-banner h2 { margin-bottom: 10px; }
+    .mock-banner p { opacity: 0.9; }
+</style>
+
+<div class="mock-banner">
+    <h2>🎮 MOCK AUCTION MODE</h2>
+    <p>Practice bidding with test purse. No real data will be affected!</p>
+</div>
+
+<div class="card">
+    <h3>Mock Purse: ₹100Cr | Spent: ₹0Cr</h3>
+    <p style="color: #94a3b8;">Try bidding strategies without consequences</p>
+</div>
+
+<!-- Same auction UI but with mock data -->
+<div class="grid" style="margin-top: 20px;">
+    {% for player in players %}
+    <div class="player-card" style="padding: 20px;">
+        <h4>{{ player.name }}</h4>
+        <p>Base: ₹{{ player.base_price }}Cr</p>
+        <button class="btn" onclick="mockBid({{ player.id }})">Mock Bid +0.5Cr</button>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+let mockPurse = 100;
+let mockSpent = 0;
+
+function mockBid(playerId) {
+    if (mockSpent + 0.5 > mockPurse) {
+        alert('Mock purse exhausted!');
+        return;
+    }
+    mockSpent += 0.5;
+    alert(`Mock bid placed! Spent: ₹${mockSpent}Cr / ₹${mockPurse}Cr`);
+}
+</script>
+{% endblock %}

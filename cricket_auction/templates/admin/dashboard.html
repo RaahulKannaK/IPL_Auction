@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+    }
+
+    .glass-panel {
+        background: var(--bg-panel); backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
+        padding: 28px; position: relative; overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-panel::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
+
+    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
+    .glass-panel:hover .corner { opacity: 0.5; }
+    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
+    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
+    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
+    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
+
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
+    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 18px; }
+
+    .status-live { display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); box-shadow: 0 0 20px rgba(34, 197, 94, 0.15); }
+    .status-paused { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .status-pending { background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); }
+    .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 15px #22c55e; animation: livePulse 2s infinite; }
+    @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { text-align: center; padding: 25px 15px; }
+    .stat-card .label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; font-weight: 600; margin-bottom: 12px; }
+    .stat-card .value { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 700; color: var(--text-primary); }
+    .stat-purple { border-left: 3px solid var(--cosmic-purple); }
+    .stat-blue { border-left: 3px solid var(--ice-blue); }
+    .stat-gold { border-left: 3px solid var(--gold); }
+    .stat-green { border-left: 3px solid #22c55e; }
+
+    .auction-info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+    @media (max-width: 768px) { .auction-info { grid-template-columns: 1fr; } }
+
+    .info-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid rgba(100, 120, 200, 0.08); }
+    .info-item:last-child { border-bottom: none; }
+    .info-label { color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+    .info-value { font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-primary); font-size: 1.1rem; }
+
+    .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+    @media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
+
+    .history-list { max-height: 300px; overflow-y: auto; }
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
+    .history-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 16px; border-radius: 12px; margin-bottom: 8px;
+        background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(100, 120, 200, 0.05);
+        transition: all 0.3s;
+    }
+    .history-item:hover { background: rgba(124, 77, 255, 0.04); border-color: rgba(124, 77, 255, 0.1); }
+    .history-bidder { color: var(--text-secondary); font-weight: 500; font-size: 0.9rem; }
+    .history-amount { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); font-weight: 600; }
+
+    .hidden-status {
+        display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+        border-radius: 14px; margin-bottom: 8px;
+        background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.15);
+    }
+    .hidden-status .team { color: var(--cosmic-purple-light); font-weight: 600; font-size: 0.9rem; }
+    .hidden-status .player { color: var(--text-secondary); font-size: 0.85rem; }
+    .hidden-status .badge {
+        padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+        background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .nav-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px; padding: 20px; text-decoration: none; color: var(--text-secondary);
+        transition: all 0.3s; display: flex; align-items: center; gap: 12px;
+    }
+    .nav-card:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(124, 77, 255, 0.1); }
+    .nav-card .icon { font-size: 1.8rem; }
+    .nav-card .text { font-weight: 600; font-size: 0.95rem; }
+
+    .bid-value {
+        font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; font-weight: 700;
+        background: linear-gradient(135deg, var(--gold), var(--gold-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+</style>
+
+<h1>⚡ Admin Control Center</h1>
+
+<!-- Auction Status Header -->
+<div class="glass-panel" style="margin-bottom: 25px;">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">League</div>
+            <div style="font-family: 'Space Grotesk'; font-size: 1.6rem; font-weight: 700; color: var(--text-primary);">{{ league_name }}</div>
+        </div>
+        <div style="text-align: right;">
+            {% if auction_status == 'live' %}
+            <div class="status-live"><span class="live-dot"></span> Live</div>
+            {% elif auction_status == 'paused' %}
+            <div class="status-live status-paused">⏸ Paused</div>
+            {% else %}
+            <div class="status-live status-pending">○ Pending</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Navigation -->
+<div class="nav-grid">
+    <a href="/admin/auctions" class="nav-card">
+        <span class="icon">🏆</span>
+        <span class="text">Auctions</span>
+    </a>
+    <a href="/admin/teams" class="nav-card">
+        <span class="icon">👥</span>
+        <span class="text">Teams</span>
+    </a>
+    <a href="/admin/players" class="nav-card">
+        <span class="icon">🏏</span>
+        <span class="text">Players</span>
+    </a>
+    <a href="/admin/sessions" class="nav-card">
+        <span class="icon">📅</span>
+        <span class="text">Sessions</span>
+    </a>
+    <a href="/admin/reports" class="nav-card">
+        <span class="icon">📊</span>
+        <span class="text">Reports</span>
+    </a>
+    <a href="/admin/auction" class="nav-card">  <!-- FIXED: was /auction -->
+        <span class="icon">🔨</span>
+        <span class="text">Auction Room</span>
+    </a>
+</div>
+
+<!-- Current Auction Info -->
+<div class="auction-info">
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>📋 Current Auction</h2>
+        <div class="info-item">
+            <span class="info-label">Current Player</span>
+            <span class="info-value">{{ current_player.player_name if current_player else 'None' }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Highest Bid</span>
+            <span class="info-value" style="color: var(--gold); font-family: 'JetBrains Mono';">₹{{ "%.2f"|format(current_bid) }}Cr</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Current Bidder</span>
+            <span class="info-value">{{ current_player.bidder if current_player else 'None' }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Auction Status</span>
+            <span class="info-value" style="color: {% if auction_status == 'live' %}#22c55e{% elif auction_status == 'paused' %}#f59e0b{% else %}var(--text-dim){% endif %};">{{ auction_status|upper }}</span>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>📊 League Stats</h2>
+        <div class="stats-grid" style="grid-template-columns: 1fr 1fr; gap: 15px; margin: 0;">
+            <div class="stat-card stat-purple" style="padding: 18px 12px;">
+                <div class="label">Teams</div>
+                <div class="value">{{ stats.teams }}</div>
+            </div>
+            <div class="stat-card stat-blue" style="padding: 18px 12px;">
+                <div class="label">Players</div>
+                <div class="value">{{ stats.players }}</div>
+            </div>
+            <div class="stat-card stat-green" style="padding: 18px 12px;">
+                <div class="label">Sold</div>
+                <div class="value">{{ stats.sold }}</div>
+            </div>
+            <div class="stat-card stat-gold" style="padding: 18px 12px;">
+                <div class="label">Unsold</div>
+                <div class="value">{{ stats.unsold }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Hidden Bids -->
+<div class="section-grid">
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>🔥 Recent Bids</h2>
+        <div class="history-list">
+            {% for bid in recent_bids %}
+            <div class="history-item">
+                <div>
+                    <div class="history-bidder">{{ bid.team_name }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-dim);">{{ bid.player_name }}</div>
+                </div>
+                <div class="history-amount">₹{{ "%.2f"|format(bid.bid_amount) }}Cr</div>
+            </div>
+            {% else %}
+            <p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h2>🔒 Hidden Bid Status</h2>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px;">Active hidden bids (amounts hidden)</p>
+        {% for hidden in hidden_bids %}
+        <div class="hidden-status">
+            <div>
+                <div class="team">{{ hidden.team_name }}</div>
+                <div class="player">on {{ hidden.player_name }}</div>
+            </div>
+            <div class="badge">Active</div>
+        </div>
+        {% else %}
+        <p style="color: var(--text-dim); text-align: center; padding: 30px;">No active hidden bids</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
