@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, session, flash, redirect
-from database.db import get_db
+from database.db import get_db, get_cached, clear_cache
 
 bp = Blueprint('viewer_dashboard', __name__, url_prefix='/viewer')
-
-
 
 @bp.route('/dashboard')
 def dashboard():
@@ -14,30 +12,32 @@ def dashboard():
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    # All active/live auctions for viewer to pick from
-    cursor.execute("""
-        SELECT a.*, 
-               (SELECT COUNT(*) FROM teams WHERE auction_id = a.id) as team_count,
-               (SELECT COUNT(*) FROM auction_players WHERE auction_id = a.id AND status = 'sold') as sold_count
-        FROM auctions a
-        WHERE a.status IN ('live', 'paused', 'pending')
-        ORDER BY a.created_at DESC
-    """)
-    auctions = cursor.fetchall()
-    
-    # Also get completed auctions for history
-    cursor.execute("""
-        SELECT a.*,
-               (SELECT COUNT(*) FROM teams WHERE auction_id = a.id) as team_count
-        FROM auctions a
-        WHERE a.status = 'completed'
-        ORDER BY a.created_at DESC
-        LIMIT 5
-    """)
-    completed_auctions = cursor.fetchall()
-    
-    cursor.close()
-    db.close()
+    try:
+        # All active/live auctions for viewer to pick from
+        cursor.execute("""
+            SELECT a.*, 
+                   (SELECT COUNT(*) FROM teams WHERE auction_id = a.id) as team_count,
+                   (SELECT COUNT(*) FROM auction_players WHERE auction_id = a.id AND status = 'sold') as sold_count
+            FROM auctions a
+            WHERE a.status IN ('live', 'paused', 'pending')
+            ORDER BY a.created_at DESC
+        """)
+        auctions = cursor.fetchall()
+        
+        # Also get completed auctions for history
+        cursor.execute("""
+            SELECT a.*,
+                   (SELECT COUNT(*) FROM teams WHERE auction_id = a.id) as team_count
+            FROM auctions a
+            WHERE a.status = 'completed'
+            ORDER BY a.created_at DESC
+            LIMIT 5
+        """)
+        completed_auctions = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        db.close()
     
     return render_template('viewer/dashboard.html',
         auctions=auctions,
@@ -53,10 +53,13 @@ def enter_auction(auction_id):
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
-    auction = cursor.fetchone()
-    cursor.close()
-    db.close()
+    try:
+        cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
+        auction = cursor.fetchone()
+        
+    finally:
+        cursor.close()
+        db.close()
     
     if not auction:
         flash('Auction not found')

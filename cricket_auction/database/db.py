@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import pooling
 from config import Config
+import time
 
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
@@ -18,7 +19,6 @@ connection_pool = pooling.MySQLConnectionPool(
 def get_db():
     return connection_pool.get_connection()
 
-# Simple in-memory cache
 _cache = {}
 
 def get_cached(key, fetch_fn, ttl_seconds=30):
@@ -32,9 +32,6 @@ def get_cached(key, fetch_fn, ttl_seconds=30):
     return value
 
 def clear_cache(key):
-    """Remove specific key or keys matching prefix"""
     keys_to_remove = [k for k in _cache.keys() if k == key or k.startswith(key)]
     for k in keys_to_remove:
         del _cache[k]
-
-import time
