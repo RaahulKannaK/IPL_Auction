@@ -107,6 +107,78 @@
     }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+    /* NEW: User bar styles */
+    .user-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        border-radius: 14px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .user-info .role-badge {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 18px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 42, 0, 0.3);
+        background: rgba(255, 42, 0, 0.08);
+        color: #ff6b6b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .logout-btn:hover {
+        background: rgba(255, 42, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 640px) {
+        .user-bar {
+            width: 100%;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+        .user-info {
+            font-size: 0.75rem;
+            padding: 6px 12px;
+        }
+        .logout-btn {
+            padding: 8px 14px;
+            font-size: 0.8rem;
+        }
+        .top-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .top-bar .right-group {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
     .current-player-compact {
         background: linear-gradient(135deg, rgba(124, 77, 255, 0.08), rgba(0, 212, 255, 0.04));
         border: 1px solid rgba(124, 77, 255, 0.2);
@@ -366,6 +438,34 @@
         cursor: pointer; transition: all 0.3s;
     }
 
+    /* NEW: Players toggle button */
+    .players-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 16px;
+        border: none;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk';
+    }
+    .players-toggle-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3);
+    }
+    .players-toggle-btn .count-badge {
+        background: rgba(0,0,0,0.3);
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-family: 'JetBrains Mono';
+    }
+
     .players-section { margin-top: 10px; }
     .players-header {
         display: flex; justify-content: space-between; align-items: center;
@@ -468,13 +568,12 @@
     
     <div class="auction-container">
         
-        <!-- TOP BAR: Live Status + League Name + Your Players Button -->
+        <!-- TOP BAR: Live Status + League Name + Refresh + My Squad -->
         <div class="top-bar">
             <div class="left-group">
                 <div class="live-badge" id="roomStatus">
                     <div class="live-dot"></div> LIVE
                 </div>
-                <!-- NEW: League Name Display -->
                 <div class="league-name" id="leagueNameDisplay" style="display: none;">
                     🏆 <span id="leagueNameText">--</span>
                 </div>
@@ -486,8 +585,17 @@
                     </svg>
                     Refresh
                 </button>
-                <a href="/team_owner/squad.html" class="nav-btn">👥 My Squad</a>
+                <a href="/team-owner/squad" class="nav-btn">👥 My Squad</a>
             </div>
+        </div>
+
+        <!-- USER BAR: Username, Role, Logout -->
+        <div class="user-bar">
+            <div class="user-info">
+                <span>👤 {{ session.username }}</span>
+                <span class="role-badge">{{ session.role }}</span>
+            </div>
+            <a href="/logout" class="logout-btn">🚪 Logout</a>
         </div>
 
         <!-- TEAM INFO BAR -->
@@ -604,40 +712,45 @@
             </div>
         </div>
 
-        <!-- PLAYERS POOL -->
+        <!-- PLAYERS POOL - TOGGLE BUTTON -->
         <div class="players-section">
-            <div class="players-header">
-                <h2>🏏 Players (<span id="playerCount">{{ players|length }}</span>)</h2>
-                <div class="filter-chips">
-                    <button onclick="filterPlayers('all')" class="filter-chip active">All</button>
-                    <button onclick="filterPlayers('batsman')" class="filter-chip">Batsmen</button>
-                    <button onclick="filterPlayers('bowler')" class="filter-chip">Bowlers</button>
-                    <button onclick="filterPlayers('all_rounder')" class="filter-chip">All Rounders</button>
-                    <button onclick="filterPlayers('wicket_keeper')" class="filter-chip">Keepers</button>
-                </div>
-            </div>
-            <div class="players-grid" id="playersGrid">
-                {% for player in players %}
-                <div class="player-card" 
-                     data-category="{{ player.category }}" 
-                     data-id="{{ player.id }}" 
-                     data-auction-player-id="{{ player.auction_player_id }}" 
-                     data-name="{{ player.player_name }}" 
-                     data-base="{{ player.base_price or 2.00 }}"
-                     data-overseas="{{ 'true' if player.overseas else 'false' }}"
-                     data-status="{{ player.status or 'available' }}">
-                    <div class="avatar">🏏</div>
-                    <div class="name">{{ player.player_name }}</div>
-                    <div class="meta">
-                        <span class="cat-badge badge-{{ player.category }}">{{ player.category.replace('_', ' ').title() }}</span>
-                        {% if player.overseas %}
-                        <span class="cat-badge badge-overseas">🌍 OS</span>
-                        {% endif %}
+            <button onclick="togglePlayers()" class="players-toggle-btn" id="playersToggleBtn">
+                🏏 Available Players <span class="count-badge" id="playerCountBadge">{{ players|length }}</span>
+            </button>
+            
+            <div id="playersPanel" style="display: none; margin-top: 15px;">
+                <div class="players-header">
+                    <div class="filter-chips">
+                        <button onclick="filterPlayers('all')" class="filter-chip active">All</button>
+                        <button onclick="filterPlayers('batsman')" class="filter-chip">Batsmen</button>
+                        <button onclick="filterPlayers('bowler')" class="filter-chip">Bowlers</button>
+                        <button onclick="filterPlayers('all_rounder')" class="filter-chip">All Rounders</button>
+                        <button onclick="filterPlayers('wicket_keeper')" class="filter-chip">Keepers</button>
                     </div>
-                    <div class="price">₹{{ "%.2f"|format(player.base_price or 2.00) }}Cr</div>
-                    <div class="status status-{{ player.status or 'available' }}">{{ (player.status or 'available').upper() }}</div>
                 </div>
-                {% endfor %}
+                <div class="players-grid" id="playersGrid">
+                    {% for player in players %}
+                    <div class="player-card" 
+                         data-category="{{ player.category }}" 
+                         data-id="{{ player.id }}" 
+                         data-auction-player-id="{{ player.auction_player_id }}" 
+                         data-name="{{ player.player_name }}" 
+                         data-base="{{ player.base_price or 2.00 }}"
+                         data-overseas="{{ 'true' if player.overseas else 'false' }}"
+                         data-status="{{ player.status or 'available' }}">
+                        <div class="avatar">🏏</div>
+                        <div class="name">{{ player.player_name }}</div>
+                        <div class="meta">
+                            <span class="cat-badge badge-{{ player.category }}">{{ player.category.replace('_', ' ').title() }}</span>
+                            {% if player.overseas %}
+                            <span class="cat-badge badge-overseas">🌍 OS</span>
+                            {% endif %}
+                        </div>
+                        <div class="price">₹{{ "%.2f"|format(player.base_price or 2.00) }}Cr</div>
+                        <div class="status status-{{ player.status or 'available' }}">{{ (player.status or 'available').upper() }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -680,7 +793,7 @@ let myTeamId = {{ team.id if team else 'null' }};
 let myTeamName = "{{ team.team_name if team else '' }}";
 let pendingWillingPricePlayer = null;
 let previousHasBids = false;
-let currentLeagueName = ''; // Track league name
+let currentLeagueName = '';
 
 // ==================== LOBBY ====================
 function joinAuction() {
@@ -698,7 +811,6 @@ function enterRoom(auctionId) {
     .then(r => r.json())
     .then(data => {
         if (data.status !== 'none') {
-            // FIX: Show league name
             if (data.league_name) {
                 currentLeagueName = data.league_name;
                 document.getElementById('leagueNameText').textContent = data.league_name;
@@ -740,7 +852,7 @@ function leaveRoom() {
     closeWillingPopup();
 }
 
-// ==================== FAST POLLING ====================
+// ==================== FAST POLLING (200ms) ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
@@ -768,7 +880,6 @@ function startFastPolling() {
                     }
                 }
                 
-                // FIX: Update league name from polling
                 if (data.league_name && data.league_name !== currentLeagueName) {
                     currentLeagueName = data.league_name;
                     document.getElementById('leagueNameText').textContent = data.league_name;
@@ -786,7 +897,6 @@ function startFastPolling() {
                 const playerId = data.auction_player_id;
                 const serverHasBids = data.has_bids || false;
                 
-                // Detect re-bid of same player
                 if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
                     hasSkippedCurrentPlayer = false;
                     resetSkipUI();
@@ -798,7 +908,6 @@ function startFastPolling() {
                     currentBidderId = null;
                 }
                 
-                // New player selected
                 if (playerId && playerId !== lastPlayerId) {
                     lastPlayerId = playerId; 
                     currentAuctionPlayerId = playerId;
@@ -812,7 +921,6 @@ function startFastPolling() {
                     currentBidderId = data.current_bidder_id || null;
                 }
                 
-                // Always update display and controls
                 updatePlayerDisplay(data.current_player, data.current_bid, data.current_bidder, data.player_category, data.base_price);
                 updateBidControls(data.current_bid, data.base_price, data.has_bids, data.current_bidder_id);
                 
@@ -823,7 +931,7 @@ function startFastPolling() {
                 }
             }
         });
-    }, 300);
+    }, 200);
 }
 
 function stopPolling() {
@@ -992,7 +1100,7 @@ function placeInitialBid() {
     executeBid(currentBasePrice);
 }
 
-// ==================== EXECUTE BID ====================
+// ==================== EXECUTE BID (OPTIMISTIC) ====================
 function executeBid(amount) {
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ Join auction first', '#ef4444');
@@ -1003,6 +1111,24 @@ function executeBid(amount) {
         return;
     }
     
+    // INSTANT UI UPDATE
+    if (!hasBids) {
+        hasBids = true;
+        previousHasBids = true;
+    }
+    currentBidAmount = amount;
+    currentBidderId = myTeamId;
+    updatePlayerDisplay(
+        document.getElementById('currentPlayerName').textContent,
+        amount,
+        myTeamName + ' (YOU)',
+        null,
+        currentBasePrice
+    );
+    addHistory(myTeamName, amount, false);
+    updateBidControls(amount, currentBasePrice, true, myTeamId);
+    
+    // Server request
     fetch('/team-owner/auction/bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1016,16 +1142,16 @@ function executeBid(amount) {
     .then(data => {
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
+            // Revert - fetch correct state
+            fetch('/admin/auction/status?auction_id=' + currentAuctionId)
+            .then(r => r.json())
+            .then(serverData => {
+                updatePlayerDisplay(serverData.current_player, serverData.current_bid, serverData.current_bidder, serverData.player_category, serverData.base_price);
+                updateBidControls(serverData.current_bid, serverData.base_price, serverData.has_bids, serverData.current_bidder_id);
+            });
         } else {
-            hasBids = true;
-            previousHasBids = true;
-            currentBidderId = myTeamId;
-            currentBidAmount = data.current_bid;
-            updatePlayerDisplay(data.current_player || document.getElementById('currentPlayerName').textContent, data.current_bid, data.bidder, null, currentBasePrice);
-            addHistory(data.bidder, data.current_bid, false);
             showStatus('bidStatus', `✅ ₹${data.current_bid.toFixed(2)}Cr`, '#22c55e');
             startCountdown();
-            updateBidControls(data.current_bid, currentBasePrice, true, myTeamId);
             if (data.check_auto) setTimeout(() => checkAutoBid(data.current_bid), 1500);
         }
     });
@@ -1199,32 +1325,35 @@ function checkAutoBid(currentBid) {
     });
 }
 
-// ==================== PLAYERS ====================
+// ==================== PLAYERS TOGGLE ====================
+function togglePlayers() {
+    const panel = document.getElementById('playersPanel');
+    const btn = document.getElementById('playersToggleBtn');
+    
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        refreshPlayers();
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// ==================== PLAYERS REFRESH ====================
 function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
     
-    // FIX: Use shared admin endpoint for refresh
-    fetch('/admin/auction/players?auction_id=' + (currentAuctionId || ''))
+    fetch('/team-owner/auction/players?auction_id=' + (currentAuctionId || ''))
     .then(r => r.json())
     .then(data => {
         if (data.players) {
             updatePlayersGrid(data.players);
-            document.getElementById('playerCount').textContent = data.players.length;
+            document.getElementById('playerCountBadge').textContent = data.players.length;
         }
         btn.classList.remove('spinning');
     })
     .catch(() => {
         btn.classList.remove('spinning');
-        // Fallback to team-owner endpoint
-        fetch('/team-owner/auction/players?auction_id=' + (currentAuctionId || ''))
-        .then(r => r.json())
-        .then(data => {
-            if (data.players) {
-                updatePlayersGrid(data.players);
-                document.getElementById('playerCount').textContent = data.players.length;
-            }
-        });
     });
 }
 
