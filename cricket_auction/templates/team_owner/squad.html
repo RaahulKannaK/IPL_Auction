@@ -13,6 +13,12 @@
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
     }
 
+    .squad-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
     .glass-panel {
         background: var(--bg-panel); backdrop-filter: blur(24px);
         border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
@@ -26,158 +32,464 @@
     }
     .glass-panel:hover { border-color: rgba(124, 77, 255, 0.2); box-shadow: 0 0 30px rgba(124, 77, 255, 0.08); }
 
-    .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid; opacity: 0.25; transition: all 0.3s; }
-    .glass-panel:hover .corner { opacity: 0.5; }
-    .corner-tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-color: var(--ice-blue); }
-    .corner-tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-color: var(--cosmic-purple); }
-    .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
-    .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
-
-    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
-    h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
-
-    .squad-table { width: 100%; border-collapse: collapse; }
-    .squad-table th {
-        text-align: left; padding: 14px 16px; color: var(--cosmic-purple-light);
-        font-family: 'Space Grotesk'; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
-        border-bottom: 2px solid rgba(124, 77, 255, 0.3);
+    /* TOP BAR */
+    .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 25px;
     }
-    .squad-table td { padding: 14px 16px; color: var(--text-primary); border-bottom: 1px solid rgba(100, 120, 200, 0.08); }
-    .squad-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
-
-    .cat-badge {
-        padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;
+    .top-bar h1 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        margin: 0;
     }
-    .badge-batsman { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-    .badge-bowler { background: rgba(255, 42, 0, 0.12); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
-    .badge-all_rounder { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
-    .badge-wicket_keeper { background: rgba(247, 181, 0, 0.12); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
+    .nav-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 10px 18px; border-radius: 14px;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; font-weight: 700; font-size: 0.85rem;
+        border: none; cursor: pointer; text-decoration: none;
+        transition: all 0.3s;
+    }
+    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3); }
 
-    .price-tag { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 700; }
+    /* PURSE STATS CARDS */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    @media (min-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+    .stat-card .label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    .stat-card .value {
+        font-family: 'JetBrains Mono';
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .stat-card .value.available { color: #22c55e; }
+    .stat-card .value.spent { color: #ef4444; }
+    .stat-card .value.reserved { color: #f59e0b; }
+    .stat-card .value.total { color: var(--cosmic-purple-light); }
 
+    /* PROGRESS BAR */
+    .progress-bar-container {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        height: 8px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    .progress-bar.spent { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .progress-bar.reserved { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+    /* SQUAD SUMMARY */
+    .summary-bar {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 25px;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 14px;
+        border: 1px solid rgba(100, 120, 200, 0.08);
+    }
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    .summary-item .count {
+        font-family: 'JetBrains Mono';
+        font-weight: 700;
+        color: var(--cosmic-purple-light);
+        font-size: 1.1rem;
+    }
+
+    /* CATEGORY SECTIONS */
     .category-section { margin-bottom: 25px; }
     .category-header {
         display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
         padding: 12px 18px; background: rgba(0,0,0,0.2); border-radius: 12px;
         border: 1px solid rgba(100, 120, 200, 0.08);
     }
-    .category-header .count { font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--cosmic-purple-light); }
-    .category-header .name { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; }
+    .category-header .count {
+        font-family: 'Space Grotesk';
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--cosmic-purple-light);
+    }
+    .category-header .name {
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+    }
+
+    /* TABLE */
+    .squad-table { width: 100%; border-collapse: collapse; }
+    .squad-table th {
+        text-align: left; padding: 14px 16px;
+        color: var(--cosmic-purple-light);
+        font-family: 'Space Grotesk';
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 2px solid rgba(124, 77, 255, 0.3);
+    }
+    .squad-table td {
+        padding: 14px 16px;
+        color: var(--text-primary);
+        border-bottom: 1px solid rgba(100, 120, 200, 0.08);
+    }
+    .squad-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
+
+    .cat-badge {
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .badge-batsman { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+    .badge-bowler { background: rgba(255, 42, 0, 0.12); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
+    .badge-all_rounder { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .badge-wicket_keeper { background: rgba(247, 181, 0, 0.12); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
+
+    .price-tag {
+        font-family: 'JetBrains Mono';
+        color: var(--gold-light);
+        font-weight: 700;
+    }
+
+    .willing-tag {
+        font-family: 'JetBrains Mono';
+        color: var(--cosmic-purple-light);
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .overseas-icon { color: var(--gold); }
+
+    /* WILLING PRICES SECTION */
+    .willing-section { margin-top: 30px; }
+    .willing-section h2 {
+        font-family: 'Space Grotesk';
+        font-size: 1.2rem;
+        color: var(--text-primary);
+        margin-bottom: 15px;
+    }
+    .willing-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(139, 92, 246, 0.15);
+        border-radius: 14px;
+        margin-bottom: 10px;
+    }
+    .willing-card .player-name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .willing-card .price {
+        font-family: 'JetBrains Mono';
+        color: var(--cosmic-purple-light);
+        font-weight: 700;
+    }
+    .willing-card .status {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .status-won {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    .status-lost {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    .status-active {
+        background: rgba(139, 92, 246, 0.15);
+        color: var(--cosmic-purple-light);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+    .empty-state .icon {
+        font-size: 5rem;
+        margin-bottom: 25px;
+        opacity: 0.2;
+    }
+    .empty-state h2 {
+        color: var(--text-secondary);
+        margin-bottom: 15px;
+        font-family: 'Space Grotesk';
+    }
+    .empty-state p {
+        color: var(--text-dim);
+    }
+
+    @media (max-width: 640px) {
+        .squad-container { padding: 10px; }
+        .top-bar h1 { font-size: 1.3rem; }
+        .stat-card { padding: 15px; }
+        .stat-card .value { font-size: 1.2rem; }
+        .squad-table th, .squad-table td { padding: 10px 12px; font-size: 0.85rem; }
+    }
 </style>
 
-<h1>👥 {{ team.team_name }} Squad</h1>
+<div class="squad-container">
 
-{% if squad %}
-<!-- Batsmen -->
-{% if breakdown.batsmen %}
-<div class="category-section">
-    <div class="category-header">
-        <span class="count">{{ breakdown.batsmen|length }}</span>
-        <span class="name">🏏 Batsmen</span>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <h1>👥 {{ team.team_name }} Squad</h1>
+        <a href="/team-owner/auction" class="nav-btn">⚡ Auction Room</a>
     </div>
-    <div class="glass-panel">
-        <table class="squad-table">
-            <thead>
-                <tr><th>Player</th><th>Price</th><th>Overseas</th></tr>
-            </thead>
-            <tbody>
-                {% for player in breakdown.batsmen %}
-                <tr>
-                    <td style="font-weight: 600;">{{ player.player_name }}</td>
-                    <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                    <td>{% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% else %}-{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
 
-<!-- Bowlers -->
-{% if breakdown.bowlers %}
-<div class="category-section">
-    <div class="category-header">
-        <span class="count">{{ breakdown.bowlers|length }}</span>
-        <span class="name">🎯 Bowlers</span>
+    <!-- PURSE STATS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="label">💰 Total Purse</div>
+            <div class="value total">₹{{ "%.2f"|format(stats.purse_limit) }}Cr</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">💸 Spent</div>
+            <div class="value spent">₹{{ "%.2f"|format(stats.spent) }}Cr</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar spent" style="width: {{ stats.spent_pct }}%"></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="label">🔒 Reserved</div>
+            <div class="value reserved">₹{{ "%.2f"|format(stats.reserved) }}Cr</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">✅ Available</div>
+            <div class="value available">₹{{ "%.2f"|format(stats.available) }}Cr</div>
+        </div>
     </div>
-    <div class="glass-panel">
-        <table class="squad-table">
-            <thead>
-                <tr><th>Player</th><th>Price</th><th>Overseas</th></tr>
-            </thead>
-            <tbody>
-                {% for player in breakdown.bowlers %}
-                <tr>
-                    <td style="font-weight: 600;">{{ player.player_name }}</td>
-                    <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                    <td>{% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% else %}-{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
 
-<!-- All Rounders -->
-{% if breakdown.all_rounders %}
-<div class="category-section">
-    <div class="category-header">
-        <span class="count">{{ breakdown.all_rounders|length }}</span>
-        <span class="name">⚡ All Rounders</span>
+    <!-- SQUAD SUMMARY -->
+    <div class="summary-bar">
+        <div class="summary-item">
+            👤 Total: <span class="count">{{ stats.total_players }}</span>
+        </div>
+        <div class="summary-item">
+            🌍 Overseas: <span class="count">{{ stats.overseas_count }}/{{ stats.overseas_limit }}</span>
+        </div>
+        <div class="summary-item">
+            🏏 Batsmen: <span class="count">{{ breakdown.batsmen|length }}</span>
+        </div>
+        <div class="summary-item">
+            🎯 Bowlers: <span class="count">{{ breakdown.bowlers|length }}</span>
+        </div>
+        <div class="summary-item">
+            ⚡ All Rounders: <span class="count">{{ breakdown.all_rounders|length }}</span>
+        </div>
+        <div class="summary-item">
+            🧤 Keepers: <span class="count">{{ breakdown.wicket_keepers|length }}</span>
+        </div>
     </div>
-    <div class="glass-panel">
-        <table class="squad-table">
-            <thead>
-                <tr><th>Player</th><th>Price</th><th>Overseas</th></tr>
-            </thead>
-            <tbody>
-                {% for player in breakdown.all_rounders %}
-                <tr>
-                    <td style="font-weight: 600;">{{ player.player_name }}</td>
-                    <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                    <td>{% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% else %}-{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
 
-<!-- Wicket Keepers -->
-{% if breakdown.wicket_keepers %}
-<div class="category-section">
-    <div class="category-header">
-        <span class="count">{{ breakdown.wicket_keepers|length }}</span>
-        <span class="name">🧤 Wicket Keepers</span>
+    {% if squad %}
+    <!-- Batsmen -->
+    {% if breakdown.batsmen %}
+    <div class="category-section">
+        <div class="category-header">
+            <span class="count">{{ breakdown.batsmen|length }}</span>
+            <span class="name">🏏 Batsmen</span>
+        </div>
+        <div class="glass-panel">
+            <table class="squad-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Overseas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in breakdown.batsmen %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ player.player_name }}</td>
+                        <td><span class="cat-badge badge-batsman">Batsman</span></td>
+                        <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="glass-panel">
-        <table class="squad-table">
-            <thead>
-                <tr><th>Player</th><th>Price</th><th>Overseas</th></tr>
-            </thead>
-            <tbody>
-                {% for player in breakdown.wicket_keepers %}
-                <tr>
-                    <td style="font-weight: 600;">{{ player.player_name }}</td>
-                    <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                    <td>{% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% else %}-{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
 
-{% else %}
-<div class="glass-panel" style="text-align: center; padding: 80px;">
-    <div style="font-size: 5rem; margin-bottom: 25px; opacity: 0.2;">👥</div>
-    <h2 style="color: var(--text-secondary); margin-bottom: 15px; font-family: 'Space Grotesk';">Squad Empty</h2>
-    <p style="color: var(--text-dim);">Start bidding in the auction room to build your squad</p>
-    <a href="/team-owner/auction" style="display: inline-block; margin-top: 20px; padding: 14px 30px; border-radius: 14px; background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; text-decoration: none; font-weight: 700; font-family: 'Space Grotesk';">Go to Auction Room →</a>
+    <!-- Bowlers -->
+    {% if breakdown.bowlers %}
+    <div class="category-section">
+        <div class="category-header">
+            <span class="count">{{ breakdown.bowlers|length }}</span>
+            <span class="name">🎯 Bowlers</span>
+        </div>
+        <div class="glass-panel">
+            <table class="squad-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Overseas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in breakdown.bowlers %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ player.player_name }}</td>
+                        <td><span class="cat-badge badge-bowler">Bowler</span></td>
+                        <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- All Rounders -->
+    {% if breakdown.all_rounders %}
+    <div class="category-section">
+        <div class="category-header">
+            <span class="count">{{ breakdown.all_rounders|length }}</span>
+            <span class="name">⚡ All Rounders</span>
+        </div>
+        <div class="glass-panel">
+            <table class="squad-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Overseas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in breakdown.all_rounders %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ player.player_name }}</td>
+                        <td><span class="cat-badge badge-all_rounder">All Rounder</span></td>
+                        <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Wicket Keepers -->
+    {% if breakdown.wicket_keepers %}
+    <div class="category-section">
+        <div class="category-header">
+            <span class="count">{{ breakdown.wicket_keepers|length }}</span>
+            <span class="name">🧤 Wicket Keepers</span>
+        </div>
+        <div class="glass-panel">
+            <table class="squad-table">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Overseas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for player in breakdown.wicket_keepers %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ player.player_name }}</td>
+                        <td><span class="cat-badge badge-wicket_keeper">Wicket Keeper</span></td>
+                        <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
+                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- WILLING PRICES SECTION -->
+    {% if willing_prices %}
+    <div class="willing-section">
+        <h2>🔒 Willing Prices History</h2>
+        {% for wp in willing_prices %}
+        <div class="willing-card">
+            <div class="player-name">{{ wp.player_name }}</div>
+            <div class="price">₹{{ "%.2f"|format(wp.max_bid) }}Cr</div>
+            {% if wp.final_price %}
+                {% if wp.final_price <= wp.max_bid %}
+                <span class="status status-won">✅ WON @ ₹{{ "%.2f"|format(wp.final_price) }}Cr</span>
+                {% else %}
+                <span class="status status-lost">❌ LOST @ ₹{{ "%.2f"|format(wp.final_price) }}Cr</span>
+                {% endif %}
+            {% else %}
+            <span class="status status-active">⏳ Active</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- EMPTY STATE -->
+    <div class="glass-panel empty-state">
+        <div class="icon">👥</div>
+        <h2>Squad Empty</h2>
+        <p>Start bidding in the auction room to build your squad</p>
+        <a href="/team-owner/auction" class="nav-btn" style="margin-top: 20px;">Go to Auction Room →</a>
+    </div>
+    {% endif %}
+
 </div>
-{% endif %}
 {% endblock %}
