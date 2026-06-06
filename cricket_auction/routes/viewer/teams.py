@@ -1,15 +1,8 @@
 from flask import Blueprint, render_template, session, flash, redirect
-import mysql.connector
+from database.db import get_db
 
 bp = Blueprint('viewer_teams', __name__, url_prefix='/viewer/teams')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
 
 @bp.route('/')
 def view_teams():

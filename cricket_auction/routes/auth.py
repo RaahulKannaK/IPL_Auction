@@ -1,16 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, url_for, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-import mysql.connector
+from database.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
+
 
 def get_role_dashboard(role):
     """Return the correct dashboard URL based on role"""

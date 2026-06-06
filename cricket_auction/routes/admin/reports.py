@@ -1,15 +1,10 @@
 from flask import Blueprint, render_template, session, flash, jsonify
-import mysql.connector
+
+from database.db import get_db
 
 bp = Blueprint('admin_reports', __name__, url_prefix='/admin/reports')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
+
 
 @bp.route('/')
 def reports_dashboard():

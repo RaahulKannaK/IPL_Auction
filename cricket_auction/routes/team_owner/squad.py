@@ -1,15 +1,10 @@
 from flask import Blueprint, render_template, session, flash, redirect, jsonify
-import mysql.connector
+
+from database.db import get_db
 
 bp = Blueprint('team_owner_squad', __name__, url_prefix='/team-owner/squad')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
+
 
 def get_user_team(user_id):
     db = get_db()

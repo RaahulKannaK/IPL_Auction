@@ -1,18 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
-import mysql.connector
+
 import csv
 from io import StringIO
 from flask import Response
+from database.db import get_db
+
 
 bp = Blueprint('admin_players', __name__, url_prefix='/admin/players')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
 
 @bp.route('/')
 def list_players():

@@ -1,16 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
-import mysql.connector
+
 import json
 
 bp = Blueprint('admin_sessions', __name__, url_prefix='/admin/sessions')
 
-def get_db():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='raahul@185',
-        database='cricket_auction'
-    )
+from database.db import get_db
+
 
 @bp.route('/')
 def list_sessions():
