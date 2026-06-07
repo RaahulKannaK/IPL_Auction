@@ -109,7 +109,7 @@ def save_playing11():
     
     return jsonify({'success': True, 'message': 'Playing 11 saved!'})
 
-@bp.route('/<<int:team_id>')
+@bp.route('/<int:team_id>')
 def view_playing11(team_id):
     """View playing11 for any team (for admin/viewer reference)"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer', 'viewer']:

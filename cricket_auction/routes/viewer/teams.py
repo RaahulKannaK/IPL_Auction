@@ -50,7 +50,7 @@ def view_teams():
     
     return render_template('viewer/teams.html', teams=teams)
 
-@bp.route('/<<int:team_id>')
+@bp.route('/<int:team_id>')
 def view_team_detail(team_id):
     """View specific team details for viewers"""
     if session.get('role') != 'viewer':
