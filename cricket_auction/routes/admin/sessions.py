@@ -140,7 +140,7 @@ def create_session():
     flash(f'Session "{session_name}" created with {len(team_ids)} teams!')
     return redirect('/admin/sessions')
 
-@bp.route('/<<int:session_id>/teams')
+@bp.route('/<int:session_id>/teams')
 def get_session_teams(session_id):
     """Get teams participating in a session"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -186,7 +186,7 @@ def get_session_teams(session_id):
         'team_count': len(teams)
     })
 
-@bp.route('/<<int:session_id>/add-teams', methods=['POST'])
+@bp.route('/<int:session_id>/add-teams', methods=['POST'])
 def add_teams_to_session(session_id):
     """Add teams to an existing session"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -227,7 +227,7 @@ def add_teams_to_session(session_id):
     flash(f'Added {len(new_team_ids)} teams to session!')
     return redirect('/admin/sessions')
 
-@bp.route('/<<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
+@bp.route('/<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
 def remove_team_from_session(session_id, team_id):
     """Remove a team from session (withdrawal)"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -268,7 +268,7 @@ def remove_team_from_session(session_id, team_id):
     
     return jsonify({'success': False, 'error': 'Team not in session'})
 
-@bp.route('/<<int:session_id>/close', methods=['POST'])
+@bp.route('/<int:session_id>/close', methods=['POST'])
 def close_session(session_id):
     """Close a session and make teams available for next session"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -291,7 +291,7 @@ def close_session(session_id):
     flash('Session closed! Teams are now available for next session.')
     return redirect('/admin/sessions')
 
-@bp.route('/<<int:session_id>/continue', methods=['POST'])
+@bp.route('/<int:session_id>/continue', methods=['POST'])
 def continue_session(session_id):
     """Continue session - create new session with remaining/unused teams"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -379,7 +379,7 @@ def session_history():
     
     return jsonify({'sessions': sessions})
 
-@bp.route('/<<int:session_id>/bid', methods=['POST'])
+@bp.route('/<int:session_id>/bid', methods=['POST'])
 def place_bid(session_id):
     """Place bid in a session"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
@@ -419,7 +419,7 @@ def place_bid(session_id):
         'bidder': f'Team #{team_id}'
     })
 
-@bp.route('/<<int:session_id>/status')
+@bp.route('/<int:session_id>/status')
 def get_session_status(session_id):
     """Get real-time session status"""
     db = get_db()
@@ -445,7 +445,7 @@ def get_session_status(session_id):
         'current_player': sess['current_player_id']
     })
 
-@bp.route('/<<int:auction_id>/master-status')
+@bp.route('/<int:auction_id>/master-status')
 def get_master_status(auction_id):
     """Get master bid across all sessions"""
     db = get_db()
