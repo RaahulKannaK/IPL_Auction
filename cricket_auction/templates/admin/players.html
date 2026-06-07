@@ -57,8 +57,16 @@
     .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
     .btn-success { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
     .btn-success:hover { background: rgba(34, 197, 94, 0.25); }
+    .btn-secondary { background: rgba(100, 120, 200, 0.1); color: var(--text-secondary); border: 1px solid rgba(100, 120, 200, 0.2); }
+    .btn-secondary:hover { background: rgba(100, 120, 200, 0.2); color: var(--text-primary); }
 
-    .players-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .view-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+    .view-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(100, 120, 200, 0.15); background: rgba(0,0,0,0.2); color: var(--text-dim); cursor: pointer; font-size: 0.85rem; transition: all 0.3s; }
+    .view-btn.active { background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); border-color: var(--cosmic-purple); }
+
+    /* Table View */
+    .players-table { width: 100%; border-collapse: collapse; margin-top: 20px; display: none; }
+    .players-table.active { display: table; }
     .players-table th {
         text-align: left; padding: 14px 16px; color: var(--cosmic-purple-light);
         font-family: 'Space Grotesk'; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
@@ -67,6 +75,55 @@
     .players-table td { padding: 14px 16px; color: var(--text-primary); border-bottom: 1px solid rgba(100, 120, 200, 0.08); }
     .players-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
 
+    /* Card Grid View */
+    .player-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        display: none;
+    }
+    .player-grid.active { display: grid; }
+    
+    .player-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    .player-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        border-color: var(--cosmic-purple);
+    }
+    .player-card.sold { border-color: #22c55e; opacity: 0.85; }
+    .player-card.in-auction { border-color: #f59e0b; animation: auctionGlow 2s infinite; }
+    @keyframes auctionGlow {
+        0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.3); }
+        50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
+    }
+    
+    .player-status-badge {
+        position: absolute; top: 15px; right: 15px;
+        padding: 4px 12px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    }
+    .status-available-badge { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+    .status-sold-badge { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .status-in-auction-badge { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    
+    .player-avatar {
+        width: 60px; height: 60px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.8rem; margin-bottom: 15px;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; font-family: 'Space Grotesk'; font-weight: 700;
+    }
+    .player-name { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .player-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+    
     .cat-badge {
         padding: 5px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;
     }
@@ -74,12 +131,43 @@
     .badge-bowler { background: rgba(255, 42, 0, 0.12); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
     .badge-all_rounder { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
     .badge-wicket_keeper { background: rgba(247, 181, 0, 0.12); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
+    .overseas-badge { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
 
     .status-sold { color: #22c55e; font-weight: 700; }
     .status-available { color: var(--text-dim); }
     .status-unsold { color: #f59e0b; }
 
-    .overseas-badge { color: var(--gold); font-size: 0.9rem; }
+    .price-section {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .price-row:last-child { margin-bottom: 0; }
+    .price-label { color: var(--text-dim); font-size: 0.85rem; }
+    .price-value { color: var(--text-primary); font-weight: 700; font-family: 'JetBrains Mono'; }
+    .sold-price { color: #22c55e; font-size: 1.1rem; }
+    .team-tag {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: rgba(59, 130, 246, 0.12); color: #60a5fa;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 10px;
+    }
+    
+    .player-actions {
+        display: flex; gap: 8px; margin-top: 15px;
+    }
+    .player-action-btn {
+        flex: 1; padding: 8px; border: 1px solid rgba(100, 120, 200, 0.15);
+        background: rgba(0, 0, 0, 0.3); color: var(--text-secondary);
+        border-radius: 8px; cursor: pointer; font-size: 0.8rem; transition: all 0.3s;
+    }
+    .player-action-btn:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); }
 
     .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     .filter-btn {
@@ -92,31 +180,93 @@
         background: rgba(124, 77, 255, 0.08);
     }
 
+    .search-box {
+        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
+        border-radius: 12px; padding: 12px 20px; color: var(--text-primary);
+        font-size: 1rem; width: 300px; transition: all 0.3s; outline: none;
+    }
+    .search-box:focus { border-color: var(--cosmic-purple); box-shadow: 0 0 20px rgba(124, 77, 255, 0.1); }
+    .search-box::placeholder { color: var(--text-dim); }
+
+    .sort-select {
+        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-primary); padding: 10px 15px; border-radius: 10px; cursor: pointer; outline: none;
+    }
+
+    .stats-bar {
+        display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.2);
+        padding: 20px 30px; border-radius: 16px; margin-bottom: 25px;
+        border: 1px solid rgba(100, 120, 200, 0.1);
+    }
+    .stat-block { text-align: center; }
+    .stat-block-number { font-size: 2rem; font-weight: 800; font-family: 'Space Grotesk'; }
+    .stat-block-label { color: var(--text-dim); font-size: 0.85rem; margin-top: 4px; }
+
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(7, 11, 22, 0.9); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
     .modal-box { background: var(--bg-panel); backdrop-filter: blur(30px);
         border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 24px; padding: 35px;
-        max-width: 500px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        max-width: 500px; width: 90%; box-shadow: 0 25px 50px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
     .modal-title { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
     .modal-close { font-size: 1.5rem; color: var(--text-dim); cursor: pointer; transition: color 0.3s; }
     .modal-close:hover { color: #ef4444; }
 
-    .file-input-wrapper {
-        position: relative; overflow: hidden; display: inline-block;
-    }
-    .file-input-wrapper input[type=file] {
-        position: absolute; left: -9999px;
-    }
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+    .file-input-wrapper input[type=file] { position: absolute; left: -9999px; }
     .file-input-label {
         padding: 12px 24px; border-radius: 14px; border: 1px dashed rgba(124, 77, 255, 0.4);
         background: rgba(124, 77, 255, 0.05); color: var(--cosmic-purple-light);
         cursor: pointer; font-weight: 600; transition: all 0.3s; display: inline-block;
     }
     .file-input-label:hover { background: rgba(124, 77, 255, 0.1); border-color: var(--cosmic-purple-light); }
+
+    .empty-players {
+        text-align: center; padding: 80px 20px; color: var(--text-dim);
+    }
+    .empty-players-icon { font-size: 5rem; margin-bottom: 20px; opacity: 0.5; }
+    .empty-players h3 { color: var(--text-secondary); margin-bottom: 10px; }
+
+    .add-player-card {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+        border: 2px dashed var(--cosmic-purple);
+        border-radius: 16px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 25px;
+    }
+    .add-player-card:hover {
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(23, 37, 84, 0.9));
+        border-color: var(--cosmic-purple-light);
+        transform: translateY(-2px);
+    }
+    .add-player-icon { font-size: 3rem; margin-bottom: 10px; }
+    .add-player-text { color: var(--cosmic-purple-light); font-weight: 700; font-size: 1.1rem; }
 </style>
 
 <h1>🏏 Player Management</h1>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+    <div class="stat-block">
+        <div class="stat-block-number" style="color: var(--cosmic-purple-light);">{{ players|length }}</div>
+        <div class="stat-block-label">Total Players</div>
+    </div>
+    <div class="stat-block">
+        <div class="stat-block-number" style="color: #22c55e;">{{ players|selectattr("status", "equalto", "sold")|list|length }}</div>
+        <div class="stat-block-label">Sold</div>
+    </div>
+    <div class="stat-block">
+        <div class="stat-block-number" style="color: #f59e0b;">{{ players|selectattr("status", "equalto", "available")|list|length }}</div>
+        <div class="stat-block-label">Available</div>
+    </div>
+    <div class="stat-block">
+        <div class="stat-block-number" style="color: var(--gold);">{{ players|selectattr("overseas")|list|length }}</div>
+        <div class="stat-block-label">Overseas</div>
+    </div>
+</div>
 
 <!-- Add Player -->
 <div class="glass-panel" style="max-width: 600px; margin-bottom: 30px;">
@@ -175,7 +325,22 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
         <h2>All Players</h2>
-        <a href="/admin/players/export" class="btn btn-success">📥 Export CSV</a>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="text" class="search-box" id="searchPlayers" placeholder="🔍 Search players..." onkeyup="searchPlayers()">
+            <select class="sort-select" id="sortPlayers" onchange="sortPlayers()">
+                <option value="name">Sort by Name</option>
+                <option value="base_price">Sort by Base Price</option>
+                <option value="category">Sort by Category</option>
+                <option value="status">Sort by Status</option>
+            </select>
+            <a href="/admin/players/export" class="btn btn-success">📥 Export CSV</a>
+        </div>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="view-toggle">
+        <button class="view-btn active" onclick="switchView('table')">📋 Table</button>
+        <button class="view-btn" onclick="switchView('grid')">⊞ Grid</button>
     </div>
     
     <div class="filter-bar">
@@ -184,12 +349,14 @@
         <button class="filter-btn" onclick="filterPlayers('bowler')">Bowlers</button>
         <button class="filter-btn" onclick="filterPlayers('all_rounder')">All Rounders</button>
         <button class="filter-btn" onclick="filterPlayers('wicket_keeper')">Keepers</button>
+        <button class="filter-btn" onclick="filterPlayers('overseas')">Overseas</button>
         <button class="filter-btn" onclick="filterPlayers('available')">Available</button>
         <button class="filter-btn" onclick="filterPlayers('sold')">Sold</button>
     </div>
     
+    <!-- Table View -->
     <div style="overflow-x: auto;">
-        <table class="players-table">
+        <table class="players-table active" id="tableView">
             <thead>
                 <tr>
                     <th>Player</th>
@@ -203,10 +370,10 @@
             </thead>
             <tbody>
                 {% for player in players %}
-                <tr data-category="{{ player.category }}" data-status="{{ player.status or 'available' }}">
+                <tr data-category="{{ player.category }}" data-status="{{ player.status or 'available' }}" data-overseas="{{ 'true' if player.overseas else 'false' }}" data-name="{{ player.player_name.lower() }}" data-base="{{ player.base_price or 0.5 }}" data-player-id="{{ player.id }}">
                     <td>
                         <div style="font-weight: 600; color: var(--text-primary);">{{ player.player_name }}</div>
-                        {% if player.overseas %}<span class="overseas-badge">🌍</span>{% endif %}
+                        {% if player.overseas %}<<span class="overseas-badge">🌍 Overseas</span>{% endif %}
                     </td>
                     <td>
                         <span class="cat-badge badge-{{ player.category }}">{{ player.category.replace('_', ' ').title() }}</span>
@@ -236,6 +403,73 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Grid View -->
+    <div class="player-grid" id="gridView">
+        {% for player in players %}
+        <div class="player-card {{ player.status or 'available' }}" 
+             data-category="{{ player.category }}" 
+             data-status="{{ player.status or 'available' }}"
+             data-overseas="{{ 'true' if player.overseas else 'false' }}"
+             data-name="{{ player.player_name.lower() }}"
+             data-base="{{ player.base_price or 0.5 }}"
+             data-player-id="{{ player.id }}">
+            
+            <div class="player-status-badge status-{{ (player.status or 'available').replace('_', '-') }}-badge">
+                {{ (player.status or 'AVAILABLE').upper() }}
+            </div>
+            
+            <div class="player-avatar">
+                {{ player.player_name[:1].upper() }}
+            </div>
+            
+            <div class="player-name">{{ player.player_name }}</div>
+            
+            <div class="player-meta">
+                <span class="cat-badge badge-{{ player.category }}">
+                    {{ player.category.replace('_', ' ').title() }}
+                </span>
+                {% if player.overseas %}
+                <span class="cat-badge overseas-badge">🌍 Overseas</span>
+                {% endif %}
+            </div>
+            
+            <div class="price-section">
+                <div class="price-row">
+                    <span class="price-label">Base Price</span>
+                    <span class="price-value">₹{{ "%.2f"|format(player.base_price or 0.5) }}Cr</span>
+                </div>
+                {% if player.status == 'sold' and player.sold_price %}
+                <div class="price-row">
+                    <span class="price-label">Sold For</span>
+                    <span class="sold-price">₹{{ "%.2f"|format(player.sold_price) }}Cr</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if player.team_name %}
+            <div class="team-tag">
+                🏏 {{ player.team_name }}
+            </div>
+            {% endif %}
+            
+            <div class="player-actions">
+                <button class="player-action-btn" onclick="editPlayer({{ player.id }})">✏️ Edit</button>
+                {% if player.status != 'sold' %}
+                <button class="player-action-btn" onclick="deletePlayer({{ player.id }})" style="color: #ef4444;">🗑️ Delete</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not players %}
+    <div class="empty-players">
+        <div class="empty-players-icon">🏏</div>
+        <h3>No Players in Pool</h3>
+        <p>Add players to start the auction</p>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Edit Modal -->
@@ -273,29 +507,114 @@
 </div>
 
 <script>
+let currentView = 'table';
+
+function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if (view === 'table') {
+        document.getElementById('tableView').classList.add('active');
+        document.getElementById('gridView').classList.remove('active');
+    } else {
+        document.getElementById('tableView').classList.remove('active');
+        document.getElementById('gridView').classList.add('active');
+    }
+}
+
 function filterPlayers(filter) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     
+    // Filter table rows
     document.querySelectorAll('.players-table tbody tr').forEach(row => {
         const category = row.dataset.category;
         const status = row.dataset.status;
+        const overseas = row.dataset.overseas;
         
-        if (filter === 'all') row.style.display = '';
-        else if (filter === 'available' && status === 'available') row.style.display = '';
-        else if (filter === 'sold' && status === 'sold') row.style.display = '';
-        else if (category === filter) row.style.display = '';
-        else row.style.display = 'none';
+        let show = false;
+        if (filter === 'all') show = true;
+        else if (filter === 'overseas') show = overseas === 'true';
+        else if (filter === 'available' && status === 'available') show = true;
+        else if (filter === 'sold' && status === 'sold') show = true;
+        else if (category === filter) show = true;
+        
+        row.style.display = show ? '' : 'none';
+    });
+    
+    // Filter grid cards
+    document.querySelectorAll('.player-grid .player-card').forEach(card => {
+        const category = card.dataset.category;
+        const status = card.dataset.status;
+        const overseas = card.dataset.overseas;
+        
+        let show = false;
+        if (filter === 'all') show = true;
+        else if (filter === 'overseas') show = overseas === 'true';
+        else if (filter === 'available' && status === 'available') show = true;
+        else if (filter === 'sold' && status === 'sold') show = true;
+        else if (category === filter) show = true;
+        
+        card.style.display = show ? '' : 'none';
     });
 }
 
+function searchPlayers() {
+    const query = document.getElementById('searchPlayers').value.toLowerCase();
+    
+    // Search table
+    document.querySelectorAll('.players-table tbody tr').forEach(row => {
+        const name = row.dataset.name;
+        row.style.display = name.includes(query) ? '' : 'none';
+    });
+    
+    // Search grid
+    document.querySelectorAll('.player-grid .player-card').forEach(card => {
+        const name = card.dataset.name;
+        card.style.display = name.includes(query) ? '' : 'none';
+    });
+}
+
+function sortPlayers() {
+    const sortBy = document.getElementById('sortPlayers').value;
+    
+    // Sort table
+    const tableBody = document.querySelector('.players-table tbody');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+        if (sortBy === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+        else if (sortBy === 'base_price') return parseFloat(b.dataset.base) - parseFloat(a.dataset.base);
+        else if (sortBy === 'category') return a.dataset.category.localeCompare(b.dataset.category);
+        else if (sortBy === 'status') return a.dataset.status.localeCompare(b.dataset.status);
+    });
+    rows.forEach(row => tableBody.appendChild(row));
+    
+    // Sort grid
+    const grid = document.getElementById('gridView');
+    const cards = Array.from(grid.querySelectorAll('.player-card'));
+    cards.sort((a, b) => {
+        if (sortBy === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+        else if (sortBy === 'base_price') return parseFloat(b.dataset.base) - parseFloat(a.dataset.base);
+        else if (sortBy === 'category') return a.dataset.category.localeCompare(b.dataset.category);
+        else if (sortBy === 'status') return a.dataset.status.localeCompare(b.dataset.status);
+    });
+    cards.forEach(card => grid.appendChild(card));
+}
+
 function editPlayer(id) {
-    const row = document.querySelector(`tr[data-player-id="${id}"]`) || event.target.closest('tr');
-    const name = row.cells[0].textContent.trim();
-    const category = row.dataset.category;
+    const row = document.querySelector(`tr[data-player-id="${id}"]`);
+    const card = document.querySelector(`.player-card[data-player-id="${id}"]`);
+    const source = row || card;
+    
+    const name = source.querySelector('.player-name')?.textContent || 
+                 source.cells[0].textContent.trim();
+    const category = source.dataset.category;
+    const overseas = source.dataset.overseas === 'true';
     
     document.getElementById('editPlayerName').value = name;
     document.getElementById('editCategory').value = category;
+    document.getElementById('editOverseas').checked = overseas;
     document.getElementById('editForm').action = '/admin/players/edit/' + id;
     document.getElementById('editModal').style.display = 'flex';
 }

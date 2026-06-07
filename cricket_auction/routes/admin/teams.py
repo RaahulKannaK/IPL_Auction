@@ -1,118 +1,256 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
-
-
-from database.db import get_db
+from database.db import get_db, get_cached, clear_cache
 
 bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
 
-
-
 @bp.route('/')
 def list_teams():
+    """List all teams for current auction with owner details"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
-        return redirect('/dashboard')
+        return redirect('/')
+    
+    auction_id = session.get('active_auction_id')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT t.*, u.username as owner_name, a.league_name
-        FROM teams t 
-        LEFT JOIN users u ON t.owner_id = u.id
-        LEFT JOIN auctions a ON t.auction_id = a.id
-    """)
-    teams = cursor.fetchall()
-    cursor.close()
-    db.close()
-    return render_template('admin/teams.html', teams=teams)
+    
+    try:
+        # Current auction details
+        if auction_id:
+            cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
+            auction = cursor.fetchone()
+        else:
+            auction = None
+        
+        # All teams with owner details (up to 3 owners)
+        cursor.execute("""
+            SELECT t.*, 
+                   u1.username as owner_1_name,
+                   u2.username as owner_2_name,
+                   u3.username as owner_3_name,
+                   a.league_name
+            FROM teams t 
+            LEFT JOIN users u1 ON t.owner_id = u1.id
+            LEFT JOIN users u2 ON t.owner_id_2 = u2.id
+            LEFT JOIN users u3 ON t.owner_id_3 = u3.id
+            LEFT JOIN auctions a ON t.auction_id = a.id
+            ORDER BY t.created_at DESC
+        """)
+        teams = cursor.fetchall()
+        
+        # Available users for owner assignment
+        cursor.execute("""
+            SELECT id, username, role 
+            FROM users 
+            WHERE role IN ('team_owner', 'admin', 'auctioneer', 'owner')
+            ORDER BY username
+        """)
+        available_owners = cursor.fetchall()
+        
+        # Stats
+        total_teams = len(teams)
+        assigned_teams = sum(1 for t in teams if t['owner_id'])
+        unassigned_teams = total_teams - assigned_teams
+        
+        stats = {
+            'total': total_teams,
+            'assigned': assigned_teams,
+            'unassigned': unassigned_teams
+        }
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return render_template('admin/teams.html', 
+        teams=teams, 
+        auction=auction,
+        available_owners=available_owners,
+        stats=stats
+    )
 
 @bp.route('/create', methods=['POST'])
 def create_team():
+    """Create new team with multiple owners support"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
     
-    team_name = request.form['team_name']
-    auction_id = request.form.get('auction_id', 1)
-    purse_limit = request.form.get('purse_limit', 100)
+    auction_id = session.get('active_auction_id') or request.form.get('auction_id', 1)
+    team_name = request.form['team_name'].strip()
+    purse_limit = float(request.form.get('purse_limit', 100))
+    squad_size = int(request.form.get('squad_size', 18))
+    overseas_limit = int(request.form.get('overseas_limit', 8))
+    
+    # Get owner IDs (1-3 owners)
+    owner_ids = []
+    for i in range(1, 4):
+        owner_id = request.form.get(f'owner_id_{i}')
+        if owner_id and owner_id.strip():
+            owner_ids.append(int(owner_id))
+    
+    # Remove duplicates while preserving order
+    owner_ids = list(dict.fromkeys(owner_ids))
     
     db = get_db()
     cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO teams (auction_id, team_name, purse_limit) VALUES (%s, %s, %s)",
-        (auction_id, team_name, purse_limit)
-    )
-    db.commit()
-    cursor.close()
-    db.close()
     
-    flash('Team created!')
+    try:
+        if len(owner_ids) >= 1:
+            owner_id = owner_ids[0]
+            owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
+            owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
+            
+            cursor.execute("""
+                INSERT INTO teams (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit))
+        else:
+            cursor.execute("""
+                INSERT INTO teams (auction_id, team_name, purse_limit, squad_size, overseas_limit)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (auction_id, team_name, purse_limit, squad_size, overseas_limit))
+        
+        db.commit()
+        team_id = cursor.lastrowid
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    flash(f'Team "{team_name}" created successfully!')
     return redirect('/admin/teams')
 
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
-    if session.get('role') not in ['owner', 'admin']:
+    """Edit team details and owners"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    team_name = request.form['team_name']
-    purse_limit = request.form.get('purse_limit')
+    team_name = request.form['team_name'].strip()
+    purse_limit = float(request.form.get('purse_limit', 100))
+    squad_size = int(request.form.get('squad_size', 18))
+    overseas_limit = int(request.form.get('overseas_limit', 8))
+    
+    # Get updated owner IDs
+    owner_ids = []
+    for i in range(1, 4):
+        owner_id = request.form.get(f'owner_id_{i}')
+        if owner_id and owner_id.strip():
+            owner_ids.append(int(owner_id))
+    
+    owner_ids = list(dict.fromkeys(owner_ids))
     
     db = get_db()
     cursor = db.cursor()
-    cursor.execute(
-        "UPDATE teams SET team_name=%s, purse_limit=%s WHERE id=%s",
-        (team_name, purse_limit, id)
-    )
-    db.commit()
-    cursor.close()
-    db.close()
     
-    flash('Team updated!')
+    try:
+        owner_id = owner_ids[0] if len(owner_ids) > 0 else None
+        owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
+        owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
+        
+        cursor.execute("""
+            UPDATE teams 
+            SET team_name = %s, 
+                owner_id = %s,
+                owner_id_2 = %s,
+                owner_id_3 = %s,
+                purse_limit = %s,
+                squad_size = %s,
+                overseas_limit = %s
+            WHERE id = %s
+        """, (team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit, id))
+        
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    flash('Team updated successfully!')
     return redirect('/admin/teams')
 
-@bp.route('/assign_owner/<int:team_id>', methods=['POST'])
-def assign_owner(team_id):
+@bp.route('/delete/<int:id>', methods=['POST'])
+def delete_team(id):
+    """Delete team (only if no players assigned)"""
     if session.get('role') not in ['owner', 'admin']:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    user_id = request.form['user_id']
-    
     db = get_db()
-    cursor = db.cursor()
-    cursor.execute("UPDATE teams SET owner_id = %s WHERE id = %s", (user_id, team_id))
-    db.commit()
-    cursor.close()
-    db.close()
+    cursor = db.cursor(dictionary=True)
     
-    flash('Owner assigned!')
+    try:
+        # Check if team has players
+        cursor.execute("SELECT COUNT(*) as cnt FROM team_players WHERE team_id = %s", (id,))
+        result = cursor.fetchone()
+        
+        if result['cnt'] > 0:
+            flash('Cannot delete team with assigned players!')
+            return redirect('/admin/teams')
+        
+        cursor.execute("DELETE FROM teams WHERE id = %s", (id,))
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    flash('Team deleted!')
     return redirect('/admin/teams')
 
-@bp.route('/remove_owner/<int:team_id>', methods=['POST'])
-def remove_owner(team_id):
-    if session.get('role') not in ['owner', 'admin']:
+@bp.route('/remove_owner/<int:team_id>/<int:owner_num>', methods=['POST'])
+def remove_owner(team_id, owner_num):
+    """Remove specific owner from team (1, 2, or 3)"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("UPDATE teams SET owner_id = NULL WHERE id = %s", (team_id,))
-    db.commit()
-    cursor.close()
-    db.close()
+    
+    try:
+        if owner_num == 1:
+            # Shift owner 2 to 1, owner 3 to 2
+            cursor.execute("""
+                UPDATE teams 
+                SET owner_id = owner_id_2,
+                    owner_id_2 = owner_id_3,
+                    owner_id_3 = NULL
+                WHERE id = %s
+            """, (team_id,))
+        elif owner_num == 2:
+            cursor.execute("UPDATE teams SET owner_id_2 = owner_id_3, owner_id_3 = NULL WHERE id = %s", (team_id,))
+        elif owner_num == 3:
+            cursor.execute("UPDATE teams SET owner_id_3 = NULL WHERE id = %s", (team_id,))
+        
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
     
     flash('Owner removed!')
     return redirect('/admin/teams')
 
 @bp.route('/purse/<int:team_id>')
 def view_purse(team_id):
+    """Get team purse details"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM teams WHERE id = %s", (team_id,))
-    team = cursor.fetchone()
-    cursor.close()
-    db.close()
+    
+    try:
+        cursor.execute("SELECT * FROM teams WHERE id = %s", (team_id,))
+        team = cursor.fetchone()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    if not team:
+        return jsonify({'error': 'Team not found'}), 404
     
     return jsonify({
         'team_name': team['team_name'],
@@ -124,21 +262,63 @@ def view_purse(team_id):
 
 @bp.route('/squad/<int:team_id>')
 def view_squad(team_id):
+    """Get team squad details"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT p.*, tp.purchase_price as sold_price
-        FROM team_players tp
-        JOIN auction_players ap ON tp.auction_player_id = ap.id
-        JOIN players p ON ap.player_id = p.id
-        WHERE tp.team_id = %s
-        ORDER BY tp.purchase_price DESC
-    """, (team_id,))
-    players = cursor.fetchall()
-    cursor.close()
-    db.close()
     
-    return jsonify({'players': players})
+    try:
+        cursor.execute("""
+            SELECT p.*, tp.purchase_price as sold_price, tp.purchased_at
+            FROM team_players tp
+            JOIN auction_players ap ON tp.auction_player_id = ap.id
+            JOIN players p ON ap.player_id = p.id
+            WHERE tp.team_id = %s
+            ORDER BY tp.purchase_price DESC
+        """, (team_id,))
+        players = cursor.fetchall()
+        
+        # Category breakdown
+        categories = {}
+        for player in players:
+            cat = player['category']
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(player)
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({
+        'players': players,
+        'categories': categories,
+        'total_players': len(players),
+        'overseas_count': sum(1 for p in players if p['overseas'])
+    })
+
+@bp.route('/available_owners')
+def available_owners():
+    """Get list of users available for team ownership"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT id, username, role 
+            FROM users 
+            WHERE role IN ('team_owner', 'admin', 'auctioneer', 'owner')
+            ORDER BY username
+        """)
+        users = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'users': users})

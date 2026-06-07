@@ -36,216 +36,957 @@
     h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 25px; }
     h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 15px; }
 
-    .pitch {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(6, 78, 59, 0.2));
-        border: 2px solid rgba(34, 197, 94, 0.2); border-radius: 20px;
-        padding: 30px; min-height: 400px; position: relative;
+    .playing11-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+    @media (max-width: 900px) {
+        .playing11-container { grid-template-columns: 1fr; }
     }
 
-    .player-slot {
-        background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
-        border-radius: 14px; padding: 14px 18px; margin-bottom: 10px;
-        cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 12px;
+    .pitch-section {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(6, 78, 59, 0.2));
+        border-radius: 20px;
+        padding: 30px;
+        position: relative;
+        min-height: 500px;
+        border: 2px solid rgba(34, 197, 94, 0.2);
     }
-    .player-slot:hover { border-color: var(--cosmic-purple); background: rgba(124, 77, 255, 0.05); }
-    .player-slot.selected {
-        border-color: #22c55e; background: rgba(6, 78, 59, 0.3);
-        box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+    .pitch-title {
+        text-align: center;
+        color: #86efac;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        font-family: 'Space Grotesk';
     }
-    .player-slot .avatar {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.2rem;
+    .pitch-ground {
+        background: linear-gradient(180deg, rgba(21, 128, 61, 0.3), rgba(22, 101, 52, 0.4));
+        border-radius: 16px;
+        padding: 20px;
+        min-height: 400px;
+        position: relative;
     }
-    .player-slot .name { font-weight: 600; color: var(--text-primary); flex: 1; }
-    .player-slot .role { font-size: 0.8rem; color: var(--text-dim); }
-    .player-slot .captain-badge {
-        padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
-        background: rgba(247, 181, 0, 0.15); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.25);
+    .pitch-strip {
+        position: absolute;
+        left: 50%;
+        top: 10%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 80%;
+        background: linear-gradient(180deg, #d4a574, #c49a6c);
+        border-radius: 8px;
+        opacity: 0.15;
     }
-    .player-slot .vice-badge {
-        padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
-        background: rgba(100, 116, 139, 0.15); color: var(--text-secondary); border: 1px solid rgba(100, 116, 139, 0.25);
+
+    .player-position {
+        position: absolute;
+        width: 90px;
+        text-align: center;
+        cursor: grab;
+        transition: all 0.3s;
     }
+    .player-position:hover { transform: scale(1.1); z-index: 10; }
+    .player-position.selected-pos {
+        filter: drop-shadow(0 0 15px rgba(124, 77, 255, 0.6));
+    }
+    .position-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-family: 'Space Grotesk';
+        font-weight: 700;
+        color: white;
+        margin: 0 auto 5px;
+        border: 3px solid var(--gold);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transition: all 0.3s;
+    }
+    .position-avatar.captain { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+    .position-avatar.vice-captain { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+    .position-name {
+        font-size: 0.75rem;
+        color: var(--text-primary);
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        font-family: 'Space Grotesk';
+    }
+    .position-role {
+        font-size: 0.65rem;
+        color: var(--ice-blue-light);
+    }
+
+    /* Position coordinates on pitch */
+    .pos-wk { bottom: 5%; left: 50%; transform: translateX(-50%); }
+    .pos-b1 { bottom: 25%; left: 20%; }
+    .pos-b2 { bottom: 25%; left: 50%; transform: translateX(-50%); }
+    .pos-b3 { bottom: 25%; right: 20%; }
+    .pos-b4 { bottom: 45%; left: 15%; }
+    .pos-b5 { bottom: 45%; left: 50%; transform: translateX(-50%); }
+    .pos-b6 { bottom: 45%; right: 15%; }
+    .pos-ar1 { top: 35%; left: 25%; }
+    .pos-ar2 { top: 35%; right: 25%; }
+    .pos-bw1 { top: 15%; left: 20%; }
+    .pos-bw2 { top: 15%; left: 50%; transform: translateX(-50%); }
+    .pos-bw3 { top: 15%; right: 20%; }
 
     .btn {
-        padding: 14px 28px; border-radius: 14px; border: none; font-weight: 700; font-size: 0.95rem;
-        cursor: pointer; transition: all 0.3s; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0.5px;
+        padding: 12px 24px;
+        border-radius: 14px;
+        border: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk', sans-serif;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
     .btn-primary {
         background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
         color: white; position: relative; overflow: hidden;
     }
     .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
+    .btn-success {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+    }
+    .btn-success:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(34, 197, 94, 0.3); }
+    .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+    .btn-secondary {
+        background: rgba(100, 120, 200, 0.1);
+        color: var(--text-secondary);
+        border: 1px solid rgba(100, 120, 200, 0.2);
+    }
+    .btn-secondary:hover { background: rgba(100, 120, 200, 0.2); color: var(--text-primary); }
 
-    .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-    @media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
+    .controls-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .formation-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .formation-tab {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk';
+    }
+    .formation-tab.active {
+        background: rgba(124, 77, 255, 0.15);
+        color: var(--cosmic-purple-light);
+        border-color: var(--cosmic-purple);
+    }
+    .formation-tab:hover:not(.active) {
+        border-color: var(--cosmic-purple);
+        color: var(--text-secondary);
+    }
+
+    .squad-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+    }
+    .panel-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Space Grotesk';
+    }
+    .squad-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .squad-player {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    .squad-player:hover {
+        border-color: var(--cosmic-purple);
+        transform: translateX(5px);
+        background: rgba(124, 77, 255, 0.05);
+    }
+    .squad-player.selected {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.08);
+    }
+    .squad-player.in-xi {
+        opacity: 0.4;
+        pointer-events: none;
+        border-color: transparent;
+    }
+    .squad-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 0.9rem;
+        font-family: 'Space Grotesk';
+        flex-shrink: 0;
+    }
+    .squad-info { flex: 1; }
+    .squad-name { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; }
+    .squad-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+    .squad-price { color: var(--gold-light); font-weight: 700; font-size: 0.9rem; font-family: 'JetBrains Mono'; }
+
+    .analysis-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-top: 20px;
+    }
+    .analysis-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .analysis-item {
+        text-align: center;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 14px;
+        border: 1px solid rgba(100, 120, 200, 0.05);
+        transition: all 0.3s;
+    }
+    .analysis-item:hover {
+        border-color: rgba(124, 77, 255, 0.15);
+    }
+    .analysis-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        font-family: 'Space Grotesk';
+    }
+    .analysis-label {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .strength-meter {
+        margin-top: 20px;
+    }
+    .strength-bar {
+        height: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 10px;
+        border: 1px solid rgba(100, 120, 200, 0.1);
+    }
+    .strength-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+        background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e);
+    }
+    .strength-text {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 0.85rem;
+    }
+
+    .empty-slot {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px dashed rgba(100, 120, 200, 0.3);
+        margin: 0 auto 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-dim);
+        font-size: 1.5rem;
+        transition: all 0.3s;
+    }
+    .empty-slot:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); }
+
+    .captain-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ef4444;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 2px solid var(--text-primary);
+        font-family: 'Space Grotesk';
+    }
+    .vc-badge {
+        background: #8b5cf6;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 14px;
+        color: white;
+        font-weight: 600;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        font-family: 'Space Grotesk';
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .toast.success { background: rgba(34, 197, 94, 0.9); }
+    .toast.error { background: rgba(239, 68, 68, 0.9); }
+    .toast.info { background: rgba(59, 130, 246, 0.9); }
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .player-slot {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .player-slot:hover {
+        border-color: var(--cosmic-purple);
+        background: rgba(124, 77, 255, 0.05);
+    }
+    .player-slot .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-family: 'Space Grotesk';
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+    }
+    .player-slot .name { font-weight: 600; color: var(--text-primary); flex: 1; }
+    .player-slot .role { font-size: 0.8rem; color: var(--text-dim); }
+
+    .section-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 900px) {
+        .section-grid { grid-template-columns: 1fr; }
+    }
 </style>
 
 <h1>🏏 Playing XI Builder</h1>
 
-<div class="section-grid">
-    <!-- Available Players -->
-    <div class="glass-panel">
-        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
-        <h2>👥 Squad Players</h2>
-        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px;">Click to add to Playing XI</p>
-        
-        <div id="squadList" style="max-height: 500px; overflow-y: auto;">
-            {% for player in squad %}
-            <div class="player-slot" onclick="addToXI({{ player.id }}, '{{ player.player_name }}', '{{ player.category }}')">
-                <div class="avatar">🏏</div>
-                <div class="name">{{ player.player_name }}</div>
-                <div class="role">{{ player.category.replace('_', ' ').title() }}</div>
+<div class="controls-bar">
+    <button class="btn btn-secondary" onclick="autoSelect()">🤖 Auto Select</button>
+    <button class="btn btn-secondary" onclick="suggestTeam()">💡 Suggest Best XI</button>
+    <button class="btn btn-success" onclick="savePlaying11()">💾 Save Playing XI</button>
+    <button class="btn btn-danger" onclick="clearSelection()">🗑️ Clear</button>
+</div>
+
+<div class="formation-tabs">
+    <button class="formation-tab active" onclick="setFormation('balanced')">Balanced (4-3-3-1)</button>
+    <button class="formation-tab" onclick="setFormation('batting')">Batting Heavy (5-2-3-1)</button>
+    <button class="formation-tab" onclick="setFormation('bowling')">Bowling Heavy (3-4-3-1)</button>
+    <button class="formation-tab" onclick="setFormation('allrounder')">All-Rounders (3-2-4-1)</button>
+</div>
+
+<div class="playing11-container">
+    <!-- Cricket Pitch Visualization -->
+    <div class="pitch-section">
+        <div class="pitch-title">🏟️ Playing XI Formation</div>
+        <div class="pitch-ground" id="pitchGround">
+            <div class="pitch-strip"></div>
+
+            <!-- Wicket Keeper -->
+            <div class="player-position pos-wk" data-position="wk" onclick="selectPosition('wk')">
+                <div class="empty-slot" id="slot-wk">+</div>
+                <div class="position-name">Wicket Keeper</div>
+                <div class="position-role"></div>
             </div>
-            {% endfor %}
+
+            <!-- Batsmen -->
+            <div class="player-position pos-b1" data-position="b1" onclick="selectPosition('b1')">
+                <div class="empty-slot" id="slot-b1">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-b2" data-position="b2" onclick="selectPosition('b2')">
+                <div class="empty-slot" id="slot-b2">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-b3" data-position="b3" onclick="selectPosition('b3')">
+                <div class="empty-slot" id="slot-b3">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-b4" data-position="b4" onclick="selectPosition('b4')">
+                <div class="empty-slot" id="slot-b4">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-b5" data-position="b5" onclick="selectPosition('b5')">
+                <div class="empty-slot" id="slot-b5">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-b6" data-position="b6" onclick="selectPosition('b6')">
+                <div class="empty-slot" id="slot-b6">+</div>
+                <div class="position-name">Batsman</div>
+                <div class="position-role"></div>
+            </div>
+
+            <!-- All Rounders -->
+            <div class="player-position pos-ar1" data-position="ar1" onclick="selectPosition('ar1')">
+                <div class="empty-slot" id="slot-ar1">+</div>
+                <div class="position-name">All Rounder</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-ar2" data-position="ar2" onclick="selectPosition('ar2')">
+                <div class="empty-slot" id="slot-ar2">+</div>
+                <div class="position-name">All Rounder</div>
+                <div class="position-role"></div>
+            </div>
+
+            <!-- Bowlers -->
+            <div class="player-position pos-bw1" data-position="bw1" onclick="selectPosition('bw1')">
+                <div class="empty-slot" id="slot-bw1">+</div>
+                <div class="position-name">Bowler</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-bw2" data-position="bw2" onclick="selectPosition('bw2')">
+                <div class="empty-slot" id="slot-bw2">+</div>
+                <div class="position-name">Bowler</div>
+                <div class="position-role"></div>
+            </div>
+            <div class="player-position pos-bw3" data-position="bw3" onclick="selectPosition('bw3')">
+                <div class="empty-slot" id="slot-bw3">+</div>
+                <div class="position-name">Bowler</div>
+                <div class="position-role"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Playing XI -->
-    <div class="glass-panel">
-        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
-        <h2>⭐ Playing XI</h2>
-        <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 15px;">Select 11 players. Click C for Captain, VC for Vice Captain.</p>
-        
-        <div class="pitch" id="playingXI">
-            <!-- Selected players appear here -->
-            {% for p in playing11 %}
-            <div class="player-slot selected" data-id="{{ p.id }}">
-                <div class="avatar">⭐</div>
-                <div class="name">{{ p.player_name }}</div>
-                <div class="role">{{ p.position }}</div>
-                {% if p.is_captain %}
-                <span class="captain-badge">C</span>
-                {% elif p.is_vice_captain %}
-                <span class="vice-badge">VC</span>
-                {% endif %}
-                <button onclick="removeFromXI({{ p.id }})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;">✕</button>
+    <!-- Right Panel -->
+    <div>
+        <!-- Squad Panel -->
+        <div class="squad-panel glass-panel">
+            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+            <div class="panel-title">
+                <span>👥 Your Squad</span>
+                <span style="color: var(--text-dim); font-size: 0.9rem;">Click to select</span>
             </div>
-            {% endfor %}
+            <div class="squad-list" id="squadList">
+                {% for player in squad %}
+                <div class="squad-player"
+                     data-id="{{ player.id }}"
+                     data-name="{{ player.player_name }}"
+                     data-category="{{ player.category }}"
+                     data-price="{{ player.sold_price or player.base_price or 0 }}"
+                     data-overseas="{{ 'true' if player.overseas else 'false' }}"
+                     onclick="selectPlayer({{ player.id }})"
+                     id="player-{{ player.id }}">
+                    <div class="squad-avatar">{{ player.player_name[:1].upper() }}</div>
+                    <div class="squad-info">
+                        <div class="squad-name">{{ player.player_name }}</div>
+                        <div class="squad-meta">
+                            {{ player.category.replace('_', ' ').title() }}
+                            {% if player.overseas %}| 🌍 Overseas{% endif %}
+                        </div>
+                    </div>
+                    <div class="squad-price">₹{{ "%.2f"|format(player.sold_price or player.base_price or 0) }}Cr</div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="btn btn-primary" onclick="savePlaying11()">💾 Save Playing XI</button>
-            <button class="btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25);" onclick="clearXI()">Clear</button>
-        </div>
-        
-        <div id="xiCount" style="margin-top: 10px; color: var(--text-dim); font-size: 0.9rem;">
-            Selected: <span style="color: var(--cosmic-purple-light); font-weight: 700;">{{ playing11|length }}</span> / 11
+
+        <!-- Analysis Panel -->
+        <div class="analysis-panel glass-panel">
+            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+            <div class="panel-title">📊 XI Analysis</div>
+            <div class="analysis-grid">
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-batsmen" style="color: #60a5fa;">0</div>
+                    <div class="analysis-label">Batsmen</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-bowlers" style="color: #ef4444;">0</div>
+                    <div class="analysis-label">Bowlers</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-allrounders" style="color: #22c55e;">0</div>
+                    <div class="analysis-label">All Rounders</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-keepers" style="color: #f59e0b;">0</div>
+                    <div class="analysis-label">Wicket Keepers</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-overseas" style="color: #a78bfa;">0</div>
+                    <div class="analysis-label">Overseas</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="analysis-value" id="xi-total" style="color: var(--text-primary);">0/11</div>
+                    <div class="analysis-label">Selected</div>
+                </div>
+            </div>
+
+            <div class="strength-meter">
+                <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 0.9rem;">
+                    <span>Team Strength</span>
+                    <span id="strengthPercent">0%</span>
+                </div>
+                <div class="strength-bar">
+                    <div class="strength-fill" id="strengthFill" style="width: 0%;"></div>
+                </div>
+                <div class="strength-text">
+                    <span style="color: #ef4444;">Weak</span>
+                    <span style="color: #f59e0b;">Balanced</span>
+                    <span style="color: #22c55e;">Strong</span>
+                </div>
+            </div>
+
+            <div id="validationMessages" style="margin-top: 15px;"></div>
         </div>
     </div>
 </div>
 
 <script>
-let selectedPlayers = {{ playing11|map(attribute='id')|list|tojson }};
-let playerData = {};
+let selectedPosition = null;
+let playing11 = {};
+let formation = 'balanced';
 
-function addToXI(id, name, category) {
-    if (selectedPlayers.includes(id)) {
-        alert('Player already in XI');
-        return;
-    }
-    if (selectedPlayers.length >= 11) {
-        alert('Playing XI is full (11 players)');
-        return;
-    }
-    
-    selectedPlayers.push(id);
-    playerData[id] = { name, category, is_captain: false, is_vice_captain: false };
-    renderXI();
+// Formation configs
+const formations = {
+    balanced: { batsmen: 4, bowlers: 3, allrounders: 3, wicketkeepers: 1 },
+    batting: { batsmen: 5, bowlers: 2, allrounders: 3, wicketkeepers: 1 },
+    bowling: { batsmen: 3, bowlers: 4, allrounders: 3, wicketkeepers: 1 },
+    allrounder: { batsmen: 3, bowlers: 2, allrounders: 4, wicketkeepers: 1 }
+};
+
+function setFormation(type) {
+    formation = type;
+    document.querySelectorAll('.formation-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    showValidation('Formation changed to ' + type, 'info');
 }
 
-function removeFromXI(id) {
-    selectedPlayers = selectedPlayers.filter(p => p !== id);
-    delete playerData[id];
-    renderXI();
-}
+function selectPosition(position) {
+    selectedPosition = position;
 
-function setCaptain(id) {
-    Object.keys(playerData).forEach(k => playerData[k].is_captain = false);
-    playerData[id].is_captain = true;
-    playerData[id].is_vice_captain = false;
-    renderXI();
-}
-
-function setViceCaptain(id) {
-    Object.keys(playerData).forEach(k => playerData[k].is_vice_captain = false);
-    playerData[id].is_vice_captain = true;
-    playerData[id].is_captain = false;
-    renderXI();
-}
-
-function renderXI() {
-    const container = document.getElementById('playingXI');
-    container.innerHTML = '';
-    
-    selectedPlayers.forEach(id => {
-        const p = playerData[id];
-        if (!p) return;
-        
-        const div = document.createElement('div');
-        div.className = 'player-slot selected';
-        div.innerHTML = `
-            <div class="avatar">⭐</div>
-            <div class="name">${p.name}</div>
-            <div class="role">${p.category.replace('_', ' ').title()}</div>
-            ${p.is_captain ? '<span class="captain-badge">C</span>' : `<button onclick="setCaptain(${id})" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:0.8rem;">C?</button>`}
-            ${p.is_vice_captain ? '<span class="vice-badge">VC</span>' : `<button onclick="setViceCaptain(${id})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.8rem;">VC?</button>`}
-            <button onclick="removeFromXI(${id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.2rem;">✕</button>
-        `;
-        container.appendChild(div);
+    // Highlight position
+    document.querySelectorAll('.player-position').forEach(p => {
+        p.classList.toggle('selected-pos', p.dataset.position === position);
     });
-    
-    document.getElementById('xiCount').innerHTML = `Selected: <span style="color: var(--cosmic-purple-light); font-weight: 700;">${selectedPlayers.length}</span> / 11`;
+
+    showValidation('Select a player from squad to assign', 'info');
+}
+
+function selectPlayer(playerId) {
+    const playerEl = document.getElementById('player-' + playerId);
+    if (!playerEl) return;
+
+    const playerData = {
+        id: playerId,
+        name: playerEl.dataset.name,
+        category: playerEl.dataset.category,
+        price: parseFloat(playerEl.dataset.price),
+        overseas: playerEl.dataset.overseas === 'true'
+    };
+
+    if (!selectedPosition) {
+        showValidation('Select a position on the pitch first!', 'error');
+        return;
+    }
+
+    // Check if player already in XI
+    for (let pos in playing11) {
+        if (playing11[pos].id === playerId) {
+            showValidation('Player already in Playing XI!', 'error');
+            return;
+        }
+    }
+
+    // Check if position already filled
+    if (playing11[selectedPosition]) {
+        showValidation('Position already filled! Remove first.', 'error');
+        return;
+    }
+
+    // Assign to position
+    playing11[selectedPosition] = playerData;
+
+    // Update pitch
+    updatePitch();
+
+    // Update squad list
+    updateSquadList();
+
+    // Update analysis
+    updateAnalysis();
+
+    // Clear selection
+    selectedPosition = null;
+    document.querySelectorAll('.player-position').forEach(p => {
+        p.classList.remove('selected-pos');
+    });
+
+    showValidation(playerData.name + ' assigned!', 'success');
+}
+
+function updatePitch() {
+    const allPositions = ['wk', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'ar1', 'ar2', 'bw1', 'bw2', 'bw3'];
+
+    allPositions.forEach(pos => {
+        const slot = document.getElementById('slot-' + pos);
+        const positionEl = slot.parentElement;
+        const player = playing11[pos];
+
+        if (player) {
+            slot.className = 'position-avatar';
+            slot.textContent = player.name.substring(0, 2).toUpperCase();
+            slot.style.background = getCategoryColor(player.category);
+
+            // Check captain/vice
+            const isCaptain = Object.values(playing11).find(p => p.is_captain && p.id === player.id);
+            const isVice = Object.values(playing11).find(p => p.is_vice_captain && p.id === player.id);
+
+            if (isCaptain) {
+                slot.classList.add('captain');
+                if (!slot.querySelector('.captain-badge')) {
+                    slot.innerHTML += '<span class="captain-badge">C</span>';
+                }
+            } else if (isVice) {
+                slot.classList.add('vice-captain');
+                if (!slot.querySelector('.captain-badge')) {
+                    slot.innerHTML += '<span class="captain-badge vc-badge">VC</span>';
+                }
+            }
+
+            positionEl.querySelector('.position-name').textContent = player.name;
+            positionEl.querySelector('.position-role').textContent = player.category.replace('_', ' ').toUpperCase();
+        } else {
+            slot.className = 'empty-slot';
+            slot.textContent = '+';
+            slot.style.background = '';
+            slot.innerHTML = '+';
+
+            const defaultNames = {
+                wk: 'Wicket Keeper', b1: 'Batsman', b2: 'Batsman', b3: 'Batsman',
+                b4: 'Batsman', b5: 'Batsman', b6: 'Batsman',
+                ar1: 'All Rounder', ar2: 'All Rounder',
+                bw1: 'Bowler', bw2: 'Bowler', bw3: 'Bowler'
+            };
+            positionEl.querySelector('.position-name').textContent = defaultNames[pos];
+            positionEl.querySelector('.position-role').textContent = '';
+        }
+    });
+}
+
+function getCategoryColor(category) {
+    const colors = {
+        batsman: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+        bowler: 'linear-gradient(135deg, #ef4444, #dc2626)',
+        all_rounder: 'linear-gradient(135deg, #22c55e, #16a34a)',
+        wicket_keeper: 'linear-gradient(135deg, #f59e0b, #d97706)'
+    };
+    return colors[category] || colors.batsman;
+}
+
+function updateSquadList() {
+    const playerIds = Object.values(playing11).map(p => p.id);
+
+    document.querySelectorAll('.squad-player').forEach(el => {
+        const id = parseInt(el.dataset.id);
+        if (playerIds.includes(id)) {
+            el.classList.add('in-xi');
+            el.classList.remove('selected');
+        } else {
+            el.classList.remove('in-xi');
+        }
+    });
+}
+
+function updateAnalysis() {
+    const counts = {
+        batsmen: 0, bowlers: 0, allrounders: 0, wicketkeepers: 0, overseas: 0
+    };
+
+    Object.values(playing11).forEach(p => {
+        if (p.category === 'batsman') counts.batsmen++;
+        else if (p.category === 'bowler') counts.bowlers++;
+        else if (p.category === 'all_rounder') counts.allrounders++;
+        else if (p.category === 'wicket_keeper') counts.wicketkeepers++;
+        if (p.overseas) counts.overseas++;
+    });
+
+    document.getElementById('xi-batsmen').textContent = counts.batsmen;
+    document.getElementById('xi-bowlers').textContent = counts.bowlers;
+    document.getElementById('xi-allrounders').textContent = counts.allrounders;
+    document.getElementById('xi-keepers').textContent = counts.wicketkeepers;
+    document.getElementById('xi-overseas').textContent = counts.overseas;
+    document.getElementById('xi-total').textContent = Object.keys(playing11).length + '/11';
+
+    // Strength calculation
+    const total = Object.keys(playing11).length;
+    const target = formations[formation];
+    let strength = 0;
+
+    if (total === 11) {
+        strength = 100;
+        // Deduct for imbalance
+        if (counts.batsmen < target.batsmen) strength -= 10;
+        if (counts.bowlers < target.bowlers) strength -= 10;
+        if (counts.wicketkeepers < 1) strength -= 15;
+        if (counts.overseas > 4) strength -= 10;
+    } else {
+        strength = (total / 11) * 60;
+    }
+
+    strength = Math.max(0, Math.min(100, strength));
+    document.getElementById('strengthPercent').textContent = Math.round(strength) + '%';
+    document.getElementById('strengthFill').style.width = strength + '%';
+
+    // Validation
+    const messages = [];
+    if (total < 11) messages.push('Need ' + (11 - total) + ' more players');
+    if (counts.wicketkeepers < 1) messages.push('⚠️ Need a Wicket Keeper');
+    if (counts.bowlers < 2) messages.push('⚠️ Need at least 2 Bowlers');
+    if (counts.batsmen < 3) messages.push('⚠️ Need at least 3 Batsmen');
+    if (total === 11 && counts.overseas > 4) messages.push('⚠️ Too many Overseas players');
+
+    const msgDiv = document.getElementById('validationMessages');
+    if (messages.length === 0 && total === 11) {
+        msgDiv.innerHTML = '<div style="color: #22c55e; padding: 12px; background: rgba(34,197,94,0.08); border-radius: 10px; border: 1px solid rgba(34,197,94,0.2); font-weight: 600;">✅ Perfect XI!</div>';
+    } else {
+        msgDiv.innerHTML = messages.map(m =>
+            '<div style="color: ' + (m.includes('⚠️') ? '#f59e0b' : 'var(--text-dim)') + '; padding: 6px 0; font-size: 0.9rem;">' + m + '</div>'
+        ).join('');
+    }
+}
+
+function autoSelect() {
+    clearSelection();
+    const squad = Array.from(document.querySelectorAll('.squad-player:not(.in-xi)'));
+    const target = formations[formation];
+    const positions = ['wk', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'ar1', 'ar2', 'bw1', 'bw2', 'bw3'];
+
+    // Sort by price (expensive first)
+    squad.sort((a, b) => parseFloat(b.dataset.price) - parseFloat(a.dataset.price));
+
+    // Assign wicket keeper first
+    const wk = squad.find(p => p.dataset.category === 'wicket_keeper');
+    if (wk) {
+        playing11['wk'] = {
+            id: parseInt(wk.dataset.id),
+            name: wk.dataset.name,
+            category: wk.dataset.category,
+            price: parseFloat(wk.dataset.price),
+            overseas: wk.dataset.overseas === 'true'
+        };
+    }
+
+    // Assign bowlers
+    let bowlers = squad.filter(p => p.dataset.category === 'bowler' && !Object.values(playing11).find(x => x.id === parseInt(p.dataset.id)));
+    let bwPos = ['bw1', 'bw2', 'bw3'];
+    for (let i = 0; i < Math.min(target.bowlers, bowlers.length, bwPos.length); i++) {
+        playing11[bwPos[i]] = {
+            id: parseInt(bowlers[i].dataset.id),
+            name: bowlers[i].dataset.name,
+            category: bowlers[i].dataset.category,
+            price: parseFloat(bowlers[i].dataset.price),
+            overseas: bowlers[i].dataset.overseas === 'true'
+        };
+    }
+
+    // Assign all rounders
+    let ars = squad.filter(p => p.dataset.category === 'all_rounder' && !Object.values(playing11).find(x => x.id === parseInt(p.dataset.id)));
+    let arPos = ['ar1', 'ar2'];
+    for (let i = 0; i < Math.min(target.allrounders, ars.length, arPos.length); i++) {
+        playing11[arPos[i]] = {
+            id: parseInt(ars[i].dataset.id),
+            name: ars[i].dataset.name,
+            category: ars[i].dataset.category,
+            price: parseFloat(ars[i].dataset.price),
+            overseas: ars[i].dataset.overseas === 'true'
+        };
+    }
+
+    // Fill remaining with batsmen
+    let batsmen = squad.filter(p => p.dataset.category === 'batsman' && !Object.values(playing11).find(x => x.id === parseInt(p.dataset.id)));
+    let bPos = ['b1', 'b2', 'b3', 'b4', 'b5', 'b6'].filter(p => !playing11[p]);
+    for (let i = 0; i < Math.min(bPos.length, batsmen.length); i++) {
+        playing11[bPos[i]] = {
+            id: parseInt(batsmen[i].dataset.id),
+            name: batsmen[i].dataset.name,
+            category: batsmen[i].dataset.category,
+            price: parseFloat(batsmen[i].dataset.price),
+            overseas: batsmen[i].dataset.overseas === 'true'
+        };
+    }
+
+    // Auto-assign captain to most expensive batsman, vice to 2nd most expensive
+    const allPlayers = Object.values(playing11);
+    if (allPlayers.length > 0) {
+        allPlayers.sort((a, b) => b.price - a.price);
+        allPlayers[0].is_captain = true;
+        if (allPlayers[1]) allPlayers[1].is_vice_captain = true;
+    }
+
+    updatePitch();
+    updateSquadList();
+    updateAnalysis();
+    showValidation('Auto-selected based on ' + formation + ' formation!', 'success');
+}
+
+function suggestTeam() {
+    autoSelect();
+    showValidation('Best XI suggested based on player value!', 'success');
+}
+
+function clearSelection() {
+    playing11 = {};
+    updatePitch();
+    updateSquadList();
+    updateAnalysis();
+    showValidation('Selection cleared', 'info');
 }
 
 function savePlaying11() {
-    if (selectedPlayers.length !== 11) {
-        alert('Please select exactly 11 players');
+    if (Object.keys(playing11).length !== 11) {
+        showValidation('Need exactly 11 players!', 'error');
         return;
     }
-    
-    const hasCaptain = Object.values(playerData).some(p => p.is_captain);
-    const hasVice = Object.values(playerData).some(p => p.is_vice_captain);
-    
-    if (!hasCaptain) { alert('Please select a Captain'); return; }
-    if (!hasVice) { alert('Please select a Vice Captain'); return; }
-    
-    const players = selectedPlayers.map((id, index) => ({
-        player_id: id,
-        position: index + 1,
-        is_captain: playerData[id].is_captain,
-        is_vice_captain: playerData[id].is_vice_captain
+
+    const hasCaptain = Object.values(playing11).some(p => p.is_captain);
+    const hasVice = Object.values(playing11).some(p => p.is_vice_captain);
+
+    if (!hasCaptain) { showValidation('Please select a Captain', 'error'); return; }
+    if (!hasVice) { showValidation('Please select a Vice Captain', 'error'); return; }
+
+    const data = Object.entries(playing11).map(([position, player]) => ({
+        position: position,
+        player_id: player.id,
+        is_captain: !!player.is_captain,
+        is_vice_captain: !!player.is_vice_captain
     }));
-    
+
     fetch('/team-owner/playing11/save', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ team_id: {{ team_id }}, players })
+        body: JSON.stringify({ team_id: {{ team_id | default('null') }}, players: data })
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) alert('Playing XI saved!');
+        if (data.success) {
+            showValidation('✅ Playing XI saved successfully!', 'success');
+        } else {
+            showValidation('❌ ' + (data.error || 'Failed to save'), 'error');
+        }
+    })
+    .catch(err => {
+        showValidation('❌ Network error', 'error');
     });
 }
 
-function clearXI() {
-    selectedPlayers = [];
-    playerData = {};
-    renderXI();
+function showValidation(message, type) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 // Initialize existing playing11 data
+{% if playing11 %}
 {% for p in playing11 %}
-playerData[{{ p.id }}] = {
+playing11['{{ p.position }}'] = {
+    id: {{ p.player_id }},
     name: '{{ p.player_name }}',
     category: '{{ p.category }}',
+    price: {{ p.sold_price or p.base_price or 0 }},
+    overseas: {{ 'true' if p.overseas else 'false' }},
     is_captain: {{ 'true' if p.is_captain else 'false' }},
     is_vice_captain: {{ 'true' if p.is_vice_captain else 'false' }}
 };
 {% endfor %}
+updatePitch();
+updateSquadList();
+updateAnalysis();
+{% endif %}
 </script>
 {% endblock %}

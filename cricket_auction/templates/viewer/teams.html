@@ -124,7 +124,7 @@
             <tbody>
                 {% for player in team.squad %}
                 <tr>
-                    <td style="font-weight: 500;">{{ player.player_name }} {% if player.overseas %}<span style="color: var(--gold);">🌍</span>{% endif %}</td>
+                    <td style="font-weight: 500;">{{ player.player_name }} {% if player.overseas %}<<span style="color: var(--gold);">🌍</span>{% endif %}</td>
                     <td><span style="padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; background: rgba(124,77,255,0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(124,77,255,0.15);">{{ player.category }}</span></td>
                     <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
                 </tr>

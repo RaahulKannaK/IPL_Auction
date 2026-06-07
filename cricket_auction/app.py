@@ -11,13 +11,16 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 
+# Remove Flask-Session — not needed for simple session data
 app.url_map.strict_slashes = False
 
 # === REGISTER BLUEPRINTS ===
+
+# Auth routes (login/logout)
 import routes.auth as auth
 app.register_blueprint(auth.bp)
 
-# === ADMIN ROUTES ===
+# === ADMIN ROUTES (Auctioneer) ===
 import routes.admin.dashboard as admin_dashboard
 import routes.admin.auction as admin_auctions
 import routes.admin.teams as admin_teams
