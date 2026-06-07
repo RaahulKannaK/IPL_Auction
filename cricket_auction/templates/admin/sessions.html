@@ -906,10 +906,10 @@
                         {% if sess.status == 'active' %}
                         <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">➕ Continue</button>
-                        <a href="/admin/sessions?room={{ sess.id }}" class="btn-small btn-enter">🔨 Enter Room</a>
+                        <a href="/admin/sessions/room/{{ sess.id }}" class="btn-small btn-enter"></a>🔨 Enter Room</a>
                         {% else %}
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">🔄 Continue</button>
-                        <a href="/admin/sessions?room={{ sess.id }}" class="btn-small btn-enter">📊 View</a>
+                        <a href="/admin/sessions/room/{{ sess.id }}" class="btn-small btn-enter"></a>📊 View</a>
                         {% endif %}
                     </div>
                 </div>

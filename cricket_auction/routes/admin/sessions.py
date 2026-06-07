@@ -378,3 +378,174 @@ def session_history():
         db.close()
     
     return jsonify({'sessions': sessions})
+
+@bp.route('/<<int:session_id>/bid', methods=['POST'])
+def place_bid(session_id):
+    """Place bid in a session"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    player_id = data.get('player_id')
+    team_id = data.get('team_id')
+    amount = data.get('amount')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Update session current bid
+        cursor.execute("""
+            UPDATE auction_sessions 
+            SET current_bid = %s, current_bidder_id = %s, current_player_id = %s
+            WHERE id = %s
+        """, (amount, team_id, player_id, session_id))
+        db.commit()
+        
+        # Record bid history
+        cursor.execute("""
+            INSERT INTO session_bids (session_id, player_id, team_id, amount, created_at)
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (session_id, player_id, team_id, amount))
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({
+        'success': True,
+        'current_bid': amount,
+        'bidder': f'Team #{team_id}'
+    })
+
+@bp.route('/<<int:session_id>/status')
+def get_session_status(session_id):
+    """Get real-time session status"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT current_bid, current_bidder_id, current_player_id
+            FROM auction_sessions WHERE id = %s
+        """, (session_id,))
+        sess = cursor.fetchone()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    if not sess:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    return jsonify({
+        'current_bid': float(sess['current_bid'] or 0),
+        'current_bidder': sess['current_bidder_id'],
+        'current_player': sess['current_player_id']
+    })
+
+@bp.route('/<<int:auction_id>/master-status')
+def get_master_status(auction_id):
+    """Get master bid across all sessions"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT MAX(current_bid) as master_bid,
+                   current_bidder_id,
+                   current_player_id
+            FROM auction_sessions
+            WHERE auction_id = %s AND status = 'active'
+        """, (auction_id,))
+        result = cursor.fetchone()
+        
+        cursor.execute("""
+            SELECT COUNT(*) as active_count
+            FROM auction_sessions
+            WHERE auction_id = %s AND status = 'active'
+        """, (auction_id,))
+        active = cursor.fetchone()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({
+        'master_bid': float(result['master_bid'] or 0),
+        'master_bidder': f'Team #{result["current_bidder_id"]}' if result['current_bidder_id'] else 'None',
+        'master_player': f'Player #{result["current_player_id"]}' if result['current_player_id'] else 'None',
+        'active_sessions': active['active_count']
+    })
+
+@bp.route('/room/<int:session_id>')
+def session_room(session_id):
+    """Enter a session room for bidding"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        flash('Unauthorized')
+        return redirect('/')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
+        sess = cursor.fetchone()
+        
+        if not sess:
+            flash('Session not found')
+            return redirect('/admin/sessions')
+        
+        # Get session team IDs
+        team_ids = []
+        if sess['team_ids']:
+            try:
+                team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+            except:
+                team_ids = []
+        
+        # Get participating teams
+        teams = []
+        if team_ids:
+            format_ids = ','.join(['%s'] * len(team_ids))
+            cursor.execute(f"""
+                SELECT t.*, 
+                       (t.purse_limit - COALESCE(t.spent, 0) - COALESCE(t.reserved, 0)) as available_purse
+                FROM teams t
+                WHERE t.id IN ({format_ids})
+            """, tuple(team_ids))
+            teams = cursor.fetchall()
+        
+        # Get available players
+        cursor.execute("""
+            SELECT * FROM players 
+            WHERE status = 'available' AND auction_id = %s
+            ORDER BY base_price DESC
+        """, (sess['auction_id'],))
+        players = cursor.fetchall()
+        
+        # Get bid history
+        cursor.execute("""
+            SELECT b.*, p.player_name, t.team_name
+            FROM session_bids b
+            JOIN players p ON b.player_id = p.id
+            JOIN teams t ON b.team_id = t.id
+            WHERE b.session_id = %s
+            ORDER BY b.created_at DESC
+            LIMIT 50
+        """, (session_id,))
+        session_bids = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return render_template('admin/sessions.html',
+        view='room',
+        session=sess,
+        teams=teams,
+        players=players,
+        session_bids=session_bids,
+        auction={'id': sess['auction_id']}
+    )
