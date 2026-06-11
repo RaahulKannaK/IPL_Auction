@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db
 
-bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams', strict_slashes=False)
+bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
 
 @bp.route('/')
 def list_teams():
@@ -67,7 +67,7 @@ def list_teams():
 @bp.route('/create', methods=['POST'])
 def create_team():
     """Create new team with single owner"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
     
@@ -100,7 +100,7 @@ def create_team():
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
     """Edit team details and owner"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     team_name = request.form['team_name'].strip()
@@ -164,7 +164,7 @@ def delete_team(id):
 @bp.route('/remove_owner/<int:team_id>', methods=['POST'])
 def remove_owner(team_id):
     """Remove owner from team"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -185,7 +185,7 @@ def remove_owner(team_id):
 @bp.route('/purse/<int:team_id>')
 def view_purse(team_id):
     """Get team purse details"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -214,7 +214,7 @@ def view_purse(team_id):
 @bp.route('/squad/<int:team_id>')
 def view_squad(team_id):
     """Get team squad details"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -253,7 +253,7 @@ def view_squad(team_id):
 @bp.route('/available_owners')
 def available_owners():
     """Get list of users available for team ownership"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
