@@ -13,6 +13,8 @@
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
     }
 
+    .auction-wrapper { position: relative; z-index: 2; max-width: 1400px; margin: 0 auto; padding: 25px; }
+
     .glass-panel {
         background: var(--bg-panel); backdrop-filter: blur(24px);
         border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px;
@@ -33,59 +35,8 @@
     .corner-bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-color: var(--gold); }
     .corner-br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-color: var(--cosmic-purple); }
 
-    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.5rem; color: var(--text-primary); margin-bottom: 10px; text-align: center; }
+    h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; color: var(--text-primary); margin-bottom: 10px; }
     .subtitle { color: var(--text-dim); text-align: center; font-size: 1.1rem; margin-bottom: 50px; }
-
-    .lobby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 900px; margin: 0 auto; }
-    @media (max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } }
-
-    .lobby-card { text-align: center; padding: 45px 35px; }
-    .lobby-icon { font-size: 4rem; margin-bottom: 20px; display: block; }
-    .lobby-title { font-family: 'Space Grotesk'; font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
-    .lobby-desc { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 30px; line-height: 1.6; }
-
-    .input-group { margin-bottom: 20px; text-align: left; }
-    .input-group label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .input-group input, .input-group select {
-        width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15);
-        color: var(--text-primary); padding: 14px 18px; border-radius: 14px;
-        font-size: 1rem; outline: none; transition: all 0.3s;
-    }
-    .input-group input:focus, .input-group select:focus { border-color: var(--cosmic-purple-light); box-shadow: 0 0 20px rgba(124, 77, 255, 0.1); }
-
-    .btn {
-        width: 100%; padding: 16px; border-radius: 16px; border: none;
-        font-weight: 700; font-size: 1.05rem; cursor: pointer;
-        transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
-        letter-spacing: 1px; position: relative; overflow: hidden;
-    }
-    .btn::before {
-        content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.6s;
-    }
-    .btn:hover::before { left: 100%; }
-    .btn:hover { transform: translateY(-3px); }
-
-    .btn-create {
-        background: linear-gradient(135deg, #22c55e, #16a34a); color: white;
-    }
-    .btn-create:hover { box-shadow: 0 15px 35px rgba(34, 197, 94, 0.3); }
-
-    .btn-join {
-        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white;
-    }
-    .btn-join:hover { box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
-
-    .role-badge {
-        display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
-        border-radius: 30px; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px;
-        text-transform: uppercase; margin-bottom: 40px;
-    }
-    .role-admin { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-    .role-auctioneer { background: rgba(124, 77, 255, 0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
-
-    .auction-wrapper { position: relative; z-index: 2; max-width: 1400px; margin: 0 auto; padding: 25px; }
 
     .live-status {
         display: inline-flex; align-items: center; gap: 10px;
@@ -101,6 +52,14 @@
     .auction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
     .auction-title h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; color: var(--text-primary); margin-bottom: 5px; text-align: left; }
     .auction-title p { color: var(--text-dim); font-size: 0.9rem; }
+
+    .session-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 18px; border-radius: 20px;
+        background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        font-weight: 600; font-size: 0.85rem;
+    }
 
     .display-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
     @media (max-width: 900px) { .display-grid { grid-template-columns: 1fr; } }
@@ -275,22 +234,6 @@
     .sold-toast h3 { color: #22c55e; font-family: 'Space Grotesk'; margin-bottom: 8px; font-size: 1.2rem; }
     .sold-toast p { color: var(--text-secondary); font-size: 0.95rem; }
 
-    .empty-auction {
-        text-align: center; padding: 80px 30px;
-    }
-    .empty-auction .icon { font-size: 5rem; margin-bottom: 25px; opacity: 0.2; }
-    .empty-auction h2 { color: var(--text-secondary); margin-bottom: 15px; font-family: 'Space Grotesk'; font-size: 1.8rem; }
-    .empty-auction p { color: var(--text-dim); margin-bottom: 30px; }
-
-    .start-btn {
-        padding: 16px 40px; border-radius: 16px; border: none;
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        color: white; font-weight: 700; font-size: 1rem;
-        cursor: pointer; transition: all 0.3s;
-        font-family: 'Space Grotesk', sans-serif; letter-spacing: 1px;
-    }
-    .start-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(34, 197, 94, 0.3); }
-
     .selected-player-bar {
         background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 78, 59, 0.3));
         border: 1px solid rgba(34, 197, 94, 0.3);
@@ -324,32 +267,9 @@
         padding: 10px 20px; border-radius: 12px;
         background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.15);
         color: var(--text-dim); cursor: pointer; font-weight: 600;
-        transition: all 0.3s; margin-bottom: 20px;
+        transition: all 0.3s; margin-bottom: 20px; text-decoration: none;
     }
     .back-btn:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); background: rgba(124, 77, 255, 0.08); }
-
-    .waiting-panel {
-        text-align: center; padding: 60px 30px;
-        background: rgba(0, 0, 0, 0.2); border-radius: 20px;
-        border: 1px dashed rgba(100, 120, 200, 0.2);
-    }
-    .waiting-panel .icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-    .waiting-panel h3 { color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk'; font-size: 1.4rem; }
-    .waiting-panel p { color: var(--text-dim); }
-
-    .current-player-display {
-        background: linear-gradient(135deg, rgba(124, 77, 255, 0.1), rgba(0, 212, 255, 0.05));
-        border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px;
-        padding: 40px 30px; text-align: center; margin-bottom: 25px;
-    }
-    .current-player-display .name { font-family: 'Space Grotesk'; font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
-    .current-player-display .meta { color: var(--text-secondary); font-size: 1rem; margin-bottom: 20px; }
-    .current-player-display .price {
-        font-family: 'JetBrains Mono'; font-size: 4rem; font-weight: 700;
-        background: linear-gradient(135deg, var(--gold), var(--gold-light));
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
 
     .sync-indicator {
         display: inline-flex; align-items: center; gap: 6px;
@@ -453,236 +373,314 @@
         background: rgba(239, 68, 68, 0.25);
         box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
     }
+
+    .nav-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+    .nav-link {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 20px; border-radius: 14px;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; font-weight: 700; font-size: 0.85rem;
+        border: none; cursor: pointer; text-decoration: none;
+        transition: all 0.3s;
+    }
+    .nav-link:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3); }
+    .nav-link.secondary {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-dim);
+    }
+    .nav-link.secondary:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); background: rgba(124, 77, 255, 0.08); }
+
+    .session-nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .session-chip {
+        padding: 8px 18px;
+        border-radius: 20px;
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-dim);
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .session-chip:hover {
+        border-color: var(--cosmic-purple);
+        color: var(--cosmic-purple-light);
+        background: rgba(124, 77, 255, 0.08);
+    }
+    .session-chip.active {
+        background: rgba(124, 77, 255, 0.15);
+        border-color: var(--cosmic-purple);
+        color: var(--cosmic-purple-light);
+    }
+    .session-chip .time {
+        font-family: 'JetBrains Mono';
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
 </style>
 
-{% extends "base.html" %}
-
-{% block content %}
-
-<!-- ==================== AUCTION ROOM ==================== -->
-<div id="auctionRoom">
-    <input type="hidden" id="serverAuctionId" value="{{ auction.id if auction else '' }}">
-
-    <div class="auction-wrapper">
-        <div class="auction-header">
-            <div class="auction-title">
-                <h1>🏏 Auction Room</h1>
-                <p id="roomLeagueName">{{ auction.league_name if auction else 'Live bidding arena' }}</p>
-            </div>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="sync-indicator sync-active" id="syncIndicator">
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
-                    Live Sync
-                </div>
-                <div class="live-status status-{{ auction.status if auction else 'live' }}" id="roomStatus">
-                    {% if auction and auction.status == 'paused' %}
-                        ⏸ PAUSED
-                    {% else %}
-                        <div class="live-dot"></div> LIVE
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
+<div class="auction-wrapper">
+    <!-- Navigation -->
+    <div class="nav-bar">
+        <a href="/admin/" class="nav-link secondary">← Dashboard</a>
+        <a href="/admin/sessions?auction={{ auction.id }}" class="nav-link secondary">📅 Sessions</a>
+        <a href="/admin/teams" class="nav-link secondary">👥 Teams</a>
         {% if session.role in ['admin', 'auctioneer'] %}
-        <div id="adminPlayerPanel">
-            <div class="selected-player-bar" id="selectedPlayerBar" style="display: none;">
-                <div class="info">
-                    <div class="avatar">🏏</div>
-                    <div>
-                        <div class="name" id="selectedPlayerBarName">Select a Player</div>
-                        <div class="meta" id="selectedPlayerBarMeta">Click on a player card below</div>
-                    </div>
-                </div>
-                <div class="action" id="selectedPlayerBarAction">Click "Send to Auction" to broadcast</div>
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 20px;">
-                <button onclick="broadcastPlayer()" id="broadcastBtn" class="start-btn" style="display: none;">
-                    📢 Send to Auction
-                </button>
-            </div>
-        </div>
+        <a href="/admin/players" class="nav-link secondary">🏏 Players</a>
         {% endif %}
+    </div>
 
-        <div class="glass-panel" style="margin-bottom: 25px;">
-            <div class="display-grid">
-                <div class="glass-panel display-card card-purple" style="padding: 25px;">
-                    <div class="label">Current Player</div>
-                    <div class="value" id="currentPlayer">
-                        {% if current_player %}{{ current_player.player_name }}{% else %}Waiting...{% endif %}
-                    </div>
-                    <div class="sublabel" id="playerCategory" style="color: var(--cosmic-purple-light);">
-                        {% if current_player %}{{ current_player.category.replace('_', ' ').upper() }}{% else %}--{% endif %}
-                    </div>
-                </div>
-                <div class="glass-panel display-card card-gold" style="padding: 25px;">
-                    <div class="label">Current Bid</div>
-                    <div class="bid-value-gold" id="currentBid">₹{{ "%.2f"|format(current_bid) }}Cr</div>
-                    <div class="sublabel">Base: ₹<<span id="basePrice">{{ "%.2f"|format(current_player.base_price if current_player else 0.00) }}</span>Cr</div>
-                </div>
-                <div class="glass-panel display-card card-blue" style="padding: 25px;">
-                    <div class="label">Current Bidder</div>
-                    <div class="value" id="currentBidder" style="color: var(--ice-blue-light);">
-                        {% if auction and auction.current_bidder_id %}
-                            {% for team in teams %}
-                                {% if team.id == auction.current_bidder_id %}{{ team.team_name }}{% endif %}
-                            {% endfor %}
-                        {% else %}
-                            No bids yet
-                        {% endif %}
-                    </div>
-                    <div class="sublabel" id="bidCount">0 bids placed</div>
-                </div>
-            </div>
-
-            <div class="final-call-panel" id="finalCallPanel">
-                <h3>⚠️ FINAL CALL — UNSOLD PENDING</h3>
-                <div class="timer" id="finalCallTimer">15</div>
-                <p>Auctioneer initiated unsold. New bids can still come in!</p>
-                <button onclick="confirmUnsold()" class="btn-final-unsold" id="confirmUnsoldBtn">
-                    ❌ CONFIRM UNSOLD
-                </button>
-            </div>
-
-            <div class="countdown-display" id="countdownDisplay">
-                <h3>⚠️ ALL TEAMS SKIPPED</h3>
-                <div class="countdown-value" id="countdownValue">3</div>
-                <p>Force unsold in... Click "Force Unsold" to end now</p>
-            </div>
-
-            <div class="force-unsold-panel" id="forceUnsoldPanel">
-                <p>⚠️ All teams have skipped this player. You can force unsold or sell to highest bidder.</p>
-                <button onclick="forceUnsold()" class="ctrl-btn btn-unsold forced" style="margin-right: 10px;">❌ Force Unsold</button>
-                <button onclick="sellPlayer()" class="ctrl-btn btn-sell">✅ Sell to Highest Bidder</button>
-            </div>
-
-            <div class="timer-display" id="timerCard" style="display: none;">
-                <h4>⏰ FINAL CALL</h4>
-                <div class="timer-value" id="countdown">10</div>
-                <p style="color: #fca5a5; margin-top: 10px;">Seconds remaining to bid!</p>
-            </div>
-
-            <div style="margin-top: 20px;">
-                <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">📜 Bid History</h4>
-                <div class="history-panel" id="bidHistory">
-                        <p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>
-                </div>
-            </div>
-
-            <div class="skip-votes-panel" id="skipVotesPanel" style="display: none;">
-                <h4>⏭️ Skip Votes (<span id="skipVoteCount">0</span> / <span id="skipVoteTotal">{{ total_teams }}</span>)</h4>
-                <div id="skipVotesList">
-                    {% for vote in skip_votes %}
-                    <div class="skip-vote-item">
-                        <span class="team">{{ vote.team_name }}</span>
-                        <span class="reason">{{ vote.skip_reason or 'No reason' }}</span>
-                        <span class="time">{{ vote.skipped_at }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            {% if session.role in ['admin', 'auctioneer'] %}
-            <div class="controls-bar" style="margin-top: 25px;">
-                <button onclick="pauseAuction()" class="ctrl-btn btn-pause">⏸ Pause</button>
-                <button onclick="resumeAuction()" class="ctrl-btn btn-resume">▶ Resume</button>
-                <button onclick="sellPlayer()" class="ctrl-btn btn-sell">✅ Sell Player</button>
-                <button onclick="initiateUnsold()" class="ctrl-btn btn-unsold" id="unsoldBtn" {{ 'disabled' if has_bids else '' }}>❌ Unsold</button>
-                <button onclick="rebidPlayer()" class="ctrl-btn btn-rebid" id="rebidBtn" {{ 'disabled' if not current_player else '' }}>🔄 Re-bid</button>
-                <button onclick="deselectPlayer()" class="ctrl-btn btn-deselect" id="deselectBtn" {{ 'disabled' if not current_player else '' }}>↩ Deselect</button>
-                <button onclick="nextPlayer()" class="ctrl-btn btn-next">⏭ Next</button>
+    <!-- Auction Header -->
+    <div class="auction-header">
+        <div class="auction-title">
+            <h1>🏏 {{ auction.league_name }}</h1>
+            <p id="roomLeagueName">
+                {% if current_session %}
+                    {{ current_session.session_name }} • {{ current_session.team_count }} teams participating
+                {% else %}
+                    Live bidding arena
+                {% endif %}
+            </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+            {% if current_session %}
+            <div class="session-badge">
+                ⏰ {{ current_session.start_time }} - {{ current_session.end_time }}
             </div>
             {% endif %}
+            <div class="sync-indicator sync-active" id="syncIndicator">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
+                Live Sync
+            </div>
+            <div class="live-status status-live" id="roomStatus">
+                <div class="live-dot"></div> LIVE
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Navigation (if multiple sessions exist) -->
+    {% if all_sessions and all_sessions|length > 1 %}
+    <div class="session-nav">
+        {% for sess in all_sessions %}
+        <a href="/admin/auction?auction={{ auction.id }}&session={{ sess.id }}" 
+           class="session-chip {% if session_id == sess.id %}active{% endif %}">
+            {{ sess.session_name }}
+            <span class="time">{{ sess.start_time }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Admin Player Selection Bar -->
+    {% if session.role in ['admin', 'auctioneer'] %}
+    <div id="adminPlayerPanel">
+        <div class="selected-player-bar" id="selectedPlayerBar" style="display: none;">
+            <div class="info">
+                <div class="avatar">🏏</div>
+                <div>
+                    <div class="name" id="selectedPlayerBarName">Select a Player</div>
+                    <div class="meta" id="selectedPlayerBarMeta">Click on a player card below</div>
+                </div>
+            </div>
+            <div class="action" id="selectedPlayerBarAction">Click "Send to Auction" to broadcast</div>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button onclick="broadcastPlayer()" id="broadcastBtn" class="ctrl-btn btn-sell" style="display: none;">
+                📢 Send to Auction
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Display -->
+    <div class="glass-panel" style="margin-bottom: 25px;">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        
+        <div class="display-grid">
+            <div class="glass-panel display-card card-purple" style="padding: 25px;">
+                <div class="label">Current Player</div>
+                <div class="value" id="currentPlayer">Waiting...</div>
+                <div class="sublabel" id="playerCategory" style="color: var(--cosmic-purple-light);">--</div>
+            </div>
+            <div class="glass-panel display-card card-gold" style="padding: 25px;">
+                <div class="label">Current Bid</div>
+                <div class="bid-value-gold" id="currentBid">₹0.00Cr</div>
+                <div class="sublabel">Base: ₹<span id="basePrice">0.00</span>Cr</div>
+            </div>
+            <div class="glass-panel display-card card-blue" style="padding: 25px;">
+                <div class="label">Current Bidder</div>
+                <div class="value" id="currentBidder" style="color: var(--ice-blue-light);">No bids yet</div>
+                <div class="sublabel" id="bidCount">0 bids placed</div>
+            </div>
         </div>
 
-        {% if session.role not in ['admin', 'auctioneer'] %}
-        <div class="bid-section" style="display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 25px;">
-            <div class="glass-panel">
-                <div class="section-title">💰 Place Bid</div>
-                
-                <div class="input-group">
-                    <label>Select Your Team</label>
-                    <select id="teamSelect">
-                        {% for team in teams %}
-                        <option value="{{ team.id }}" data-purse="{{ team.purse_limit }}" data-spent="{{ team.spent }}" data-reserved="{{ team.reserved }}">
-                            {{ team.team_name }} (₹{{ "%.2f"|format((team.purse_limit or 0) - (team.spent or 0) - (team.reserved or 0)) }}Cr)
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="input-group">
-                    <label>Bid Amount (Cr)</label>
-                    <input type="number" id="bidAmount" placeholder="Enter amount" step="0.05" min="0.05">
-                </div>
-                
-                <div class="quick-bid-grid">
-                    <button class="quick-bid-btn" onclick="quickBid(0.05)">+0.05</button>
-                    <button class="quick-bid-btn" onclick="quickBid(0.10)">+0.10</button>
-                    <button class="quick-bid-btn" onclick="quickBid(0.25)">+0.25</button>
-                    <button class="quick-bid-btn" onclick="quickBid(0.50)">+0.50</button>
-                    <button class="quick-bid-btn" onclick="quickBid(1.0)">+1.0</button>
-                    <button class="quick-bid-btn" onclick="quickBid(2.0)">+2.0</button>
-                </div>
-                
-                <button onclick="placeBid()" class="bid-action-btn">🚀 PLACE BID</button>
-                <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px;"></div>
+        <!-- Final Call Panel -->
+        <div class="final-call-panel" id="finalCallPanel">
+            <h3>⚠️ FINAL CALL — UNSOLD PENDING</h3>
+            <div class="timer" id="finalCallTimer">15</div>
+            <p>Auctioneer initiated unsold. New bids can still come in!</p>
+            <button onclick="confirmUnsold()" class="btn-final-unsold" id="confirmUnsoldBtn">
+                ❌ CONFIRM UNSOLD
+            </button>
+        </div>
+
+        <!-- Countdown Display -->
+        <div class="countdown-display" id="countdownDisplay">
+            <h3>⚠️ ALL TEAMS SKIPPED</h3>
+            <div class="countdown-value" id="countdownValue">3</div>
+            <p>Force unsold in... Click "Force Unsold" to end now</p>
+        </div>
+
+        <!-- Force Unsold Panel -->
+        <div class="force-unsold-panel" id="forceUnsoldPanel">
+            <p>⚠️ All teams have skipped this player. You can force unsold or sell to highest bidder.</p>
+            <button onclick="forceUnsold()" class="ctrl-btn btn-unsold forced" style="margin-right: 10px;">❌ Force Unsold</button>
+            <button onclick="sellPlayer()" class="ctrl-btn btn-sell">✅ Sell to Highest Bidder</button>
+        </div>
+
+        <!-- Timer Card -->
+        <div class="timer-display" id="timerCard" style="display: none;">
+            <h4>⏰ FINAL CALL</h4>
+            <div class="timer-value" id="countdown">10</div>
+            <p style="color: #fca5a5; margin-top: 10px;">Seconds remaining to bid!</p>
+        </div>
+
+        <!-- Bid History -->
+        <div style="margin-top: 20px;">
+            <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">📜 Bid History</h4>
+            <div class="history-panel" id="bidHistory">
+                <p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>
             </div>
+        </div>
+
+        <!-- Skip Votes -->
+        <div class="skip-votes-panel" id="skipVotesPanel" style="display: none;">
+            <h4>⏭️ Skip Votes (<span id="skipVoteCount">0</span> / <span id="skipVoteTotal">0</span>)</h4>
+            <div id="skipVotesList"></div>
+        </div>
+
+        <!-- Admin Controls -->
+        {% if session.role in ['admin', 'auctioneer'] %}
+        <div class="controls-bar" style="margin-top: 25px;">
+            <button onclick="pauseAuction()" class="ctrl-btn btn-pause">⏸ Pause</button>
+            <button onclick="resumeAuction()" class="ctrl-btn btn-resume">▶ Resume</button>
+            <button onclick="sellPlayer()" class="ctrl-btn btn-sell">✅ Sell Player</button>
+            <button onclick="initiateUnsold()" class="ctrl-btn btn-unsold" id="unsoldBtn" disabled>❌ Unsold</button>
+            <button onclick="rebidPlayer()" class="ctrl-btn btn-rebid" id="rebidBtn" disabled>🔄 Re-bid</button>
+            <button onclick="deselectPlayer()" class="ctrl-btn btn-deselect" id="deselectBtn" disabled>↩ Deselect</button>
+            <button onclick="nextPlayer()" class="ctrl-btn btn-next">⏭ Next</button>
         </div>
         {% endif %}
+    </div>
 
-        <div class="players-section">
-            <div class="players-header">
-                <h2>🏏 Available Players (<span id="playerCount">{{ players|length }}</span>)</h2>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <button onclick="refreshPlayers()" class="refresh-btn" id="refreshBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                        </svg>
-                        Refresh
-                    </button>
-                    <div class="filter-bar">
-                        <button onclick="filterPlayers('all')" class="filter-btn active">All</button>
-                        <button onclick="filterPlayers('batsman')" class="filter-btn">Batsmen</button>
-                        <button onclick="filterPlayers('bowler')" class="filter-btn">Bowlers</button>
-                        <button onclick="filterPlayers('all_rounder')" class="filter-btn">All Rounders</button>
-                        <button onclick="filterPlayers('wicket_keeper')" class="filter-btn">Keepers</button>
-                    </div>
-                </div>
+    <!-- Team Owner Bid Section -->
+    {% if session.role == 'team_owner' %}
+    <div class="bid-section" style="display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 25px;">
+        <div class="glass-panel">
+            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+            
+            <div class="section-title">💰 Place Bid</div>
+            
+            <div class="input-group">
+                <label>Select Your Team</label>
+                <select id="teamSelect">
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" data-purse="{{ team.purse_limit }}" data-spent="{{ team.spent }}" data-reserved="{{ team.reserved }}">
+                        {{ team.team_name }} (₹{{ "%.2f"|format((team.purse_limit or 0) - (team.spent or 0) - (team.reserved or 0)) }}Cr)
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
             
-            <div class="players-grid" id="playersGrid">
-                {% for player in players %}
-                <div class="player-card {{ 'selected' if current_player and current_player.auction_player_id == player.auction_player_id else '' }}" 
-                     data-category="{{ player.category }}" 
-                     data-id="{{ player.id }}" 
-                     data-auction-player-id="{{ player.auction_player_id }}" 
-                     data-name="{{ player.player_name }}" 
-                     data-base="{{ player.base_price or 2.00 }}"
-                     data-overseas="{{ 'true' if player.overseas else 'false' }}"
-                     data-status="{{ player.status or 'available' }}"
-                     {% if session.role in ['admin', 'auctioneer'] %}
-                     onclick="adminSelectPlayer({{ player.auction_player_id|default(0) }}, '{{ player.player_name }}', '{{ player.category }}', {{ player.base_price or 2.00 }}, {{ 'true' if player.overseas else 'false' }})"
-                     {% endif %}>
-                    
-                    <div class="player-avatar">🏏</div>
-                    <div class="player-name">{{ player.player_name }}</div>
-                    <div class="player-meta">
-                        <span class="cat-badge badge-{{ player.category }}">{{ player.category.replace('_', ' ').title() }}</span>
-                        {% if player.overseas %}
-                        <span class="cat-badge badge-overseas">🌍 OS</span>
-                        {% endif %}
-                    </div>
-                    <div class="player-price">Base: ₹{{ player.base_price or 2.00 }}Cr</div>
-                    <div class="player-status status-{{ player.status or 'available' }}">{{ (player.status or 'available').upper() }}</div>
-                </div>
-                {% endfor %}
+            <div class="input-group">
+                <label>Bid Amount (Cr)</label>
+                <input type="number" id="bidAmount" placeholder="Enter amount" step="0.5" min="0.5">
             </div>
+            
+            <div class="quick-bid-grid">
+                <button class="quick-bid-btn" onclick="quickBid(0.5)">+0.5</button>
+                <button class="quick-bid-btn" onclick="quickBid(1.0)">+1.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(2.0)">+2.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(5.0)">+5.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(10.0)">+10</button>
+                <button class="quick-bid-btn" onclick="quickBid(25.0)">+25</button>
+            </div>
+            
+            <button onclick="placeBid()" class="bid-action-btn">🚀 PLACE BID</button>
+            <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px;"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Players Section -->
+    <div class="players-section">
+        <div class="players-header">
+            <h2>🏏 Available Players (<span id="playerCount">{{ players|length }}</span>)</h2>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button onclick="refreshPlayers()" class="refresh-btn" id="refreshBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    Refresh
+                </button>
+                <div class="filter-bar">
+                    <button onclick="filterPlayers('all')" class="filter-btn active">All</button>
+                    <button onclick="filterPlayers('batsman')" class="filter-btn">Batsmen</button>
+                    <button onclick="filterPlayers('bowler')" class="filter-btn">Bowlers</button>
+                    <button onclick="filterPlayers('all_rounder')" class="filter-btn">All Rounders</button>
+                    <button onclick="filterPlayers('wicket_keeper')" class="filter-btn">Keepers</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="players-grid" id="playersGrid">
+            {% for player in players %}
+            <div class="player-card" 
+                 data-category="{{ player.category }}" 
+                 data-id="{{ player.id }}" 
+                 data-auction-player-id="{{ player.auction_player_id }}" 
+                 data-name="{{ player.player_name }}" 
+                 data-base="{{ player.base_price or 2.00 }}"
+                 data-overseas="{{ 'true' if player.overseas else 'false' }}"
+                 data-status="{{ player.status or 'available' }}"
+                 {% if session.role in ['admin', 'auctioneer'] %}
+                 onclick="adminSelectPlayer({{ player.auction_player_id|default(0) }}, '{{ player.player_name }}', '{{ player.category }}', {{ player.base_price or 2.00 }}, {{ 'true' if player.overseas else 'false' }})"
+                 {% endif %}>
+                
+                <div class="player-avatar">🏏</div>
+                <div class="player-name">{{ player.player_name }}</div>
+                <div class="player-meta">
+                    <span class="cat-badge badge-{{ player.category }}">{{ player.category.replace('_', ' ').title() }}</span>
+                    {% if player.overseas %}
+                    <span class="cat-badge badge-overseas">🌍 OS</span>
+                    {% endif %}
+                </div>
+                <div class="player-price">Base: ₹{{ player.base_price or 2.00 }}Cr</div>
+                <div class="player-status status-{{ player.status or 'available' }}">{{ (player.status or 'available').upper() }}</div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
 
+<!-- Sold Notification Toast -->
 <div class="sold-toast" id="soldNotification">
     <h3>🎉 PLAYER SOLD!</h3>
     <p id="soldMessage"></p>
@@ -690,40 +688,54 @@
 
 <script>
 // ==================== GLOBAL STATE ====================
-let currentAuctionId = {{ auction.id if auction else 'null' }};
+let currentAuctionId = {{ auction.id }};
+let currentSessionId = {{ session_id or 'null' }};
 let pollInterval = null;
-let lastPlayerId = {{ current_player.auction_player_id if current_player else 'null' }};
-let currentAuctionPlayerId = {{ current_player.auction_player_id if current_player else 'null' }};
+let lastPlayerId = null;
+let currentAuctionPlayerId = null;
 let bidHistory = [];
 let countdownTimer = null;
 let adminSelectedPlayer = null;
 let broadcastLockUntil = 0;
 let skipCountdownTimer = null;
-let isAllSkipped = {{ 'true' if all_skipped else 'false' }};
+let isAllSkipped = false;
 let finalCallTimer = null;
 let finalCallSeconds = 15;
 let lastBidAmount = 0;
 let isFinalCallActive = false;
-let hasBids = {{ 'true' if has_bids else 'false' }};
-let currentBasePrice = {{ current_player.base_price if current_player else 2.0 }};
-let isAdmin = {{ 'true' if session.role in ['admin', 'auctioneer'] else 'false' }};
+let hasBids = false;
+let currentBasePrice = 2.0;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
-    if (currentAuctionId) {
-        startFastPolling();
-        {% if all_skipped and current_player %}
-        startSkipCountdown();
-        {% endif %}
-    }
+    // Initialize from server-rendered data
+    {% if current_player %}
+    currentAuctionPlayerId = {{ current_player.auction_player_id }};
+    lastPlayerId = {{ current_player.auction_player_id }};
+    hasBids = {{ 'true' if has_bids else 'false' }};
+    currentBasePrice = {{ current_player.base_price or 2.0 }};
+    updateCurrentPlayerDisplay(
+        '{{ current_player.player_name }}', 
+        {{ current_bid }}, 
+        '{{ current_bidder or "No bids yet" }}', 
+        '{{ current_player.category }}', 
+        {{ current_player.base_price or 2.0 }}, 
+        {{ current_player.auction_player_id }}
+    );
+    updateAdminControls(hasBids);
+    {% endif %}
+    
+    startFastPolling();
 });
 
 // ==================== FAST POLLING ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
-        if (!currentAuctionId) return;
-        fetch('/admin/auction/status?auction_id=' + currentAuctionId{% if user_team %} + '&team_id=' + {{ user_team.id }}{% endif %})
+        let url = '/admin/auction/status?auction_id=' + currentAuctionId;
+        if (currentSessionId) url += '&session_id=' + currentSessionId;
+        
+        fetch(url)
         .then(r => r.json())
         .then(data => {
             if (Date.now() < broadcastLockUntil) return;
@@ -741,15 +753,8 @@ function startFastPolling() {
                 
                 const playerId = data.auction_player_id;
                 if (playerId && playerId !== lastPlayerId) {
-                    lastPlayerId = playerId; 
-                    currentAuctionPlayerId = playerId;
-                    isAllSkipped = false; 
-                    stopSkipCountdown(); 
-                    stopFinalCall(); 
-                    resetSkipUI(); 
-                    flashPlayerUpdate();
-                    // Refresh page to get new player data server-rendered
-                    window.location.reload();
+                    lastPlayerId = playerId; currentAuctionPlayerId = playerId;
+                    isAllSkipped = false; stopSkipCountdown(); stopFinalCall(); resetSkipUI(); flashPlayerUpdate();
                 }
                 
                 if (!playerId && currentAuctionPlayerId) {
@@ -761,10 +766,7 @@ function startFastPolling() {
                 if (data.base_price) currentBasePrice = parseFloat(data.base_price);
                 
                 const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
-                if (bidsExist !== hasBids) {
-                    hasBids = bidsExist;
-                    if (isAdmin) updateAdminControls(hasBids);
-                }
+                if (bidsExist !== hasBids) updateAdminControls(bidsExist);
                 
                 if (data.skip_count !== undefined) updateSkipVotes(data.skip_count, data.total_teams, data.all_skipped);
                 
@@ -772,15 +774,8 @@ function startFastPolling() {
                 if (isFinalCallActive && currentBid > lastBidAmount) {
                     stopFinalCall();
                     showStatus('bidStatus', '📢 New bid received! Final call cancelled. Auction continues!', '#22c55e');
-                    if (isAdmin) updateAdminControls(true);
+                    updateAdminControls(true);
                 }
-                
-                // Check sold notification for team owners
-                {% if session.role == 'team_owner' and user_team %}
-                if (data.sold_to_team_id == {{ user_team.id }} && data.sold_auction_player_id && !data.willing_price_set) {
-                    showSoldNotification(data.sold_player_name, data.sold_price);
-                }
-                {% endif %}
                 
                 const indicator = document.getElementById('syncIndicator');
                 if (indicator) {
@@ -799,19 +794,13 @@ function startFastPolling() {
     }, 300);
 }
 
-function stopPolling() { 
-    if (pollInterval) clearInterval(pollInterval); 
-    pollInterval = null; 
-}
+function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
 
 function flashPlayerUpdate() {
     document.querySelectorAll('.display-card').forEach(card => {
         card.style.transition = 'none';
         card.style.boxShadow = '0 0 40px rgba(124, 77, 255, 0.3)';
-        setTimeout(() => { 
-            card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; 
-            card.style.boxShadow = ''; 
-        }, 300);
+        setTimeout(() => { card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; card.style.boxShadow = ''; }, 300);
     });
 }
 
@@ -830,15 +819,110 @@ function updateAdminControls(bidsExist) {
     if (deselectBtn) deselectBtn.disabled = !currentAuctionPlayerId;
 }
 
+// ==================== ADMIN PLAYER SELECTION ====================
+function adminSelectPlayer(auctionPlayerId, name, category, basePrice, overseas) {
+    if (!auctionPlayerId || auctionPlayerId === 0 || auctionPlayerId === '0') {
+        alert('ERROR: Invalid player ID (0). Please check the database.');
+        return;
+    }
+    const target = event.currentTarget;
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+    target.classList.add('selected');
+    
+    adminSelectedPlayer = { 
+        auctionPlayerId: parseInt(auctionPlayerId), 
+        name, 
+        category, 
+        basePrice: parseFloat(basePrice), 
+        overseas 
+    };
+    currentBasePrice = parseFloat(basePrice);
+    
+    const bar = document.getElementById('selectedPlayerBar');
+    if (bar) {
+        bar.style.display = 'flex';
+        document.getElementById('selectedPlayerBarName').textContent = name;
+        document.getElementById('selectedPlayerBarMeta').textContent = 
+            category.replace(/_/g, ' ').toUpperCase() + 
+            (overseas ? ' | 🌍 Overseas' : '') + 
+            ' | Base: ₹' + parseFloat(basePrice).toFixed(2) + 'Cr';
+        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + auctionPlayerId + ')';
+    }
+    const broadcastBtn = document.getElementById('broadcastBtn');
+    if (broadcastBtn) broadcastBtn.style.display = 'inline-block';
+}
+
+function broadcastPlayer() {
+    if (!adminSelectedPlayer) { alert('No player selected!'); return; }
+    
+    let body = { 
+        auction_id: currentAuctionId, 
+        auction_player_id: adminSelectedPlayer.auctionPlayerId 
+    };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
+    fetch('/admin/auction/select_player', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            broadcastLockUntil = Date.now() + 2000;
+            currentAuctionPlayerId = adminSelectedPlayer.auctionPlayerId;
+            lastPlayerId = adminSelectedPlayer.auctionPlayerId;
+            isAllSkipped = false; resetSkipUI();
+            updateCurrentPlayerDisplay(
+                adminSelectedPlayer.name, 
+                adminSelectedPlayer.basePrice, 
+                null, 
+                adminSelectedPlayer.category, 
+                adminSelectedPlayer.basePrice, 
+                adminSelectedPlayer.auctionPlayerId
+            );
+            document.getElementById('selectedPlayerBarAction').textContent = '✅ Sent to auction!';
+            document.getElementById('broadcastBtn').style.display = 'none';
+            updateAdminControls(false);
+            setTimeout(() => {
+                document.getElementById('selectedPlayerBar').style.display = 'none';
+                document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+                adminSelectedPlayer = null;
+            }, 3000);
+        } else {
+            alert(data.error || 'Failed to select player');
+        }
+    })
+    .catch(err => { alert('Network error: ' + err.message); });
+}
+
+// ==================== UPDATE DISPLAY ====================
+function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, basePrice, auctionPlayerId) {
+    const cp = document.getElementById('currentPlayer');
+    if (cp) cp.textContent = playerName || 'Waiting...';
+    const pc = document.getElementById('playerCategory');
+    if (pc) pc.textContent = category ? category.replace(/_/g, ' ').toUpperCase() : '--';
+    const bp = document.getElementById('basePrice');
+    const cleanBase = basePrice ? parseFloat(basePrice).toFixed(2) : '0.00';
+    if (bp) bp.textContent = cleanBase;
+    const cb = document.getElementById('currentBid');
+    if (cb && currentBid !== undefined) cb.textContent = '₹' + parseFloat(currentBid).toFixed(2) + 'Cr';
+    const cbd = document.getElementById('currentBidder');
+    if (cbd) cbd.textContent = bidder || 'No bids yet';
+}
+
 // ==================== DESELECT PLAYER ====================
 function deselectPlayer() {
     if (!currentAuctionPlayerId) { alert('No player currently selected'); return; }
     if (!confirm('Deselect current player? This will clear the auction display and let you pick a different player.')) return;
     
+    let body = { auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
     fetch('/admin/auction/deselect_player', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId })
+        body: JSON.stringify(body)
     })
     .then(r => {
         if (!r.ok) throw new Error('Server error: ' + r.status);
@@ -866,23 +950,11 @@ function clearAuctionDisplay() {
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>';
     document.getElementById('bidCount').textContent = '0 bids placed';
     
-    currentAuctionPlayerId = null; 
-    lastPlayerId = null; 
-    bidHistory = []; 
-    hasBids = false; 
-    currentBasePrice = 2.0;
-    stopCountdown(); 
-    stopSkipCountdown(); 
-    stopFinalCall(); 
-    resetSkipUI(); 
-    if (isAdmin) updateAdminControls(false);
+    currentAuctionPlayerId = null; lastPlayerId = null; bidHistory = []; hasBids = false; currentBasePrice = 2.0;
+    stopCountdown(); stopSkipCountdown(); stopFinalCall(); resetSkipUI(); updateAdminControls(false);
     
     const bar = document.getElementById('selectedPlayerBar');
-    if (bar) {
-        bar.style.display = 'none';
-        document.getElementById('selectedPlayerBarName').textContent = 'Select a Player';
-        document.getElementById('selectedPlayerBarMeta').textContent = 'Click on a player card below';
-    }
+    if (bar) bar.style.display = 'none';
     const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) broadcastBtn.style.display = 'none';
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
@@ -894,10 +966,13 @@ function rebidPlayer() {
     if (!currentAuctionPlayerId) { alert('No player in auction'); return; }
     if (!confirm('Reset bidding to base price? All current bids will be cleared.')) return;
     
+    let body = { auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
     fetch('/admin/auction/rebid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId })
+        body: JSON.stringify(body)
     })
     .then(r => {
         if (!r.ok) throw new Error('Server error: ' + r.status);
@@ -922,12 +997,7 @@ function resetBidDisplay() {
     bidHistory = [];
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">Bidding reset. Waiting for new bids.</p>';
     document.getElementById('bidCount').textContent = '0 bids placed';
-    hasBids = false; 
-    stopCountdown(); 
-    stopSkipCountdown(); 
-    stopFinalCall(); 
-    resetSkipUI(); 
-    if (isAdmin) updateAdminControls(false);
+    hasBids = false; stopCountdown(); stopSkipCountdown(); stopFinalCall(); resetSkipUI(); updateAdminControls(false);
 }
 
 // ==================== FINAL CALL / UNSOLD ====================
@@ -941,57 +1011,45 @@ function initiateUnsold() {
     const panel = document.getElementById('finalCallPanel');
     const timerEl = document.getElementById('finalCallTimer');
     panel.classList.add('active');
-    finalCallSeconds = 15; 
-    timerEl.textContent = finalCallSeconds;
-    
+    finalCallSeconds = 15; timerEl.textContent = finalCallSeconds;
     const unsoldBtn = document.getElementById('unsoldBtn');
-    if (unsoldBtn) {
-        unsoldBtn.disabled = true;
-        unsoldBtn.style.opacity = '0.5';
-    }
+    if (unsoldBtn) { unsoldBtn.disabled = true; unsoldBtn.style.opacity = '0.5'; }
     
     if (finalCallTimer) clearInterval(finalCallTimer);
     finalCallTimer = setInterval(() => {
-        finalCallSeconds--; 
-        timerEl.textContent = finalCallSeconds;
+        finalCallSeconds--; timerEl.textContent = finalCallSeconds;
         if (finalCallSeconds <= 0) {
-            clearInterval(finalCallTimer); 
-            finalCallTimer = null;
+            clearInterval(finalCallTimer); finalCallTimer = null;
             timerEl.textContent = '0';
-            const p = document.getElementById('finalCallPanel').querySelector('p');
-            if (p) p.textContent = 'Grace period over. Confirm unsold or wait for more bids.';
+            document.getElementById('finalCallPanel').querySelector('p').textContent = 'Grace period over. Confirm unsold or wait for more bids.';
         }
     }, 1000);
 }
 
 function stopFinalCall() {
-    if (finalCallTimer) { 
-        clearInterval(finalCallTimer); 
-        finalCallTimer = null; 
-    }
+    if (finalCallTimer) { clearInterval(finalCallTimer); finalCallTimer = null; }
     isFinalCallActive = false;
-    const panel = document.getElementById('finalCallPanel');
-    if (panel) panel.classList.remove('active');
-    const timerEl = document.getElementById('finalCallTimer');
-    if (timerEl) timerEl.textContent = '15';
-    const p = document.getElementById('finalCallPanel');
-    if (p) {
-        const pText = p.querySelector('p');
-        if (pText) pText.textContent = 'Auctioneer initiated unsold. New bids can still come in!';
-    }
+    document.getElementById('finalCallPanel').classList.remove('active');
+    document.getElementById('finalCallTimer').textContent = '15';
+    document.getElementById('finalCallPanel').querySelector('p').textContent = 'Auctioneer initiated unsold. New bids can still come in!';
     const unsoldBtn = document.getElementById('unsoldBtn');
-    if (unsoldBtn) {
-        unsoldBtn.disabled = false;
-        unsoldBtn.style.opacity = '1';
-    }
+    if (unsoldBtn) { unsoldBtn.disabled = false; unsoldBtn.style.opacity = '1'; }
 }
 
 function confirmUnsold() {
     if (!currentAuctionPlayerId) return;
+    
+    let body = { 
+        auction_id: currentAuctionId, 
+        auction_player_id: currentAuctionPlayerId, 
+        force: true 
+    };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
     fetch('/admin/auction/unsold', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId, force: true })
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
@@ -1009,16 +1067,12 @@ function confirmUnsold() {
 // ==================== SKIP VOTES ====================
 function updateSkipVotes(skipCount, totalTeams, allSkipped) {
     const panel = document.getElementById('skipVotesPanel');
-    const countEl = document.getElementById('skipVoteCount');
-    const totalEl = document.getElementById('skipVoteTotal');
-    
     if (skipCount > 0) { 
-        if (panel) panel.style.display = 'block'; 
-        if (countEl) countEl.textContent = skipCount; 
-        if (totalEl) totalEl.textContent = totalTeams; 
+        panel.style.display = 'block'; 
+        document.getElementById('skipVoteCount').textContent = skipCount; 
+        document.getElementById('skipVoteTotal').textContent = totalTeams; 
     }
-    else if (panel) panel.style.display = 'none';
-    
+    else panel.style.display = 'none';
     if (allSkipped && !isAllSkipped && currentAuctionPlayerId) { 
         isAllSkipped = true; 
         startSkipCountdown(); 
@@ -1029,133 +1083,26 @@ function startSkipCountdown() {
     const display = document.getElementById('countdownDisplay');
     const value = document.getElementById('countdownValue');
     const forcePanel = document.getElementById('forceUnsoldPanel');
-    let s = 3; 
-    if (display) display.classList.add('active'); 
-    if (value) value.textContent = s;
-    
+    let s = 3; display.classList.add('active'); value.textContent = s;
     if (skipCountdownTimer) clearInterval(skipCountdownTimer);
     skipCountdownTimer = setInterval(() => {
-        s--; 
-        if (value) value.textContent = s;
+        s--; value.textContent = s;
         if (s <= 0) { 
             clearInterval(skipCountdownTimer); 
-            if (display) display.classList.remove('active'); 
-            if (forcePanel) forcePanel.classList.add('active'); 
-            setTimeout(() => { 
-                if (isAllSkipped && currentAuctionPlayerId) forceUnsold(); 
-            }, 2000); 
+            display.classList.remove('active'); 
+            forcePanel.classList.add('active'); 
+            setTimeout(() => { if (isAllSkipped && currentAuctionPlayerId) forceUnsold(); }, 2000); 
         }
     }, 1000);
 }
 
 function stopSkipCountdown() {
-    if (skipCountdownTimer) { 
-        clearInterval(skipCountdownTimer); 
-        skipCountdownTimer = null; 
-    }
-    const display = document.getElementById('countdownDisplay');
-    const forcePanel = document.getElementById('forceUnsoldPanel');
-    if (display) display.classList.remove('active');
-    if (forcePanel) forcePanel.classList.remove('active');
+    if (skipCountdownTimer) { clearInterval(skipCountdownTimer); skipCountdownTimer = null; }
+    document.getElementById('countdownDisplay').classList.remove('active');
+    document.getElementById('forceUnsoldPanel').classList.remove('active');
 }
 
-function resetSkipUI() { 
-    stopSkipCountdown(); 
-    isAllSkipped = false; 
-    const panel = document.getElementById('skipVotesPanel');
-    if (panel) panel.style.display = 'none'; 
-}
-
-// ==================== ADMIN PLAYER SELECTION ====================
-function adminSelectPlayer(auctionPlayerId, name, category, basePrice, overseas) {
-    if (!auctionPlayerId || auctionPlayerId === 0 || auctionPlayerId === '0') {
-        alert('ERROR: Invalid player ID (0). Please check the database.');
-        return;
-    }
-    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-    
-    adminSelectedPlayer = { 
-        auctionPlayerId: parseInt(auctionPlayerId), 
-        name, 
-        category, 
-        basePrice: parseFloat(basePrice), 
-        overseas 
-    };
-    currentBasePrice = parseFloat(basePrice);
-    
-    const bar = document.getElementById('selectedPlayerBar');
-    if (bar) bar.style.display = 'flex';
-    const nameEl = document.getElementById('selectedPlayerBarName');
-    if (nameEl) nameEl.textContent = name;
-    const metaEl = document.getElementById('selectedPlayerBarMeta');
-    if (metaEl) metaEl.textContent = category.replace('_', ' ').toUpperCase() + (overseas ? ' | 🌍 Overseas' : '') + ' | Base: ₹' + parseFloat(basePrice).toFixed(2) + 'Cr';
-    const actionEl = document.getElementById('selectedPlayerBarAction');
-    if (actionEl) actionEl.textContent = 'Ready to send (ID: ' + auctionPlayerId + ')';
-    const broadcastBtn = document.getElementById('broadcastBtn');
-    if (broadcastBtn) broadcastBtn.style.display = 'inline-block';
-}
-
-function broadcastPlayer() {
-    if (!adminSelectedPlayer) { alert('No player selected!'); return; }
-    fetch('/admin/auction/select_player', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            auction_id: currentAuctionId, 
-            auction_player_id: adminSelectedPlayer.auctionPlayerId 
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            broadcastLockUntil = Date.now() + 2000;
-            currentAuctionPlayerId = adminSelectedPlayer.auctionPlayerId;
-            lastPlayerId = adminSelectedPlayer.auctionPlayerId;
-            isAllSkipped = false; 
-            resetSkipUI();
-            updateCurrentPlayerDisplay(
-                adminSelectedPlayer.name, 
-                adminSelectedPlayer.basePrice, 
-                null, 
-                adminSelectedPlayer.category, 
-                adminSelectedPlayer.basePrice, 
-                adminSelectedPlayer.auctionPlayerId
-            );
-            const actionEl = document.getElementById('selectedPlayerBarAction');
-            if (actionEl) actionEl.textContent = '✅ Sent to auction!';
-            const broadcastBtn = document.getElementById('broadcastBtn');
-            if (broadcastBtn) broadcastBtn.style.display = 'none';
-            updateAdminControls(false);
-            setTimeout(() => {
-                const bar = document.getElementById('selectedPlayerBar');
-                if (bar) bar.style.display = 'none';
-                document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-                adminSelectedPlayer = null;
-            }, 3000);
-        } else {
-            alert(data.error || 'Failed to select player');
-        }
-    })
-    .catch(err => { 
-        alert('Network error: ' + err.message); 
-    });
-}
-
-// ==================== UPDATE DISPLAY ====================
-function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, basePrice, auctionPlayerId) {
-    const cp = document.getElementById('currentPlayer');
-    if (cp) cp.textContent = playerName || 'Waiting...';
-    const pc = document.getElementById('playerCategory');
-    if (pc) pc.textContent = category ? category.replace('_', ' ').toUpperCase() : '--';
-    const bp = document.getElementById('basePrice');
-    const cleanBase = basePrice ? parseFloat(basePrice).toFixed(2) : '0.00';
-    if (bp) bp.textContent = cleanBase;
-    const cb = document.getElementById('currentBid');
-    if (cb && currentBid !== undefined) cb.textContent = '₹' + parseFloat(currentBid).toFixed(2) + 'Cr';
-    const cbd = document.getElementById('currentBidder');
-    if (cbd) cbd.textContent = bidder || 'No bids yet';
-}
+function resetSkipUI() { stopSkipCountdown(); isAllSkipped = false; document.getElementById('skipVotesPanel').style.display = 'none'; }
 
 // ==================== BIDDING ====================
 function quickBid(increment) {
@@ -1163,8 +1110,7 @@ function quickBid(increment) {
     const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
     const base = currentBasePrice;
     const current = cb > 0 ? cb : base;
-    const bidAmount = document.getElementById('bidAmount');
-    if (bidAmount) bidAmount.value = (current + increment).toFixed(2);
+    document.getElementById('bidAmount').value = (current + increment).toFixed(2);
     placeBid();
 }
 
@@ -1172,12 +1118,8 @@ function placeBid() {
     if (!currentAuctionId) { showStatus('bidStatus', '❌ Join an auction first!', '#ef4444'); return; }
     if (!currentAuctionPlayerId) { showStatus('bidStatus', '❌ Wait for auctioneer to select a player!', '#ef4444'); return; }
     
-    const teamSelect = document.getElementById('teamSelect');
-    const bidAmount = document.getElementById('bidAmount');
-    if (!teamSelect || !bidAmount) return;
-    
-    const teamId = teamSelect.value;
-    const amount = parseFloat(bidAmount.value);
+    const teamId = document.getElementById('teamSelect').value;
+    const amount = parseFloat(document.getElementById('bidAmount').value);
     const cbText = document.getElementById('currentBid').textContent;
     const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
     const base = currentBasePrice;
@@ -1185,33 +1127,24 @@ function placeBid() {
     
     if (!amount || amount <= 0) { showStatus('bidStatus', '❌ Enter valid amount', '#ef4444'); return; }
     if (amount <= current) { showStatus('bidStatus', `❌ Must be > ₹${current.toFixed(2)}Cr`, '#ef4444'); return; }
+    if (amount < current + 0.5 && current > 0) { showStatus('bidStatus', '❌ Min increment 0.5 Cr', '#ef4444'); return; }
     
-    // Use server-side min increment logic, but client-side quick validation
-    let minIncrement = 0.05;
-    if (current >= 1.0) minIncrement = 0.10;
-    if (current >= 2.0) minIncrement = 0.25;
-    if (current >= 7.0) minIncrement = 0.25;
-    
-    if (amount < current + minIncrement) { 
-        showStatus('bidStatus', `❌ Min increment ₹${minIncrement.toFixed(2)}Cr`, '#ef4444'); 
-        return; 
-    }
+    let body = { 
+        auction_id: currentAuctionId, 
+        auction_player_id: currentAuctionPlayerId, 
+        amount: amount, 
+        team_id: teamId 
+    };
+    if (currentSessionId) body.session_id = currentSessionId;
     
     fetch('/admin/auction/bid', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            auction_id: currentAuctionId, 
-            auction_player_id: currentAuctionPlayerId, 
-            amount: amount, 
-            team_id: teamId 
-        })
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
-        if (data.error) { 
-            showStatus('bidStatus', '❌ ' + data.error, '#ef4444'); 
-        }
+        if (data.error) { showStatus('bidStatus', '❌ ' + data.error, '#ef4444'); }
         else {
             document.getElementById('currentBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
             document.getElementById('currentBidder').textContent = data.bidder;
@@ -1225,14 +1158,18 @@ function placeBid() {
 
 function checkAutoBid(currentBid) {
     if (!currentAuctionPlayerId) return;
+    
+    let body = { 
+        auction_id: currentAuctionId, 
+        auction_player_id: currentAuctionPlayerId, 
+        current_bid: currentBid 
+    };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
     fetch('/admin/auction/auto_bid', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            auction_id: currentAuctionId, 
-            auction_player_id: currentAuctionPlayerId, 
-            current_bid: currentBid 
-        })
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
@@ -1249,70 +1186,60 @@ function checkAutoBid(currentBid) {
 function addHistory(team, amount, isAuto) {
     bidHistory.unshift({team, amount, isAuto, time: new Date().toLocaleTimeString()});
     const h = document.getElementById('bidHistory');
-    if (!h) return;
     h.innerHTML = bidHistory.map(b => `
         <div class="history-item">
             <span class="history-bidder">${b.isAuto ? '🤖 ' : ''}${b.team}${b.isAuto ? '<span class="history-auto">AUTO</span>' : ''}</span>
             <span class="history-amount">₹${b.amount.toFixed(2)}Cr</span>
         </div>
     `).join('');
-    const bidCount = document.getElementById('bidCount');
-    if (bidCount) bidCount.textContent = bidHistory.length + ' bid' + (bidHistory.length > 1 ? 's' : '');
+    document.getElementById('bidCount').textContent = bidHistory.length + ' bid' + (bidHistory.length > 1 ? 's' : '');
 }
 
 function startCountdown() {
     const tc = document.getElementById('timerCard');
     const cd = document.getElementById('countdown');
-    let s = 10; 
-    if (tc) tc.style.display = 'block'; 
-    if (cd) { cd.textContent = s; cd.style.color = '#ef4444'; }
+    let s = 10; tc.style.display = 'block'; cd.textContent = s; cd.style.color = '#ef4444';
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
-        s--; 
-        if (cd) cd.textContent = s;
-        if (s <= 3 && cd) cd.style.color = '#ef4444';
-        if (s <= 0) { 
-            clearInterval(countdownTimer); 
-            if (tc) tc.style.display = 'none'; 
-            showStatus('bidStatus', '⏰ Time up!', '#f59e0b'); 
-        }
+        s--; cd.textContent = s;
+        if (s <= 3) cd.style.color = '#ef4444';
+        if (s <= 0) { clearInterval(countdownTimer); tc.style.display = 'none'; showStatus('bidStatus', '⏰ Time up!', '#f59e0b'); }
     }, 1000);
 }
 
 function stopCountdown() { 
-    if (countdownTimer) { 
-        clearInterval(countdownTimer); 
-        countdownTimer = null; 
-    }
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
     const tc = document.getElementById('timerCard');
     if (tc) tc.style.display = 'none';
 }
 
 function pauseAuction() { 
-    fetch('/admin/auction/pause', {method: 'POST'})
+    fetch('/admin/auction/pause', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ auction_id: currentAuctionId })
+    })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             const statusEl = document.getElementById('roomStatus');
-            if (statusEl) { 
-                statusEl.className = 'live-status status-paused'; 
-                statusEl.innerHTML = '⏸ PAUSED'; 
-            }
+            if (statusEl) { statusEl.className = 'live-status status-paused'; statusEl.innerHTML = '⏸ PAUSED'; }
             showStatus('bidStatus', '⏸ Auction paused', '#f59e0b');
         }
     });
 }
 
 function resumeAuction() { 
-    fetch('/admin/auction/resume', {method: 'POST'})
+    fetch('/admin/auction/resume', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ auction_id: currentAuctionId })
+    })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             const statusEl = document.getElementById('roomStatus');
-            if (statusEl) { 
-                statusEl.className = 'live-status status-live'; 
-                statusEl.innerHTML = '<div class="live-dot"></div> LIVE'; 
-            }
+            if (statusEl) { statusEl.className = 'live-status status-live'; statusEl.innerHTML = '<div class="live-dot"></div> LIVE'; }
             showStatus('bidStatus', '▶ Auction resumed', '#22c55e');
         }
     });
@@ -1322,33 +1249,27 @@ function sellPlayer() {
     if (!currentAuctionPlayerId) { alert('No player selected for auction'); return; }
     const currentBid = parseFloat(document.getElementById('currentBid').textContent.replace('₹','').replace('Cr','')) || 0;
     const bidder = document.getElementById('currentBidder').textContent;
-    if (currentBid <= 0 || bidder === 'No bids yet') { 
-        alert('No bids placed! Use "Unsold" button to mark player as unsold.'); 
-        return; 
-    }
+    if (currentBid <= 0 || bidder === 'No bids yet') { alert('No bids placed! Use "Unsold" button to mark player as unsold.'); return; }
     if (!confirm('Sell current player for ₹' + currentBid.toFixed(2) + 'Cr?')) return;
+    
+    let body = { auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId };
+    if (currentSessionId) body.session_id = currentSessionId;
     
     fetch('/admin/auction/sell', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            auction_id: currentAuctionId, 
-            auction_player_id: currentAuctionPlayerId 
-        })
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             const toast = document.getElementById('soldNotification');
-            const soldMessage = document.getElementById('soldMessage');
-            if (soldMessage) soldMessage.textContent = `${data.player_name} sold to ${data.sold_to} for ₹${data.price.toFixed(2)}Cr!`;
-            if (toast) toast.classList.add('show');
-            setTimeout(() => { if (toast) toast.classList.remove('show'); }, 5000);
+            document.getElementById('soldMessage').textContent = `${data.player_name} sold to ${data.sold_to} for ₹${data.price.toFixed(2)}Cr!`;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 5000);
             removePlayerFromGrid(currentAuctionPlayerId);
             nextPlayer();
-        } else { 
-            alert(data.error || 'Failed to sell player'); 
-        }
+        } else { alert(data.error || 'Failed to sell player'); }
     });
 }
 
@@ -1356,14 +1277,13 @@ function forceUnsold() {
     if (!currentAuctionPlayerId) { alert('No player selected for auction'); return; }
     if (!confirm('FORCE unsold this player? All teams skipped.')) return;
     
+    let body = { auction_id: currentAuctionId, auction_player_id: currentAuctionPlayerId, force: true };
+    if (currentSessionId) body.session_id = currentSessionId;
+    
     fetch('/admin/auction/unsold', {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ 
-            auction_id: currentAuctionId, 
-            auction_player_id: currentAuctionPlayerId, 
-            force: true 
-        })
+        body: JSON.stringify(body)
     })
     .then(r => r.json())
     .then(data => {
@@ -1372,20 +1292,7 @@ function forceUnsold() {
             showStatus('bidStatus', '❌ Player force-unsold (all skipped)', '#ef4444');
             removePlayerFromGrid(currentAuctionPlayerId);
             nextPlayer();
-        } else { 
-            alert(data.error || 'Failed to force unsold'); 
-        }
-    });
-}
-
-function removePlayerFromGrid(auctionPlayerId) {
-    document.querySelectorAll('.player-card').forEach(card => {
-        if (parseInt(card.dataset.auctionPlayerId) === auctionPlayerId) {
-            card.style.transition = 'all 0.5s';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.8)';
-            setTimeout(() => card.style.display = 'none', 500);
-        }
+        } else { alert(data.error || 'Failed to force unsold'); }
     });
 }
 
@@ -1408,26 +1315,25 @@ function nextPlayer() {
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
     adminSelectedPlayer = null;
     
-    currentAuctionPlayerId = null; 
-    lastPlayerId = null; 
-    bidHistory = [];
-    isAllSkipped = false; 
-    hasBids = false; 
-    currentBasePrice = 2.0;
-    stopCountdown(); 
-    stopSkipCountdown(); 
-    stopFinalCall(); 
-    resetSkipUI(); 
-    if (isAdmin) updateAdminControls(false);
+    currentAuctionPlayerId = null; lastPlayerId = null; bidHistory = [];
+    isAllSkipped = false; hasBids = false; currentBasePrice = 2.0;
+    stopCountdown(); stopSkipCountdown(); stopFinalCall(); resetSkipUI(); updateAdminControls(false);
 }
 
-// ==================== SOLD NOTIFICATION FOR TEAM OWNERS ====================
-function showSoldNotification(playerName, price) {
-    const toast = document.getElementById('soldNotification');
-    const soldMessage = document.getElementById('soldMessage');
-    if (soldMessage) soldMessage.textContent = `You bought ${playerName} for ₹${price.toFixed(2)}Cr!`;
-    if (toast) toast.classList.add('show');
-    setTimeout(() => { if (toast) toast.classList.remove('show'); }, 5000);
+function removePlayerFromGrid(auctionPlayerId) {
+    document.querySelectorAll('.player-card').forEach(card => {
+        if (parseInt(card.dataset.auctionPlayerId) === auctionPlayerId) {
+            card.style.transition = 'all 0.5s';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.8)';
+            setTimeout(() => card.style.display = 'none', 500);
+        }
+    });
+    const countEl = document.getElementById('playerCount');
+    if (countEl) {
+        const currentCount = parseInt(countEl.textContent) || 0;
+        countEl.textContent = Math.max(0, currentCount - 1);
+    }
 }
 
 // ==================== REFRESH PLAYERS ====================
@@ -1435,50 +1341,41 @@ function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     if (btn) btn.classList.add('spinning');
     
-    const endpoint = isAdmin 
-        ? '/admin/auction/players?auction_id=' + (currentAuctionId || '') 
-        : '/team-owner/auction/players?auction_id=' + (currentAuctionId || '');
+    let endpoint = '/admin/auction/players?auction_id=' + currentAuctionId;
+    if (currentSessionId) endpoint += '&session_id=' + currentSessionId;
     
     fetch(endpoint)
     .then(r => r.json())
     .then(data => {
         if (data.players) { 
             updatePlayersGrid(data.players); 
-            const count = document.getElementById('playerCount');
-            if (count) count.textContent = data.players.length; 
+            const countEl = document.getElementById('playerCount');
+            if (countEl) countEl.textContent = data.players.length; 
         }
         if (btn) btn.classList.remove('spinning');
     })
     .catch(() => {
         if (btn) btn.classList.remove('spinning');
-        const fallback = isAdmin 
-            ? '/team-owner/auction/players?auction_id=' + (currentAuctionId || '') 
-            : '/admin/auction/players?auction_id=' + (currentAuctionId || '');
-        fetch(fallback).then(r => r.json()).then(data => {
-            if (data.players) { 
-                updatePlayersGrid(data.players); 
-                const count = document.getElementById('playerCount');
-                if (count) count.textContent = data.players.length; 
-            }
-        });
     });
 }
 
 function updatePlayersGrid(players) {
     const grid = document.getElementById('playersGrid');
-    if (!grid) return;
     const currentFilter = document.querySelector('.filter-btn.active');
-    const filterCat = currentFilter ? currentFilter.textContent.toLowerCase() : 'all';
+    const filterCat = currentFilter ? currentFilter.dataset.category || 'all' : 'all';
+    
+    // Get isAdmin from a data attribute or global instead of Jinja in JS
+    const isAdmin = document.body.dataset.isAdmin === 'true';
     
     let html = '';
     players.forEach(player => {
         const catClass = 'badge-' + player.category;
         const overseasBadge = player.overseas ? '<span class="cat-badge badge-overseas">🌍 OS</span>' : '';
         const statusClass = 'status-' + (player.status || 'available');
-        const isSelected = currentAuctionPlayerId && player.auction_player_id == currentAuctionPlayerId ? 'selected' : '';
+        const clickAttr = isAdmin ? `onclick="adminSelectPlayer(${player.auction_player_id || 0}, '${player.player_name.replace(/'/g, "\\'")}', '${player.category}', ${player.base_price || 2.00}, ${player.overseas ? 'true' : 'false'})"` : '';
         
         html += `
-        <div class="player-card ${isSelected}" 
+        <div class="player-card" 
              data-category="${player.category}" 
              data-id="${player.id}" 
              data-auction-player-id="${player.auction_player_id}" 
@@ -1486,11 +1383,11 @@ function updatePlayersGrid(players) {
              data-base="${player.base_price || 2.00}"
              data-overseas="${player.overseas ? 'true' : 'false'}"
              data-status="${player.status || 'available'}"
-             ${isAdmin ? `onclick="adminSelectPlayer(${player.auction_player_id || 0}, '${player.player_name}', '${player.category}', ${player.base_price || 2.00}, ${player.overseas ? 'true' : 'false'})"` : ''}>
+             ${clickAttr}>
             <div class="player-avatar">🏏</div>
             <div class="player-name">${player.player_name}</div>
             <div class="player-meta">
-                <span class="cat-badge ${catClass}">${player.category.replace('_', ' ').title()}</span>
+                <span class="cat-badge ${catClass}">${player.category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
                 ${overseasBadge}
             </div>
             <div class="player-price">Base: ₹${player.base_price || 2.00}Cr</div>
@@ -1498,6 +1395,7 @@ function updatePlayersGrid(players) {
         </div>`;
     });
     grid.innerHTML = html;
+    
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (filterCat === 'all' || c.dataset.category === filterCat) ? 'block' : 'none';
     });
@@ -1506,17 +1404,13 @@ function updatePlayersGrid(players) {
 function showStatus(id, msg, color) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = msg; 
-    el.style.color = color;
-    setTimeout(() => { 
-        el.textContent = ''; 
-        el.style.color = 'var(--text-dim)'; 
-    }, 5000);
+    el.textContent = msg; el.style.color = color;
+    setTimeout(() => { el.textContent = ''; el.style.color = 'var(--text-dim)'; }, 5000);
 }
 
-function filterPlayers(cat) {
+function filterPlayers(cat, clickedBtn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    clickedBtn.classList.add('active');
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
     });
@@ -1525,11 +1419,7 @@ function filterPlayers(cat) {
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && document.activeElement.id === 'bidAmount') placeBid();
-    if (e.key === 'b' && e.ctrlKey) { 
-        e.preventDefault(); 
-        const bidAmount = document.getElementById('bidAmount');
-        if (bidAmount) bidAmount.focus(); 
-    }
+    if (e.key === 'b' && e.ctrlKey) { e.preventDefault(); document.getElementById('bidAmount')?.focus(); }
 });
 
 // Cleanup on page unload
@@ -1540,4 +1430,3 @@ window.addEventListener('beforeunload', () => {
     stopFinalCall();
 });
 </script>
-{% endblock %}
