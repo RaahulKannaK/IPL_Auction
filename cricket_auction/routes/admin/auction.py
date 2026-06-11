@@ -28,7 +28,6 @@ def get_min_bid_increment(current_bid):
 
 @bp.route('/auction/sessions', methods=['GET', 'POST'])
 def manage_sessions():
-    """List sessions or create new session for an auction"""
     if not session.get('user_id'):
         return redirect('/')
     
@@ -36,44 +35,53 @@ def manage_sessions():
         flash('Unauthorized')
         return redirect('/')
     
+    # Get auction_id from query param OR form OR find latest active
     auction_id = request.args.get('auction') or request.form.get('auction_id')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify auction exists and is live/paused
         if auction_id:
             cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
             auction = cursor.fetchone()
         else:
             cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
             auction = cursor.fetchone()
-            auction_id = auction['id'] if auction else None
         
         if not auction:
             flash('No active auction found')
             return redirect('/admin/')
         
-        # GET - Show sessions list with create form
+        auction_id = auction['id']
+        
+        # GET - Show sessions list
         if request.method == 'GET':
             cursor.execute("""
-                SELECT s.*, 
-                    (SELECT COUNT(*) FROM bids WHERE session_id = s.id) as bid_count
-                FROM auction_sessions s 
-                WHERE s.auction_id = %s 
-                ORDER BY s.created_at DESC
+                SELECT * FROM auction_sessions 
+                WHERE auction_id = %s 
+                ORDER BY created_at DESC
             """, (auction_id,))
             sessions = cursor.fetchall()
             
-            # Get teams for this auction to populate in create form
+            # Parse team_ids JSON for each session
+            for sess in sessions:
+                if sess.get('team_ids'):
+                    try:
+                        import json
+                        sess['team_ids'] = json.loads(sess['team_ids'])
+                    except:
+                        sess['team_ids'] = []
+            
+            # Get all teams for this auction
             cursor.execute("SELECT * FROM teams WHERE auction_id = %s", (auction_id,))
             teams = cursor.fetchall()
             
             return render_template('admin/sessions.html',
                 auction=auction,
                 sessions=sessions,
-                teams=teams
+                teams=teams,
+                total_teams=len(teams)
             )
         
         # POST - Create new session
@@ -81,28 +89,31 @@ def manage_sessions():
             session_name = request.form.get('session_name', 'Session ' + str(int(time.time())))
             team_ids = request.form.getlist('team_ids')
             
-            # Validate team_ids
             if not team_ids:
-                flash('Select at least one team for the session')
+                flash('Select at least one team')
                 return redirect(f'/admin/auction/sessions?auction={auction_id}')
             
+            import json
             team_ids_json = json.dumps([int(t) for t in team_ids])
+            
+            # Set time based on slot type (optional enhancement)
+            slot_type = request.form.get('slot_type', 'morning')
+            start_time = time.strftime('%Y-%m-%d %H:%M:%S')
             
             cursor.execute("""
                 INSERT INTO auction_sessions (auction_id, session_name, team_ids, status, start_time)
-                VALUES (%s, %s, %s, 'active', NOW())
-            """, (auction_id, session_name, team_ids_json))
+                VALUES (%s, %s, %s, 'active', %s)
+            """, (auction_id, session_name, team_ids_json, start_time))
             
             db.commit()
             new_session_id = cursor.lastrowid
             
-            flash(f'Session "{session_name}" created successfully!')
-            return redirect(f'/admin/auction/sessions?auction={auction_id}')
+            # INSTANT REDIRECT to enter the session
+            return redirect(f'/admin/auction/session/{new_session_id}/enter')
             
     finally:
         cursor.close()
         db.close()
-
 
 @bp.route('/auction/session/<int:session_id>/enter')
 def enter_session(session_id):
