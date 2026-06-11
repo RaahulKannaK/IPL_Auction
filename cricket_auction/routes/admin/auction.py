@@ -184,7 +184,7 @@ def close_session(session_id):
 
 @bp.route('/auction')
 def auction_room():
-    """Main auction room - requires active session"""
+    """Main auction room — requires active session"""
     if not session.get('user_id'):
         return redirect('/')
     
@@ -192,63 +192,61 @@ def auction_room():
         flash('Unauthorized')
         return redirect('/')
     
-    # Check if user has an active session
+    # Check if user has an active session in Flask session
     active_session_id = session.get('active_session_id')
     active_auction_id = session.get('active_auction_id')
     
-    # If no session in Flask session, redirect to sessions page to create/join one
-    if not active_session_id:
-        # Check if there's any active session for this auction
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        
-        try:
-            # Find latest live/paused auction
-            if active_auction_id:
-                cursor.execute("SELECT * FROM auctions WHERE id = %s AND status IN ('live', 'paused')", (active_auction_id,))
-            else:
-                cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
-            auction = cursor.fetchone()
-            
-            if not auction:
-                flash('No active auction found')
-                return redirect('/admin/')
-            
-            # Check if any sessions exist for this auction
-            cursor.execute("""
-                SELECT * FROM auction_sessions 
-                WHERE auction_id = %s AND status = 'active'
-                ORDER BY created_at DESC LIMIT 1
-            """, (auction['id'],))
-            existing_session = cursor.fetchone()
-            
-            # If no active session exists, admin must create one
-            if not existing_session:
-                if session.get('role') in ['admin', 'auctioneer']:
-                    flash('No active session found. Please create a session first.')
-                    return redirect(f'/admin/auction/sessions?auction={auction["id"]}')
-                else:
-                    flash('No active session available. Please wait for admin to create one.')
-                    return redirect('/admin/')
-            
-            # Auto-join existing session for team owners
-            session['active_session_id'] = existing_session['id']
-            session['active_auction_id'] = auction['id']
-            active_session_id = existing_session['id']
-            
-        finally:
-            cursor.close()
-            db.close()
-    
-    # Now load the auction room with session context
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Get session details
+        # Find the auction
+        if active_auction_id:
+            cursor.execute("SELECT * FROM auctions WHERE id = %s AND status IN ('live', 'paused')", (active_auction_id,))
+        else:
+            cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
+        auction = cursor.fetchone()
+        
+        if not auction:
+            flash('No active auction found')
+            return redirect('/admin/')
+        
+        auction_id = auction['id']
+        session['active_auction_id'] = auction_id
+        
+        # === CHECK: Are there any sessions for this auction? ===
         cursor.execute("""
-            SELECT s.*, a.league_name, a.status as auction_status, a.squad_size, a.purse_limit, a.overseas_limit,
-                   a.current_player_id, a.current_bid, a.current_bidder_id
+            SELECT * FROM auction_sessions 
+            WHERE auction_id = %s AND status IN ('active', 'paused')
+            ORDER BY created_at DESC LIMIT 1
+        """, (auction_id,))
+        existing_session = cursor.fetchone()
+        
+        # If NO session exists at all for this auction
+        if not existing_session:
+            if session.get('role') in ['admin', 'auctioneer']:
+                flash('⚠️ No session created yet. Create a session first to start bidding.')
+                return redirect(f'/admin/auction/sessions?auction={auction_id}')
+            else:
+                flash('⏳ No active session available. Please wait for admin to create one.')
+                return redirect('/admin/')
+        
+        # If session exists but user hasn't joined one
+        if not active_session_id:
+            # Auto-join team owners to the existing session
+            if session.get('role') == 'team_owner':
+                session['active_session_id'] = existing_session['id']
+                active_session_id = existing_session['id']
+            else:
+                # Admin/auctioneer should explicitly pick or create
+                flash('Select a session to enter or create a new one.')
+                return redirect(f'/admin/auction/sessions?auction={auction_id}')
+        
+        # === LOAD AUCTION ROOM WITH SESSION ===
+        cursor.execute("""
+            SELECT s.*, a.league_name, a.status as auction_status, a.squad_size, 
+                   a.purse_limit, a.overseas_limit, a.current_player_id, 
+                   a.current_bid, a.current_bidder_id
             FROM auction_sessions s
             JOIN auctions a ON s.auction_id = a.id
             WHERE s.id = %s
@@ -257,42 +255,37 @@ def auction_room():
         
         if not auction_session:
             session.pop('active_session_id', None)
-            session.pop('active_auction_id', None)
-            flash('Session not found or expired')
-            return redirect('/admin/auction/sessions')
+            flash('Session expired. Please select again.')
+            return redirect(f'/admin/auction/sessions?auction={auction_id}')
         
-        auction_id = auction_session['auction_id']
-        
-        # Update session with correct active auction
-        session['active_auction_id'] = auction_id
+        # ... rest of your existing auction room loading code ...
+        # (teams, players, current_player, etc.)
         
         # Get teams in this session
-        team_ids = []
+        session_team_ids = []
         if auction_session.get('team_ids'):
             try:
-                team_ids = json.loads(auction_session['team_ids'])
+                import json
+                session_team_ids = json.loads(auction_session['team_ids'])
             except:
-                team_ids = []
+                session_team_ids = []
         
-        # Get all teams for this auction (for reference)
+        # Get all teams for this auction
         cursor.execute("SELECT * FROM teams WHERE auction_id = %s", (auction_id,))
         all_teams = cursor.fetchall()
         
-        # Filter teams that are in this session
-        session_teams = [t for t in all_teams if t['id'] in team_ids] if team_ids else all_teams
+        # Filter to session teams
+        session_teams = [t for t in all_teams if t['id'] in session_team_ids] if session_team_ids else all_teams
         
-        # Get user team for team_owner
+        # Get user team
         user_team = None
         if session.get('role') == 'team_owner':
             user_team = get_user_team(cursor, session['user_id'], auction_id)
-            # Verify team is in session
-            if user_team and team_ids and user_team['id'] not in team_ids:
-                flash('Your team is not part of this session')
-                return redirect('/admin/')
         
-        # Get available/unsold players
+        # Get available players
         cursor.execute("""
-            SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, ap.sold_price, ap.skip_reason, ap.skip_notes
+            SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, 
+                   ap.sold_price, ap.skip_reason, ap.skip_notes
             FROM players p
             JOIN auction_players ap ON p.id = ap.player_id
             WHERE ap.auction_id = %s AND ap.status IN ('available', 'unsold')
@@ -300,7 +293,7 @@ def auction_room():
         """, (auction_id,))
         players = cursor.fetchall()
         
-        # Current player details
+        # Current player logic
         current_player = None
         current_bid = 0
         skip_votes = []
@@ -308,21 +301,22 @@ def auction_room():
         all_skipped = False
         has_bids = False
         
-        if auction_session.get('current_player_id'):
+        if auction.get('current_player_id'):
             cursor.execute("""
-                SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, ap.skip_reason, ap.skip_notes
+                SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, 
+                       ap.skip_reason, ap.skip_notes
                 FROM auction_players ap
                 JOIN players p ON ap.player_id = p.id
                 WHERE ap.id = %s
-            """, (auction_session['current_player_id'],))
+            """, (auction['current_player_id'],))
             current_player = cursor.fetchone()
-            current_bid = float(auction_session.get('current_bid') or 0)
+            current_bid = float(auction.get('current_bid') or 0)
             
-            # Check if any actual bids exist
+            # Check bids
             cursor.execute("""
                 SELECT COUNT(*) as bid_count FROM bids 
                 WHERE auction_id = %s AND auction_player_id = %s
-            """, (auction_id, auction_session['current_player_id']))
+            """, (auction_id, auction['current_player_id']))
             bid_result = cursor.fetchone()
             has_bids = bid_result['bid_count'] > 0 if bid_result else False
             
@@ -334,22 +328,22 @@ def auction_room():
                 JOIN users u ON ps.skipped_by = u.id
                 WHERE ps.auction_id = %s AND ps.auction_player_id = %s
                 ORDER BY ps.skipped_at DESC
-            """, (auction_id, auction_session['current_player_id']))
+            """, (auction_id, auction['current_player_id']))
             skip_votes = cursor.fetchall()
             
             all_skipped = len(skip_votes) >= total_teams and total_teams > 0
         
-        # Build auction dict for template compatibility
-        auction = {
+        # Build auction dict for template
+        auction_dict = {
             'id': auction_id,
-            'league_name': auction_session['league_name'],
-            'status': auction_session['auction_status'],
-            'current_player_id': auction_session['current_player_id'],
-            'current_bid': auction_session['current_bid'],
-            'current_bidder_id': auction_session['current_bidder_id'],
-            'squad_size': auction_session['squad_size'],
-            'purse_limit': auction_session['purse_limit'],
-            'overseas_limit': auction_session['overseas_limit']
+            'league_name': auction['league_name'],
+            'status': auction['status'],
+            'current_player_id': auction.get('current_player_id'),
+            'current_bid': auction.get('current_bid'),
+            'current_bidder_id': auction.get('current_bidder_id'),
+            'squad_size': auction.get('squad_size', 18),
+            'purse_limit': auction.get('purse_limit', 100),
+            'overseas_limit': auction.get('overseas_limit', 8)
         }
         
     finally:
@@ -357,14 +351,14 @@ def auction_room():
         db.close()
     
     return render_template('admin/auction.html', 
-        auction=auction,
+        auction=auction_dict,
         auction_session=auction_session,
         session_id=active_session_id,
         players=players, 
         teams=session_teams,
         all_teams=all_teams,
         user_team=user_team,
-        sessions_count=1,  # This session
+        sessions_count=1,
         current_player=current_player,
         current_bid=current_bid,
         has_bids=has_bids,
@@ -372,7 +366,6 @@ def auction_room():
         total_teams=total_teams,
         all_skipped=all_skipped
     )
-
 
 # ==================== AUCTION ACTIONS ====================
 
