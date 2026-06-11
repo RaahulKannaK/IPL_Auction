@@ -448,310 +448,227 @@
     }
 </style>
 
-<div class="sessions-container">
-    <!-- Back Link -->
-    <a href="/admin/" class="back-link">← Back to Dashboard</a>
+{% extends "base.html" %}
 
-    <!-- Top Bar -->
-    <div class="top-bar">
+{% block content %}
+
+<div class="sessions-container" style="max-width: 1400px; margin: 0 auto; padding: 30px 20px;">
+
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px;">
         <div>
-            <h1>📅 Session Management</h1>
-            <p style="color: var(--text-dim); margin-top: 5px;">Create time slots, assign teams, and manage auction sessions</p>
+            <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary, #e8f0ff); margin-bottom: 8px;">📅 Session Management</h1>
+            <p style="color: var(--text-dim, #7080a0);">Create time slots, assign teams, and enter auction instantly</p>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="/admin/teams" class="nav-btn">👥 Teams</a>
-            <a href="/admin/players" class="nav-btn">🏏 Players</a>
-        </div>
+        <a href="/admin/" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light, #9e7bff); border: 1px solid rgba(124, 77, 255, 0.2); text-decoration: none; font-weight: 600; transition: all 0.3s;">← Back to Dashboard</a>
     </div>
 
-    <!-- Auction Info -->
-    <div class="auction-info" style="margin-bottom: 25px;">
+    <!-- Auction Info Bar -->
+    {% if auction %}
+    <div style="display: flex; align-items: center; gap: 20px; padding: 15px 25px; background: rgba(0, 0, 0, 0.2); border-radius: 16px; border: 1px solid rgba(100, 120, 200, 0.1); margin-bottom: 25px; flex-wrap: wrap;">
         <div>
-            <div class="label">Auction</div>
-            <div class="value">{{ auction.league_name if auction else 'No Active Auction' }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Auction</div>
+            <div style="font-weight: 700; color: var(--text-primary); font-family: 'Space Grotesk';">{{ auction.league_name }}</div>
         </div>
         <div style="width: 1px; height: 30px; background: rgba(100, 120, 200, 0.2);"></div>
         <div>
-            <div class="label">Auction ID</div>
-            <div class="value">#{{ auction.id if auction else 'N/A' }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Status</div>
+            <div style="font-weight: 700; color: {% if auction.status == 'live' %}#22c55e{% elif auction.status == 'paused' %}#f59e0b{% else %}var(--text-dim){% endif %}; text-transform: uppercase;">{{ auction.status }}</div>
         </div>
         <div style="width: 1px; height: 30px; background: rgba(100, 120, 200, 0.2);"></div>
         <div>
-            <div class="label">Total Teams</div>
-            <div class="value">{{ total_teams }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Total Teams</div>
+            <div style="font-weight: 700; color: var(--text-primary); font-family: 'JetBrains Mono';">{{ total_teams }}</div>
         </div>
     </div>
-
-    <!-- Stats -->
-    <div class="stats-bar">
-        <div class="stat-card">
-            <div class="value">{{ sessions|length }}</div>
-            <div class="label">Total Sessions</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" style="color: #22c55e;">{{ sessions|selectattr('status', 'equalto', 'active')|list|length }}</div>
-            <div class="label">Active</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" style="color: #f59e0b;">{{ available_teams|length }}</div>
-            <div class="label">Available Teams</div>
-        </div>
-        <div class="stat-card">
-            <div class="value" style="color: var(--cosmic-purple-light);">{{ total_teams - available_teams|length }}</div>
-            <div class="label">In Sessions</div>
-        </div>
+    {% else %}
+    <div style="padding: 30px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px; margin-bottom: 25px; text-align: center;">
+        <p style="color: #fca5a5; font-weight: 600;">⚠️ No active auction found. Please create an auction first.</p>
     </div>
+    {% endif %}
 
-    <div class="section-grid">
-        <!-- Create Session -->
-        <div class="glass-panel">
-            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    <!-- Two Column Layout -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+        {% if auction %}
+        
+        <!-- LEFT: Create Session -->
+        <div style="background: rgba(12, 16, 32, 0.85); backdrop-filter: blur(24px); border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 24px; padding: 30px;">
+            <h2 style="font-family: 'Space Grotesk'; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 25px;">➕ Create New Session</h2>
             
-            <h2>➕ Create New Session</h2>
-            
-            <form method="POST" action="/admin/sessions/create" id="createSessionForm">
-                <div class="input-group">
-                    <label>Session Name</label>
-                    <input type="text" name="session_name" placeholder="e.g., Saturday Morning" required>
+            <form method="POST" action="/admin/auction/sessions" id="createForm">
+                <input type="hidden" name="auction_id" value="{{ auction.id }}">
+                
+                <!-- Session Name -->
+                <div style="margin-bottom: 18px;">
+                    <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Session Name</label>
+                    <input type="text" name="session_name" placeholder="e.g., Morning Session" required
+                        style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(100, 120, 200, 0.15); color: var(--text-primary); padding: 14px 18px; border-radius: 14px; font-size: 1rem; outline: none;">
                 </div>
 
-                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Select Time Slot</label>
-                <div class="slot-grid">
-                    <div class="slot-card selected" onclick="selectSlot(this, 'morning')" data-slot="morning">
-                        <div class="icon">🌅</div>
-                        <div class="name">Morning</div>
-                        <div class="time">06:00 - 12:00</div>
+                <!-- Time Slot Selection -->
+                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Time Slot</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <div class="slot-card" onclick="pickSlot(this, 'morning')" data-slot="morning" style="padding: 20px; background: rgba(0,0,0,0.2); border: 2px solid rgba(100,120,200,0.1); border-radius: 16px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🌅</div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">Morning</div>
+                        <div style="color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono';">06:00 - 12:00</div>
                     </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'afternoon')" data-slot="afternoon">
-                        <div class="icon">☀️</div>
-                        <div class="name">Afternoon</div>
-                        <div class="time">12:00 - 17:00</div>
+                    <div class="slot-card" onclick="pickSlot(this, 'afternoon')" data-slot="afternoon" style="padding: 20px; background: rgba(0,0,0,0.2); border: 2px solid rgba(100,120,200,0.1); border-radius: 16px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">☀️</div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">Afternoon</div>
+                        <div style="color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono';">12:00 - 17:00</div>
                     </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'evening')" data-slot="evening">
-                        <div class="icon">🌆</div>
-                        <div class="name">Evening</div>
-                        <div class="time">17:00 - 21:00</div>
+                    <div class="slot-card" onclick="pickSlot(this, 'evening')" data-slot="evening" style="padding: 20px; background: rgba(0,0,0,0.2); border: 2px solid rgba(100,120,200,0.1); border-radius: 16px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🌆</div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">Evening</div>
+                        <div style="color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono';">17:00 - 21:00</div>
                     </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'custom')" data-slot="custom">
-                        <div class="icon">⚙️</div>
-                        <div class="name">Custom</div>
-                        <div class="time">Set your own</div>
+                    <div class="slot-card" onclick="pickSlot(this, 'night')" data-slot="night" style="padding: 20px; background: rgba(0,0,0,0.2); border: 2px solid rgba(100,120,200,0.1); border-radius: 16px; cursor: pointer; text-align: center; transition: all 0.3s;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🌙</div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">Night</div>
+                        <div style="color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono';">21:00 - 06:00</div>
                     </div>
                 </div>
                 <input type="hidden" name="slot_type" id="slotType" value="morning">
 
-                <!-- Custom Time (hidden by default) -->
-                <div class="custom-time" id="customTime" style="display: none;">
-                    <div class="input-group">
-                        <label>Start Time</label>
-                        <input type="time" name="custom_start" id="customStart">
-                    </div>
-                    <div class="input-group">
-                        <label>End Time</label>
-                        <input type="time" name="custom_end" id="customEnd">
-                    </div>
-                </div>
-
                 <!-- Team Selection -->
-                <div class="input-group">
-                    <label>Select Teams ({{ available_teams|length }} available)</label>
-                    <div class="team-selector">
-                        {% if available_teams %}
-                            {% for team in available_teams %}
-                            <div class="team-row" onclick="toggleTeam(this)">
-                                <input type="checkbox" name="team_ids" value="{{ team.id }}" onchange="updateTeamCount()">
-                                <div class="team-info">
-                                    <div class="team-name">{{ team.team_name }}</div>
-                                    <div class="team-owners">
-                                        {% if team.owner_1_name %}👤 {{ team.owner_1_name }}{% endif %}
-                                        {% if team.owner_2_name %}, {{ team.owner_2_name }}{% endif %}
-                                        {% if team.owner_3_name %}, {{ team.owner_3_name }}{% endif %}
-                                        {% if not team.owner_1_name %}⚠️ No owners assigned{% endif %}
+                <div style="margin-bottom: 18px;">
+                    <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+                        Select Teams <span id="teamCount" style="color: var(--cosmic-purple-light);">(0 selected)</span>
+                    </label>
+                    <div style="max-height: 280px; overflow-y: auto; border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 14px; padding: 15px;">
+                        {% if teams %}
+                            {% for team in teams %}
+                            <div class="team-row" onclick="toggleTeam(this)" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.3s; margin-bottom: 8px; background: rgba(0,0,0,0.15); border: 1px solid transparent;">
+                                <input type="checkbox" name="team_ids" value="{{ team.id }}" onchange="updateCount()" style="width: 20px; height: 20px; accent-color: #7c4dff;">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: var(--text-primary);">{{ team.team_name }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 2px;">
+                                        Purse: ₹{{ "%.2f"|format(team.purse_limit or 100) }}Cr | 
+                                        Spent: ₹{{ "%.2f"|format(team.spent or 0) }}Cr
                                     </div>
                                 </div>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <div class="empty-state" style="padding: 30px;">
-                                <p>No available teams</p>
-                                <p style="font-size: 0.8rem;">All teams are currently in active sessions</p>
-                            </div>
+                            <p style="color: var(--text-dim); text-align: center; padding: 20px;">No teams available for this auction</p>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- Dynamic Count -->
-                <div class="count-display">
-                    <span class="label">Team Selection</span>
-                    <span class="value">
-                        <span class="selected" id="selectedCount">0</span> / {{ total_teams }} selected
-                        (<span class="remaining" id="remainingCount">{{ total_teams }}</span> remaining)
-                    </span>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
-                    🚀 Create Session
+                <button type="submit" class="btn-create" style="width: 100%; padding: 16px; border-radius: 16px; border: none; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; font-weight: 700; font-size: 1.05rem; cursor: pointer; font-family: 'Space Grotesk'; letter-spacing: 0.5px; transition: all 0.3s;">
+                    🚀 Create & Enter Auction
                 </button>
             </form>
         </div>
 
-        <!-- Active Sessions -->
+        <!-- RIGHT: Existing Sessions -->
         <div>
-            <h2>📋 Sessions</h2>
+            <h2 style="font-family: 'Space Grotesk'; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 20px;">📋 Existing Sessions</h2>
             
             {% if sessions %}
                 {% for sess in sessions %}
-                <div class="session-card">
-                    <div class="session-header">
+                <div style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1); border-radius: 20px; padding: 25px; margin-bottom: 20px; transition: all 0.3s;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <div>
-                            <div class="session-name">{{ sess.session_name }}</div>
+                            <div style="font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">{{ sess.session_name }}</div>
                             <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
-                                {% if sess.start_time and sess.end_time %}
-                                    ⏰ {{ sess.start_time }} - {{ sess.end_time }}
-                                {% endif %}
+                                {% if sess.start_time %}Started: {{ sess.start_time.strftime('%Y-%m-%d %H:%M') }}{% endif %}
                             </div>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <span class="session-time">{{ sess.participating }}/{{ total_teams }} teams</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
                             {% if sess.status == 'active' %}
-                            <span class="status-badge status-active">● Active</span>
+                                background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25);
                             {% elif sess.status == 'paused' %}
-                            <span class="status-badge status-paused">⏸ Paused</span>
+                                background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25);
                             {% else %}
-                            <span class="status-badge status-completed">✓ Completed</span>
-                            {% endif %}
-                        </div>
+                                background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25);
+                            {% endif %}">
+                            {% if sess.status == 'active' %}● Active{% elif sess.status == 'paused' %}⏸ Paused{% else %}✓ Completed{% endif %}
+                        </span>
                     </div>
 
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: {{ sess.percentage }}%;"></div>
-                    </div>
-
-                    <div class="session-stats">
-                        <div class="session-stat">
-                            <div class="value" style="color: #22c55e;">{{ sess.participating }}</div>
-                            <div class="label">Participating</div>
-                        </div>
-                        <div class="session-stat">
-                            <div class="value" style="color: #f59e0b;">{{ sess.remaining }}</div>
-                            <div class="label">Remaining</div>
-                        </div>
-                        <div class="session-stat">
-                            <div class="value" style="color: var(--cosmic-purple-light);">{{ "%.0f"|format(sess.percentage) }}%</div>
-                            <div class="label">Full</div>
-                        </div>
-                    </div>
-
-                    <div class="team-tags" id="teamTags-{{ sess.id }}">
-                        {% for team in teams if team.id in sess.team_ids_list %}
-                        <span class="team-tag">
+                    <!-- Teams in session -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+                        {% for team in teams if sess.team_ids and team.id in sess.team_ids %}
+                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2);">
                             {{ team.team_name }}
-                            {% if sess.status == 'active' %}
-                            <span class="remove" onclick="removeTeam({{ sess.id }}, {{ team.id }})">×</span>
-                            {% endif %}
                         </span>
                         {% endfor %}
                     </div>
 
-                    <div class="session-actions">
+                    <!-- Actions -->
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         {% if sess.status == 'active' %}
-                        <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
-                        <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">➕ Continue</button>
-                        <a href="/admin/auction?auction={{ auction.id }}&session={{ sess.id }}" class="btn-small btn-enter">🔨 Enter Auction</a>
+                        <a href="/admin/auction/session/{{ sess.id }}/enter" style="padding: 10px 20px; border-radius: 14px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); text-decoration: none; font-weight: 700; font-size: 0.85rem; transition: all 0.3s;">
+                            🔨 Enter Auction
+                        </a>
+                        <button onclick="closeSession({{ sess.id }})" style="padding: 10px 20px; border-radius: 14px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; border: none;">
+                            🔒 Close
+                        </button>
                         {% else %}
-                        <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">🔄 Continue</button>
-                        <a href="/admin/auction?auction={{ auction.id }}&session={{ sess.id }}" class="btn-small btn-enter">📊 View</a>
+                        <a href="/admin/auction/session/{{ sess.id }}/enter" style="padding: 10px 20px; border-radius: 14px; background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); text-decoration: none; font-weight: 700; font-size: 0.85rem; transition: all 0.3s;">
+                            📊 View
+                        </a>
                         {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="glass-panel empty-state">
-                    <div class="icon">📅</div>
-                    <h3>No Sessions Yet</h3>
-                    <p>Create your first session using the form on the left</p>
+                <div style="text-align: center; padding: 60px 20px; background: rgba(0, 0, 0, 0.2); border-radius: 20px; border: 1px dashed rgba(100, 120, 200, 0.2);">
+                    <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.3;">📅</div>
+                    <h3 style="color: var(--text-secondary); font-family: 'Space Grotesk'; margin-bottom: 10px;">No Sessions Yet</h3>
+                    <p style="color: var(--text-dim);">Create your first session using the form on the left</p>
                 </div>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </div>
 
 <script>
 let selectedSlot = 'morning';
 
-function selectSlot(el, slot) {
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
+function pickSlot(el, slot) {
+    document.querySelectorAll('.slot-card').forEach(c => {
+        c.style.borderColor = 'rgba(100,120,200,0.1)';
+        c.style.background = 'rgba(0,0,0,0.2)';
+    });
+    el.style.borderColor = '#7c4dff';
+    el.style.background = 'rgba(124, 77, 255, 0.1)';
     selectedSlot = slot;
     document.getElementById('slotType').value = slot;
-    
-    const customTime = document.getElementById('customTime');
-    if (slot === 'custom') {
-        customTime.style.display = 'grid';
-        document.getElementById('customStart').required = true;
-        document.getElementById('customEnd').required = true;
-    } else {
-        customTime.style.display = 'none';
-        document.getElementById('customStart').required = false;
-        document.getElementById('customEnd').required = false;
-    }
 }
 
 function toggleTeam(row) {
-    const checkbox = row.querySelector('input[type="checkbox"]');
-    checkbox.checked = !checkbox.checked;
-    row.classList.toggle('selected', checkbox.checked);
-    updateTeamCount();
+    const cb = row.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    row.style.borderColor = cb.checked ? 'rgba(34, 197, 94, 0.3)' : 'transparent';
+    row.style.background = cb.checked ? 'rgba(34, 197, 94, 0.08)' : 'rgba(0,0,0,0.15)';
+    updateCount();
 }
 
-function updateTeamCount() {
+function updateCount() {
     const checked = document.querySelectorAll('input[name="team_ids"]:checked').length;
-    const total = {{ total_teams }};
-    document.getElementById('selectedCount').textContent = checked;
-    document.getElementById('remainingCount').textContent = total - checked;
-}
-
-function removeTeam(sessionId, teamId) {
-    if (!confirm('Remove this team from session? They will be available for other sessions.')) return;
-    
-    fetch('/admin/sessions/' + sessionId + '/remove-team/' + teamId, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'}
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Failed to remove team');
-        }
-    });
+    document.getElementById('teamCount').textContent = '(' + checked + ' selected)';
 }
 
 function closeSession(sessionId) {
-    if (!confirm('Close this session? Teams will be available for next session.')) return;
-    
-    fetch('/admin/sessions/' + sessionId + '/close', {method: 'POST'})
+    if (!confirm('Close this session? No new bids can be placed.')) return;
+    fetch('/admin/auction/session/' + sessionId + '/close', {method: 'POST'})
     .then(r => r.json())
     .then(data => {
         if (data.success) location.reload();
+        else alert(data.error || 'Failed to close');
     });
 }
 
-function continueSession(sessionId) {
-    if (!confirm('Create continuation session with remaining teams?')) return;
-    
-    fetch('/admin/sessions/' + sessionId + '/continue', {method: 'POST'})
-    .then(r => {
-        if (r.redirected) window.location.href = r.url;
-        else return r.json();
-    })
-    .then(data => {
-        if (data && data.success) location.reload();
-    });
-}
-// Initialize
-updateTeamCount();
+// Initialize first slot as selected
+document.addEventListener('DOMContentLoaded', function() {
+    const firstSlot = document.querySelector('[data-slot="morning"]');
+    if (firstSlot) pickSlot(firstSlot, 'morning');
+    updateCount();
+});
 </script>
+
 {% endblock %}
