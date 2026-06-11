@@ -227,7 +227,7 @@
         </h2>
         <div class="auction-list">
             {% for auction in active_auctions %}
-            <div class="auction-item" onclick="window.location.href='/admin/enter-auction/{{ auction.id }}'">
+            <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'">
                 <div class="info">
                     <div class="name">{{ auction.league_name }}</div>
                     <div class="meta">ID: {{ auction.id }} | Teams: {{ auction.team_count }} | Sessions: {{ auction.session_count }}</div>
@@ -273,8 +273,9 @@
                     <input type="number" name="overseas_limit" value="8" min="1" max="15">
                 </div>
                 <div class="input-group">
-                    <label>Created By (User ID)</label>
-                    <input type="number" name="created_by" value="{{ session.user_id }}" readonly>
+                    <label>Created By</label>
+                    <input type="text" value="{{ session.username }}" readonly>
+                    <input type="hidden" name="created_by" value="{{ session.user_id }}">
                 </div>
             </div>
             
@@ -310,7 +311,7 @@
         <div class="auction-list">
             {% if recent_auctions %}
                 {% for auction in recent_auctions %}
-                <div class="auction-item" onclick="window.location.href='/admin/enter-auction/{{ auction.id }}'">
+                <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'">
                     <div class="info">
                         <div class="name">{{ auction.league_name }}</div>
                         <div class="meta">ID: {{ auction.id }} | Teams: {{ auction.team_count }} | Created: {{ auction.created_at.strftime('%Y-%m-%d') if auction.created_at else 'N/A' }}</div>
@@ -356,13 +357,12 @@ function createAuction(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success && data.auction_id) {
-            window.location.href = '/admin/enter-auction/' + data.auction_id;
+            window.location.href = '/admin/sessions?auction=' + data.auction_id;
         } else {
             alert(data.error || 'Failed to create auction');
         }
     })
     .catch(() => {
-        // Fallback: submit form normally
         form.submit();
     });
     return false;
@@ -374,17 +374,15 @@ function joinById() {
         alert('Please enter an auction ID');
         return;
     }
-    window.location.href = '/admin/enter-auction/' + id;
+    window.location.href = '/admin/sessions?auction=' + id;
 }
 
-// Close modal on outside click
 window.onclick = function(e) {
     if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('show');
     }
 }
 
-// Enter key on join input
 document.getElementById('joinAuctionId')?.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') joinById();
 });

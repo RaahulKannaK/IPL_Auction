@@ -51,18 +51,6 @@
         margin-bottom: 30px;
     }
 
-    .auction-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 20px;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 14px;
-        border: 1px solid rgba(100, 120, 200, 0.1);
-    }
-    .auction-info .label { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
-    .auction-info .value { color: var(--cosmic-purple-light); font-weight: 700; font-family: 'Space Grotesk'; }
-
     .nav-btn {
         display: inline-flex; align-items: center; gap: 8px;
         padding: 10px 20px; border-radius: 14px;
@@ -127,20 +115,54 @@
         box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
     }
 
-    .owner-selector {
+    /* Owner Selector - Dynamic */
+    .owner-count-selector {
         display: flex;
-        flex-direction: column;
         gap: 10px;
+        margin-bottom: 20px;
+    }
+    .owner-count-btn {
+        flex: 1;
+        padding: 15px;
+        border-radius: 14px;
+        border: 2px solid rgba(100, 120, 200, 0.15);
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-dim);
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        text-align: center;
+    }
+    .owner-count-btn:hover {
+        border-color: var(--cosmic-purple);
+        color: var(--cosmic-purple-light);
+    }
+    .owner-count-btn.selected {
+        border-color: var(--cosmic-purple);
+        background: rgba(124, 77, 255, 0.1);
+        color: var(--cosmic-purple-light);
+    }
+
+    .owner-boxes {
+        margin-bottom: 20px;
+    }
+    .owner-box {
+        display: none;
         margin-bottom: 15px;
     }
-    .owner-row {
+    .owner-box.visible {
+        display: block;
+    }
+    .owner-box .header {
         display: flex;
         align-items: center;
         gap: 10px;
+        margin-bottom: 10px;
     }
-    .owner-row .num {
-        width: 30px;
-        height: 30px;
+    .owner-box .num {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: rgba(124, 77, 255, 0.15);
         color: var(--cosmic-purple-light);
@@ -148,10 +170,13 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.85rem;
-        flex-shrink: 0;
+        font-size: 0.9rem;
     }
-    .owner-row select { flex: 1; }
+    .owner-box .title {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
 
     .btn {
         padding: 14px 28px;
@@ -245,7 +270,9 @@
         margin-left: 4px;
         transition: color 0.3s;
     }
-    .owner-tag .remove:hover { color: #ff6b6b; }
+    .owner-tag .remove:hover {
+        color: #ff6b6b;
+    }
     .owner-tag.unassigned {
         background: rgba(245, 158, 11, 0.12);
         color: #f59e0b;
@@ -300,31 +327,6 @@
         text-transform: uppercase;
         letter-spacing: 1px;
         margin-top: 4px;
-    }
-
-    .squad-preview {
-        margin-top: 18px; padding-top: 18px;
-        border-top: 1px solid rgba(100, 120, 200, 0.1);
-    }
-    .squad-count { display: flex; gap: 8px; flex-wrap: wrap; }
-    .squad-badge {
-        padding: 5px 12px; border-radius: 20px;
-        font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;
-    }
-    .badge-batsman { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-    .badge-bowler { background: rgba(255, 42, 0, 0.12); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
-    .badge-all_rounder { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
-    .badge-wicket_keeper { background: rgba(247, 181, 0, 0.12); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
-    .badge-overseas { background: rgba(139, 92, 246, 0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(139, 92, 246, 0.2); }
-
-    .warning-msg {
-        background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25);
-        color: #fbbf24; padding: 10px 15px; border-radius: 10px;
-        font-size: 0.85rem; margin-top: 12px; display: flex; align-items: center; gap: 8px;
-    }
-    .danger-msg {
-        background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);
-        color: #f87171;
     }
 
     .team-actions {
@@ -386,9 +388,6 @@
     .modal-close { font-size: 1.8rem; color: var(--text-dim); cursor: pointer; transition: color 0.3s; background: none; border: none; }
     .modal-close:hover { color: #ef4444; }
 
-    .assign-form { margin-top: 15px; }
-    .assign-form select { width: 100%; margin-bottom: 10px; }
-
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -418,26 +417,13 @@
     <!-- Top Bar -->
     <div class="top-bar">
         <div>
-            <h1>🏆 Team Management</h1>
-            <p style="color: var(--text-dim); margin-top: 5px;">Create teams, assign owners, and manage squad details</p>
+            <h1>👥 Team Management</h1>
+            <p style="color: var(--text-dim); margin-top: 5px;">Create teams, assign owners (1-3), and manage squad details</p>
         </div>
         <div style="display: flex; gap: 10px;">
             <a href="/admin/sessions" class="nav-btn">📅 Sessions</a>
-            <a href="/admin/auction" class="nav-btn">🔨 Auction</a>
+            <a href="/admin/players" class="nav-btn">🏏 Players</a>
             <a href="/admin/" class="nav-btn">← Dashboard</a>
-        </div>
-    </div>
-
-    <!-- Auction Info -->
-    <div class="auction-info" style="margin-bottom: 25px;">
-        <div>
-            <div class="label">Auction</div>
-            <div class="value">{{ auction.league_name if auction else 'No Active Auction' }}</div>
-        </div>
-        <div style="width: 1px; height: 30px; background: rgba(100, 120, 200, 0.2);"></div>
-        <div>
-            <div class="label">Auction ID</div>
-            <div class="value">#{{ auction.id if auction else 'N/A' }}</div>
         </div>
     </div>
 
@@ -488,11 +474,21 @@
                 </div>
 
                 <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
-                    Team Owners (1-3)
+                    Number of Team Owners (1-3)
                 </label>
-                <div class="owner-selector">
-                    <div class="owner-row">
-                        <span class="num">1</span>
+                <div class="owner-count-selector">
+                    <div class="owner-count-btn selected" onclick="setOwnerCount(1)">1 Owner</div>
+                    <div class="owner-count-btn" onclick="setOwnerCount(2)">2 Owners</div>
+                    <div class="owner-count-btn" onclick="setOwnerCount(3)">3 Owners</div>
+                </div>
+                <input type="hidden" name="owner_count" id="ownerCount" value="1">
+
+                <div class="owner-boxes">
+                    <div class="owner-box visible" id="ownerBox1">
+                        <div class="header">
+                            <div class="num">1</div>
+                            <div class="title">Team Owner 1</div>
+                        </div>
                         <select name="owner_id_1">
                             <option value="">-- Select Owner --</option>
                             {% for user in available_owners %}
@@ -500,8 +496,11 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="owner-row">
-                        <span class="num">2</span>
+                    <div class="owner-box" id="ownerBox2">
+                        <div class="header">
+                            <div class="num">2</div>
+                            <div class="title">Team Owner 2</div>
+                        </div>
                         <select name="owner_id_2">
                             <option value="">-- Select Owner --</option>
                             {% for user in available_owners %}
@@ -509,8 +508,11 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="owner-row">
-                        <span class="num">3</span>
+                    <div class="owner-box" id="ownerBox3">
+                        <div class="header">
+                            <div class="num">3</div>
+                            <div class="title">Team Owner 3</div>
+                        </div>
                         <select name="owner_id_3">
                             <option value="">-- Select Owner --</option>
                             {% for user in available_owners %}
@@ -578,31 +580,8 @@
                         <span style="color: #22c55e;">● Available ₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0) - (team.reserved or 0)) }}Cr</span>
                     </div>
 
-                    <!-- Squad Composition -->
-                    <div class="squad-preview">
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Squad Composition</div>
-                        <div class="squad-count">
-                            <span class="squad-badge badge-batsman">🏏 Batsmen {{ team.batsmen_count or 0 }}</span>
-                            <span class="squad-badge badge-bowler">🎯 Bowlers {{ team.bowlers_count or 0 }}</span>
-                            <span class="squad-badge badge-all_rounder">⚡ All Rounders {{ team.all_rounders_count or 0 }}</span>
-                            <span class="squad-badge badge-wicket_keeper">🧤 Wicket Keepers {{ team.keepers_count or 0 }}</span>
-                            <span class="squad-badge badge-overseas">🌍 Overseas {{ team.overseas_count or 0 }}/{{ team.overseas_limit or 8 }}</span>
-                        </div>
-                        
-                        {% if team.overseas_count and team.overseas_count > (team.overseas_limit or 8) %}
-                        <div class="warning-msg danger-msg">
-                            ⚠️ Overseas limit exceeded!
-                        </div>
-                        {% endif %}
-                        {% if (team.squad_count or 0) < 11 %}
-                        <div class="warning-msg">
-                            ⚠️ Need {{ 11 - (team.squad_count or 0) }} more players for Playing XI
-                        </div>
-                        {% endif %}
-                    </div>
-
                     <!-- Team Stats -->
-                    <div class="team-stats" style="margin-top: 15px;">
+                    <div class="team-stats">
                         <div class="team-stat">
                             <div class="value" style="color: var(--cosmic-purple-light);">{{ team.purse_limit or 100 }}</div>
                             <div class="label">Purse</div>
@@ -622,22 +601,10 @@
                     </div>
 
                     <!-- Actions -->
-                    <div class="team-actions" style="margin-top: 15px;">
-                        <button class="btn-small btn-edit" onclick="openEditModal({{ team.id }}, '{{ team.team_name }}', {{ team.purse_limit }}, {{ team.squad_size }}, {{ team.overseas_limit }}, {{ team.owner_id or 'null' }}, {{ team.owner_id_2 or 'null' }}, {{ team.owner_id_3 or 'null' }})">
-                            ✏️ Edit
-                        </button>
-                        <button class="btn-small btn-squad" onclick="viewSquad({{ team.id }})">
-                            👥 Squad
-                        </button>
-                        <button class="btn-small btn-squad" onclick="viewPurse({{ team.id }})">
-                            💰 Purse
-                        </button>
-                        <button class="btn-small btn-squad" onclick="openAssignModal({{ team.id }}, '{{ team.team_name }}')">
-                            👤 Assign
-                        </button>
-                        <button class="btn-small btn-delete" onclick="deleteTeam({{ team.id }})">
-                            🗑️ Delete
-                        </button>
+                    <div class="team-actions">
+                        <button class="btn-small btn-edit" onclick="openEditModal({{ team.id }})">✏️ Edit</button>
+                        <a href="/admin/teams/squad/{{ team.id }}" class="btn-small btn-squad">👥 Squad</a>
+                        <button class="btn-small btn-delete" onclick="deleteTeam({{ team.id }})">🗑️ Delete</button>
                     </div>
                 </div>
                 {% endfor %}
@@ -652,27 +619,6 @@
     </div>
 </div>
 
-<!-- Assign Owner Modal -->
-<div class="modal-overlay" id="assignModal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title">👤 Assign Team Owner</div>
-            <button class="modal-close" onclick="closeAssignModal()">&times;</button>
-        </div>
-        <p style="color: var(--text-dim); margin-bottom: 20px;" id="modalTeamName"></p>
-        <form method="POST" action="/admin/teams/assign_owner" class="assign-form" id="assignForm">
-            <input type="hidden" name="team_id" id="assignTeamId">
-            <div class="input-group">
-                <label>Select Owner</label>
-                <select name="user_id" id="ownerSelect" required>
-                    <option value="">-- Select User --</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Assign Owner</button>
-        </form>
-    </div>
-</div>
-
 <!-- Edit Team Modal -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-box">
@@ -682,8 +628,6 @@
         </div>
         
         <form method="POST" id="editForm">
-            <input type="hidden" name="team_id" id="editTeamId">
-            
             <div class="input-group">
                 <label>Team Name</label>
                 <input type="text" name="team_name" id="editTeamName" required>
@@ -708,9 +652,12 @@
             <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
                 Team Owners (1-3)
             </label>
-            <div class="owner-selector">
-                <div class="owner-row">
-                    <span class="num">1</span>
+            <div class="owner-boxes">
+                <div class="owner-box visible">
+                    <div class="header">
+                        <div class="num">1</div>
+                        <div class="title">Team Owner 1</div>
+                    </div>
                     <select name="owner_id_1" id="editOwner1">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
@@ -718,8 +665,11 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="owner-row">
-                    <span class="num">2</span>
+                <div class="owner-box visible">
+                    <div class="header">
+                        <div class="num">2</div>
+                        <div class="title">Team Owner 2</div>
+                    </div>
                     <select name="owner_id_2" id="editOwner2">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
@@ -727,8 +677,11 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="owner-row">
-                    <span class="num">3</span>
+                <div class="owner-box visible">
+                    <div class="header">
+                        <div class="num">3</div>
+                        <div class="title">Team Owner 3</div>
+                    </div>
                     <select name="owner_id_3" id="editOwner3">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
@@ -745,62 +698,28 @@
     </div>
 </div>
 
-<!-- Squad View Modal -->
-<div class="modal-overlay" id="squadModal">
-    <div class="modal-box" style="max-width: 600px;">
-        <div class="modal-header">
-            <div class="modal-title">👥 Team Squad</div>
-            <button class="modal-close" onclick="closeSquadModal()">&times;</button>
-        </div>
-        <div id="squadContent" style="max-height: 400px; overflow-y: auto;">
-            <p style="color: var(--text-dim); text-align: center; padding: 40px;">Loading squad...</p>
-        </div>
-    </div>
-</div>
-
-<!-- Purse Details Modal -->
-<div class="modal-overlay" id="purseModal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title">💰 Purse Breakdown</div>
-            <button class="modal-close" onclick="closePurseModal()">&times;</button>
-        </div>
-        <div id="purseContent">
-            <p style="color: var(--text-dim); text-align: center; padding: 40px;">Loading details...</p>
-        </div>
-    </div>
-</div>
-
 <script>
-function openAssignModal(teamId, teamName) {
-    document.getElementById('assignTeamId').value = teamId;
-    document.getElementById('modalTeamName').textContent = 'Team: ' + teamName;
-    document.getElementById('assignModal').classList.add('show');
+function setOwnerCount(count) {
+    document.querySelectorAll('.owner-count-btn').forEach(b => b.classList.remove('selected'));
+    event.target.classList.add('selected');
+    document.getElementById('ownerCount').value = count;
     
-    fetch('/teams/available_owners')
-    .then(r => r.json())
-    .then(data => {
-        const select = document.getElementById('ownerSelect');
-        select.innerHTML = '<option value="">-- Select User --</option>';
-        data.users.forEach(user => {
-            select.innerHTML += `<option value="${user.id}">${user.username} (${user.role})</option>`;
-        });
-    });
+    for (let i = 1; i <= 3; i++) {
+        const box = document.getElementById('ownerBox' + i);
+        if (i <= count) {
+            box.classList.add('visible');
+        } else {
+            box.classList.remove('visible');
+        }
+    }
 }
 
-function closeAssignModal() {
-    document.getElementById('assignModal').classList.remove('show');
-}
-
-function openEditModal(id, name, purse, squad, overseas, owner1, owner2, owner3) {
+function openEditModal(id) {
+    const row = document.querySelector(`tr[data-team-id="${id}"]`) || event.target.closest('.team-card');
+    const name = row.querySelector('.team-name')?.textContent || '';
+    
     document.getElementById('editForm').action = '/admin/teams/edit/' + id;
     document.getElementById('editTeamName').value = name;
-    document.getElementById('editPurseLimit').value = purse;
-    document.getElementById('editSquadSize').value = squad;
-    document.getElementById('editOverseasLimit').value = overseas;
-    document.getElementById('editOwner1').value = owner1 || '';
-    document.getElementById('editOwner2').value = owner2 || '';
-    document.getElementById('editOwner3').value = owner3 || '';
     document.getElementById('editModal').classList.add('show');
 }
 
@@ -820,114 +739,6 @@ function removeOwner(teamId, ownerNum) {
         if (data.success) location.reload();
         else alert(data.error || 'Failed to remove owner');
     });
-}
-
-function viewSquad(teamId) {
-    document.getElementById('squadModal').classList.add('show');
-    
-    fetch('/admin/teams/squad/' + teamId)
-    .then(r => r.json())
-    .then(data => {
-        const content = document.getElementById('squadContent');
-        if (data.players && data.players.length > 0) {
-            content.innerHTML = `
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="border-bottom: 2px solid rgba(124, 77, 255, 0.3);">
-                        <th style="text-align: left; padding: 12px; color: var(--cosmic-purple-light); font-family: 'Space Grotesk';">Player</th>
-                        <th style="text-align: left; padding: 12px; color: var(--cosmic-purple-light); font-family: 'Space Grotesk';">Category</th>
-                        <th style="text-align: right; padding: 12px; color: var(--cosmic-purple-light); font-family: 'Space Grotesk';">Price</th>
-                    </tr>
-                    ${data.players.map(p => `
-                        <tr style="border-bottom: 1px solid rgba(100, 120, 200, 0.1); transition: all 0.3s;">
-                            <td style="padding: 12px; color: var(--text-primary);">
-                                ${p.player_name} ${p.overseas ? '<span style="color: var(--gold); font-size: 0.8rem;">🌍</span>' : ''}
-                            </td>
-                            <td style="padding: 12px;">
-                                <span class="squad-badge badge-${p.category}">${p.category.replace('_', ' ')}</span>
-                            </td>
-                            <td style="padding: 12px; text-align: right; color: var(--gold-light); font-weight: 700; font-family: 'JetBrains Mono', monospace;">₹${parseFloat(p.sold_price).toFixed(2)}Cr</td>
-                        </tr>
-                    `).join('')}
-                </table>
-                <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 14px; border: 1px solid rgba(100, 120, 200, 0.1);">
-                    <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-family: 'Space Grotesk';">
-                        <span>Total Players: ${data.players.length}</span>
-                        <span style="color: var(--gold-light);">Total Spent: ₹${data.players.reduce((sum, p) => sum + parseFloat(p.sold_price), 0).toFixed(2)}Cr</span>
-                    </div>
-                </div>
-            `;
-        } else {
-            content.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 40px;">No players in squad yet</p>';
-        }
-    });
-}
-
-function closeSquadModal() {
-    document.getElementById('squadModal').classList.remove('show');
-}
-
-function viewPurse(teamId) {
-    document.getElementById('purseModal').classList.add('show');
-    
-    fetch('/admin/teams/purse/' + teamId)
-    .then(r => r.json())
-    .then(data => {
-        const purseLimit = parseFloat(data.purse_limit || 100);
-        const spent = parseFloat(data.spent || 0);
-        const reserved = parseFloat(data.reserved || 0);
-        const available = purseLimit - spent - reserved;
-        const spentPct = (spent / purseLimit * 100).toFixed(1);
-        const reservedPct = (reserved / purseLimit * 100).toFixed(1);
-        const availablePct = (available / purseLimit * 100).toFixed(1);
-        
-        document.getElementById('purseContent').innerHTML = `
-            <div style="text-align: center; margin-bottom: 25px;">
-                <div style="font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 5px;">${data.team_name}</div>
-                <div style="color: var(--text-dim);">Purse Analysis</div>
-            </div>
-            
-            <div style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 25px; margin-bottom: 20px; border: 1px solid rgba(100, 120, 200, 0.1);">
-                <div class="purse-bar" style="height: 40px; margin-bottom: 15px;">
-                    <div class="purse-spent" style="width: ${spentPct}%;"></div>
-                    <div class="purse-reserved" style="width: ${reservedPct}%;"></div>
-                    <div class="purse-available" style="width: ${availablePct}%;"></div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
-                    <div style="background: rgba(239, 68, 68, 0.08); padding: 15px; border-radius: 14px; border: 1px solid rgba(239, 68, 68, 0.2);">
-                        <div style="font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: #ef4444;">₹${spent.toFixed(2)}Cr</div>
-                        <div style="font-size: 0.85rem; color: #f87171; margin-top: 5px;">Spent (${spentPct}%)</div>
-                    </div>
-                    <div style="background: rgba(139, 92, 246, 0.08); padding: 15px; border-radius: 14px; border: 1px solid rgba(139, 92, 246, 0.2);">
-                        <div style="font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: var(--cosmic-purple-light);">₹${reserved.toFixed(2)}Cr</div>
-                        <div style="font-size: 0.85rem; color: var(--cosmic-purple-light); margin-top: 5px;">Reserved (${reservedPct}%)</div>
-                    </div>
-                    <div style="background: rgba(34, 197, 94, 0.08); padding: 15px; border-radius: 14px; border: 1px solid rgba(34, 197, 94, 0.2);">
-                        <div style="font-family: 'Space Grotesk'; font-size: 1.3rem; font-weight: 700; color: #22c55e;">₹${available.toFixed(2)}Cr</div>
-                        <div style="font-size: 0.85rem; color: #4ade80; margin-top: 5px;">Available (${availablePct}%)</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="background: rgba(0,0,0,0.2); border-radius: 14px; padding: 20px; border: 1px solid rgba(100, 120, 200, 0.1);">
-                <h4 style="color: var(--text-secondary); margin-bottom: 15px; font-family: 'Space Grotesk';">💡 Spending Power</h4>
-                <p style="color: var(--text-dim); line-height: 1.6;">
-                    With <strong style="color: #22c55e;">₹${available.toFixed(2)}Cr</strong> available, 
-                    you can bid on approximately <strong style="color: var(--ice-blue);">${Math.floor(available / 5)}</strong> more players 
-                    at an average of ₹5Cr each.
-                </p>
-                ${reserved > 0 ? `
-                <p style="color: var(--cosmic-purple-light); margin-top: 10px; font-size: 0.9rem;">
-                    🔒 ₹${reserved.toFixed(2)}Cr is reserved for hidden maximum bids
-                </p>
-                ` : ''}
-            </div>
-        `;
-    });
-}
-
-function closePurseModal() {
-    document.getElementById('purseModal').classList.remove('show');
 }
 
 function deleteTeam(teamId) {

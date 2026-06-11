@@ -41,7 +41,6 @@
 
     h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; color: var(--text-primary); margin-bottom: 10px; }
     h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 20px; }
-    h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: var(--cosmic-purple-light); margin-bottom: 15px; }
 
     .top-bar {
         display: flex;
@@ -104,34 +103,6 @@
         font-weight: 600;
     }
 
-    .master-status {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.3), rgba(22, 101, 52, 0.2));
-        border: 2px solid rgba(34, 197, 94, 0.3);
-        border-radius: 20px;
-        padding: 25px;
-        margin-bottom: 30px;
-        text-align: center;
-    }
-    .master-title {
-        color: #86efac;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 600;
-        margin-bottom: 10px;
-    }
-    .master-bid {
-        font-family: 'JetBrains Mono';
-        font-size: 3rem;
-        font-weight: 800;
-        color: #22c55e;
-    }
-    .master-info {
-        color: #86efac;
-        margin-top: 10px;
-        font-size: 0.9rem;
-    }
-
     .section-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -156,80 +127,79 @@
         box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
     }
 
-    .slot-selector {
+    /* Time Slot Cards */
+    .slot-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 20px;
     }
-    .slot-option {
-        padding: 15px;
+    .slot-card {
+        padding: 20px;
         background: rgba(0, 0, 0, 0.2);
         border: 2px solid rgba(100, 120, 200, 0.1);
-        border-radius: 14px;
+        border-radius: 16px;
         cursor: pointer;
         text-align: center;
         transition: all 0.3s;
     }
-    .slot-option:hover {
+    .slot-card:hover {
         border-color: rgba(124, 77, 255, 0.3);
         background: rgba(124, 77, 255, 0.05);
     }
-    .slot-option.selected {
+    .slot-card.selected {
         border-color: var(--cosmic-purple);
         background: rgba(124, 77, 255, 0.1);
     }
-    .slot-option .time {
-        font-family: 'JetBrains Mono';
-        font-size: 0.9rem;
-        color: var(--cosmic-purple-light);
-        font-weight: 600;
-    }
-    .slot-option .name {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 5px;
+    .slot-card .icon { font-size: 2rem; margin-bottom: 8px; }
+    .slot-card .name { font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 4px; }
+    .slot-card .time { color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono'; }
+
+    .custom-time {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
     }
 
     .team-selector {
-        max-height: 250px;
+        max-height: 300px;
         overflow-y: auto;
         border: 1px solid rgba(100, 120, 200, 0.1);
         border-radius: 14px;
-        padding: 10px;
+        padding: 15px;
         margin-bottom: 20px;
     }
     .team-selector::-webkit-scrollbar { width: 4px; }
     .team-selector::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
 
-    .team-checkbox {
+    .team-row {
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 12px 15px;
-        border-radius: 10px;
+        padding: 14px;
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.3s;
-        margin-bottom: 5px;
+        margin-bottom: 8px;
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid transparent;
     }
-    .team-checkbox:hover {
+    .team-row:hover {
         background: rgba(124, 77, 255, 0.05);
+        border-color: rgba(124, 77, 255, 0.2);
     }
-    .team-checkbox input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
+    .team-row.selected {
+        background: rgba(34, 197, 94, 0.08);
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+    .team-row input[type="checkbox"] {
+        width: 20px; height: 20px;
         accent-color: var(--cosmic-purple);
     }
-    .team-checkbox .team-name {
-        font-weight: 600;
-        color: var(--text-primary);
-        flex: 1;
-    }
-    .team-checkbox .owner {
-        font-size: 0.8rem;
-        color: var(--text-dim);
-    }
+    .team-row .team-info { flex: 1; }
+    .team-row .team-name { font-weight: 600; color: var(--text-primary); }
+    .team-row .team-owners { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
 
     .btn {
         padding: 14px 28px;
@@ -440,123 +410,20 @@
         color: var(--text-dim);
     }
 
-    .custom-time {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .bid-panel {
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(100, 120, 200, 0.1);
-        border-radius: 20px;
-        padding: 25px;
-        margin-bottom: 20px;
-    }
-
-    .player-select {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-    .player-option {
-        background: rgba(0, 0, 0, 0.2);
-        border: 2px solid rgba(100, 120, 200, 0.1);
-        border-radius: 12px;
-        padding: 15px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-    .player-option:hover {
-        border-color: var(--cosmic-purple);
-        background: rgba(124, 77, 255, 0.05);
-    }
-    .player-option.selected {
-        border-color: #22c55e;
-        background: rgba(34, 197, 94, 0.08);
-    }
-
-    .bid-controls {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-    .bid-controls select, .bid-controls input {
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(100, 120, 200, 0.15);
-        color: var(--text-primary);
-        padding: 14px;
-        border-radius: 14px;
-        width: 100%;
-        outline: none;
-        font-family: 'Space Grotesk';
-    }
-    .bid-controls select:focus, .bid-controls input:focus {
-        border-color: var(--cosmic-purple-light);
-        box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
-    }
-
-    .bid-btn-lg {
-        width: 100%;
-        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
-        color: white;
-        border: none;
-        padding: 16px;
-        border-radius: 14px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-family: 'Space Grotesk';
-    }
-    .bid-btn-lg:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3);
-    }
-
-    .current-bid-display {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.3), rgba(22, 101, 52, 0.2));
-        border: 2px solid rgba(34, 197, 94, 0.3);
-        border-radius: 20px;
-        padding: 25px;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    .current-bid-display h4 {
-        color: #86efac;
-        font-family: 'Space Grotesk';
-        margin-bottom: 10px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-size: 0.9rem;
-    }
-    .current-bid-display .amount {
-        font-family: 'JetBrains Mono';
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #22c55e;
-    }
-
-    .bid-history {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-    .bid-history-item {
+    .count-display {
         display: flex;
         justify-content: space-between;
-        padding: 12px;
-        border-bottom: 1px solid rgba(100, 120, 200, 0.05);
-        transition: all 0.3s;
+        align-items: center;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(100, 120, 200, 0.1);
     }
-    .bid-history-item:hover {
-        background: rgba(124, 77, 255, 0.03);
-    }
-    .bid-history-item:last-child {
-        border-bottom: none;
-    }
+    .count-display .label { color: var(--text-dim); font-size: 0.85rem; }
+    .count-display .value { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--text-primary); }
+    .count-display .value .selected { color: #22c55e; }
+    .count-display .value .remaining { color: var(--cosmic-purple-light); }
 
     .back-link {
         display: inline-flex;
@@ -572,139 +439,19 @@
         color: var(--cosmic-purple-light);
     }
 
-    .session-banner {
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(100, 120, 200, 0.1);
-        border-radius: 20px;
-        padding: 25px;
-        margin-bottom: 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    .session-banner h2 {
-        margin-bottom: 5px;
-    }
-    .session-banner p {
-        color: var(--text-dim);
-        font-size: 0.9rem;
-    }
-
-    .parallel-notice {
-        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 77, 255, 0.1));
-        border: 1px solid rgba(139, 92, 246, 0.25);
-        color: var(--cosmic-purple-light);
-        padding: 15px 20px;
-        border-radius: 14px;
-        margin-bottom: 20px;
-        text-align: center;
-        font-weight: 600;
-    }
-
     @media (max-width: 640px) {
         .sessions-container { padding: 15px; }
         .stats-bar { grid-template-columns: repeat(2, 1fr); }
         .session-stats { grid-template-columns: 1fr; }
-        .slot-selector { grid-template-columns: 1fr; }
-        .bid-controls { grid-template-columns: 1fr; }
+        .slot-grid { grid-template-columns: 1fr; }
+        .custom-time { grid-template-columns: 1fr; }
     }
 </style>
 
-{% if view == 'room' and session %}
-<!-- ========== SESSION ROOM VIEW ========== -->
-<a href="/admin/sessions?auction={{ auction.id }}" class="back-link">← Back to Sessions</a>
-
-<div class="session-banner">
-    <div>
-        <h2>🎯 {{ session.session_name }}</h2>
-        <p>Session #{{ session.id }} | Auction #{{ session.auction_id }}</p>
-    </div>
-    <div class="status-badge status-{{ session.status }}">
-        {{ session.status.upper() }}
-    </div>
-</div>
-
-<div class="parallel-notice">
-    ⚡ Parallel Auction Mode — Bids from other sessions are merged. System auto-counters across sessions!
-</div>
-
-<!-- Current Bid Display -->
-<div class="current-bid-display">
-    <h4>Current Bid in This Session</h4>
-    <div class="amount" id="sessionBid">₹{{ "%.2f"|format(session.current_bid or 0) }}Cr</div>
-    <p style="color: #86efac; margin-top: 10px;" id="sessionBidder">
-        {% if session.current_bidder_id %}
-        By Team #{{ session.current_bidder_id }}
-        {% else %}
-        No bids yet
-        {% endif %}
-    </p>
-</div>
-
-<!-- Player Selection -->
-<div class="bid-panel">
-    <h3>🏏 Select Player to Bid</h3>
-    <div class="player-select" id="playerSelect">
-        {% for player in players %}
-        <div class="player-option" 
-             onclick="selectPlayer({{ player.id }}, '{{ player.name }}')"
-             data-id="{{ player.id }}"
-             data-name="{{ player.name }}"
-             data-base="{{ player.base_price }}">
-            <h4 style="color: var(--text-primary); margin-bottom: 8px;">{{ player.name }}</h4>
-            <p style="color: var(--text-dim); font-size: 0.9rem;">
-                {{ player.category.replace('_', ' ').title() }}
-                {% if player.overseas %}| 🌍 Overseas{% endif %}
-            </p>
-            <p style="color: #22c55e; font-weight: 700; margin-top: 8px;">Base: ₹{{ player.base_price }}Cr</p>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- Bid Controls -->
-<div class="bid-panel">
-    <h3>💰 Place Bid</h3>
-    <div class="bid-controls">
-        <div>
-            <label style="color: var(--text-dim); display: block; margin-bottom: 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Your Team</label>
-            <select id="teamSelect">
-                {% for team in teams %}
-                <option value="{{ team.id }}">{{ team.name }} (₹{{ "%.2f"|format(team.purse - team.spent - team.reserved) }}Cr)</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label style="color: var(--text-dim); display: block; margin-bottom: 8px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Bid Amount (Cr)</label>
-            <input type="number" id="bidAmount" placeholder="Enter amount" step="0.5" min="0.5">
-        </div>
-    </div>
-    <button onclick="placeSessionBid()" class="bid-btn-lg">🚀 PLACE BID</button>
-    <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim);"></div>
-</div>
-
-<!-- Bid History -->
-<div class="bid-panel">
-    <h3>📜 Session Bid History</h3>
-    <div class="bid-history">
-        {% for bid in session_bids %}
-        <div class="bid-history-item">
-            <span>
-                <strong style="color: var(--cosmic-purple-light);">{{ bid.team_name }}</strong>
-                <span style="color: var(--text-dim);"> → </span>
-                <span style="color: var(--text-primary);">{{ bid.player_name }}</span>
-            </span>
-            <span style="color: #22c55e; font-weight: 700; font-family: 'JetBrains Mono';">₹{{ "%.2f"|format(bid.amount) }}Cr</span>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-{% else %}
-<!-- ========== SESSIONS LIST VIEW ========== -->
 <div class="sessions-container">
+    <!-- Back Link -->
+    <a href="/admin/" class="back-link">← Back to Dashboard</a>
+
     <!-- Top Bar -->
     <div class="top-bar">
         <div>
@@ -712,9 +459,8 @@
             <p style="color: var(--text-dim); margin-top: 5px;">Create time slots, assign teams, and manage auction sessions</p>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="/admin/auction" class="nav-btn">🔨 Auction Room</a>
             <a href="/admin/teams" class="nav-btn">👥 Teams</a>
-            <a href="/admin/" class="nav-btn">← Dashboard</a>
+            <a href="/admin/players" class="nav-btn">🏏 Players</a>
         </div>
     </div>
 
@@ -734,13 +480,6 @@
             <div class="label">Total Teams</div>
             <div class="value">{{ total_teams }}</div>
         </div>
-    </div>
-
-    <!-- Master Status -->
-    <div class="master-status" id="masterStatus">
-        <div class="master-title">📊 Master Bid (Across All Sessions)</div>
-        <div class="master-bid" id="masterBid">₹0.00Cr</div>
-        <div class="master-info" id="masterInfo">No active bids</div>
     </div>
 
     <!-- Stats -->
@@ -771,54 +510,67 @@
             
             <h2>➕ Create New Session</h2>
             
-            <form method="POST" action="/admin/sessions/create">
+            <form method="POST" action="/admin/sessions/create" id="createSessionForm">
                 <div class="input-group">
                     <label>Session Name</label>
                     <input type="text" name="session_name" placeholder="e.g., Saturday Morning" required>
                 </div>
 
-                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Time Slot</label>
-                <div class="slot-selector">
-                    <div class="slot-option selected" onclick="selectSlot(this, 'morning')" data-slot="morning">
-                        <div class="name">🌅 Morning</div>
+                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Select Time Slot</label>
+                <div class="slot-grid">
+                    <div class="slot-card selected" onclick="selectSlot(this, 'morning')" data-slot="morning">
+                        <div class="icon">🌅</div>
+                        <div class="name">Morning</div>
                         <div class="time">06:00 - 12:00</div>
                     </div>
-                    <div class="slot-option" onclick="selectSlot(this, 'afternoon')" data-slot="afternoon">
-                        <div class="name">☀️ Afternoon</div>
+                    <div class="slot-card" onclick="selectSlot(this, 'afternoon')" data-slot="afternoon">
+                        <div class="icon">☀️</div>
+                        <div class="name">Afternoon</div>
                         <div class="time">12:00 - 17:00</div>
                     </div>
-                    <div class="slot-option" onclick="selectSlot(this, 'evening')" data-slot="evening">
-                        <div class="name">🌆 Evening</div>
+                    <div class="slot-card" onclick="selectSlot(this, 'evening')" data-slot="evening">
+                        <div class="icon">🌆</div>
+                        <div class="name">Evening</div>
                         <div class="time">17:00 - 21:00</div>
                     </div>
-                    <div class="slot-option" onclick="selectSlot(this, 'night')" data-slot="night">
-                        <div class="name">🌙 Night</div>
-                        <div class="time">21:00 - 23:59</div>
+                    <div class="slot-card" onclick="selectSlot(this, 'custom')" data-slot="custom">
+                        <div class="icon">⚙️</div>
+                        <div class="name">Custom</div>
+                        <div class="time">Set your own</div>
                     </div>
                 </div>
                 <input type="hidden" name="slot_type" id="slotType" value="morning">
 
+                <!-- Custom Time (hidden by default) -->
                 <div class="custom-time" id="customTime" style="display: none;">
                     <div class="input-group">
-                        <label>Custom Start</label>
-                        <input type="time" name="custom_start">
+                        <label>Start Time</label>
+                        <input type="time" name="custom_start" id="customStart">
                     </div>
                     <div class="input-group">
-                        <label>Custom End</label>
-                        <input type="time" name="custom_end">
+                        <label>End Time</label>
+                        <input type="time" name="custom_end" id="customEnd">
                     </div>
                 </div>
 
+                <!-- Team Selection -->
                 <div class="input-group">
                     <label>Select Teams ({{ available_teams|length }} available)</label>
                     <div class="team-selector">
                         {% if available_teams %}
                             {% for team in available_teams %}
-                            <label class="team-checkbox">
-                                <input type="checkbox" name="team_ids" value="{{ team.id }}">
-                                <span class="team-name">{{ team.team_name }}</span>
-                                <span class="owner">{{ team.owner_name or 'Unassigned' }}</span>
-                            </label>
+                            <div class="team-row" onclick="toggleTeam(this)">
+                                <input type="checkbox" name="team_ids" value="{{ team.id }}" onchange="updateTeamCount()">
+                                <div class="team-info">
+                                    <div class="team-name">{{ team.team_name }}</div>
+                                    <div class="team-owners">
+                                        {% if team.owner_1_name %}👤 {{ team.owner_1_name }}{% endif %}
+                                        {% if team.owner_2_name %}, {{ team.owner_2_name }}{% endif %}
+                                        {% if team.owner_3_name %}, {{ team.owner_3_name }}{% endif %}
+                                        {% if not team.owner_1_name %}⚠️ No owners assigned{% endif %}
+                                    </div>
+                                </div>
+                            </div>
                             {% endfor %}
                         {% else %}
                             <div class="empty-state" style="padding: 30px;">
@@ -829,12 +581,12 @@
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <span style="color: var(--text-dim); font-size: 0.85rem;">
-                        <span id="selectedCount">0</span> / {{ total_teams }} teams selected
-                    </span>
-                    <span style="color: var(--text-dim); font-size: 0.85rem;">
-                        Remaining: <span id="remainingCount">{{ total_teams }}</span>
+                <!-- Dynamic Count -->
+                <div class="count-display">
+                    <span class="label">Team Selection</span>
+                    <span class="value">
+                        <span class="selected" id="selectedCount">0</span> / {{ total_teams }} selected
+                        (<span class="remaining" id="remainingCount">{{ total_teams }}</span> remaining)
                     </span>
                 </div>
 
@@ -856,7 +608,7 @@
                             <div class="session-name">{{ sess.session_name }}</div>
                             <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
                                 {% if sess.start_time and sess.end_time %}
-                                    {{ sess.start_time }} - {{ sess.end_time }}
+                                    ⏰ {{ sess.start_time }} - {{ sess.end_time }}
                                 {% endif %}
                             </div>
                         </div>
@@ -906,10 +658,10 @@
                         {% if sess.status == 'active' %}
                         <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">➕ Continue</button>
-                        <a href="/admin/sessions/room/{{ sess.id }}" class="btn-small btn-enter"></a>🔨 Enter Room</a>
+                        <a href="/admin/auction?session={{ sess.id }}" class="btn-small btn-enter">🔨 Enter Auction</a>
                         {% else %}
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">🔄 Continue</button>
-                        <a href="/admin/sessions/room/{{ sess.id }}" class="btn-small btn-enter"></a>📊 View</a>
+                        <a href="/admin/auction?session={{ sess.id }}" class="btn-small btn-enter">📊 View</a>
                         {% endif %}
                     </div>
                 </div>
@@ -924,16 +676,12 @@
         </div>
     </div>
 </div>
-{% endif %}
 
 <script>
 let selectedSlot = 'morning';
-let selectedPlayerId = null;
-let selectedPlayerName = '';
-let sessionId = {{ session.id if session else 'null' }};
 
 function selectSlot(el, slot) {
-    document.querySelectorAll('.slot-option').forEach(o => o.classList.remove('selected'));
+    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
     selectedSlot = slot;
     document.getElementById('slotType').value = slot;
@@ -941,99 +689,23 @@ function selectSlot(el, slot) {
     const customTime = document.getElementById('customTime');
     if (slot === 'custom') {
         customTime.style.display = 'grid';
+        document.getElementById('customStart').required = true;
+        document.getElementById('customEnd').required = true;
     } else {
         customTime.style.display = 'none';
+        document.getElementById('customStart').required = false;
+        document.getElementById('customEnd').required = false;
     }
 }
 
-function selectPlayer(id, name) {
-    document.querySelectorAll('.player-option').forEach(p => p.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-    selectedPlayerId = id;
-    selectedPlayerName = name;
-    document.getElementById('bidStatus').textContent = 'Selected: ' + name;
-    document.getElementById('bidStatus').style.color = 'var(--text-secondary)';
+function toggleTeam(row) {
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    checkbox.checked = !checkbox.checked;
+    row.classList.toggle('selected', checkbox.checked);
+    updateTeamCount();
 }
 
-function placeSessionBid() {
-    if (!selectedPlayerId) {
-        alert('Select a player first!');
-        return;
-    }
-    
-    const teamId = document.getElementById('teamSelect').value;
-    const amount = parseFloat(document.getElementById('bidAmount').value);
-    
-    if (!amount || amount <= 0) {
-        alert('Enter valid bid amount');
-        return;
-    }
-    
-    fetch('/admin/sessions/' + sessionId + '/bid', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            player_id: selectedPlayerId,
-            team_id: teamId,
-            amount: amount
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('sessionBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
-            document.getElementById('sessionBidder').textContent = 'By ' + data.bidder;
-            document.getElementById('bidStatus').textContent = '✅ Bid placed successfully!';
-            document.getElementById('bidStatus').style.color = '#22c55e';
-        } else {
-            document.getElementById('bidStatus').textContent = '❌ ' + data.error;
-            document.getElementById('bidStatus').style.color = '#ef4444';
-        }
-    });
-}
-
-// Auto-refresh session status
-if (sessionId) {
-    setInterval(() => {
-        fetch('/admin/sessions/' + sessionId + '/status')
-        .then(r => r.json())
-        .then(data => {
-            if (data.current_bid > 0) {
-                document.getElementById('sessionBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
-                document.getElementById('sessionBidder').textContent = 'By ' + (data.current_bidder || 'Unknown');
-            }
-        });
-    }, 3000);
-}
-
-// Auto-refresh master status (list view)
-function updateMasterStatus() {
-    const auctionId = {{ auction.id if auction else 'null' }};
-    if (!auctionId) return;
-    
-    fetch('/admin/sessions/' + auctionId + '/master-status')
-    .then(r => r.json())
-    .then(data => {
-        if (data.master_bid > 0) {
-            document.getElementById('masterBid').textContent = '₹' + data.master_bid.toFixed(2) + 'Cr';
-            document.getElementById('masterInfo').innerHTML = 
-                data.master_bidder + ' on ' + data.master_player + '<br>' +
-                data.active_sessions + ' active sessions';
-        }
-    });
-}
-
-if (!sessionId) {
-    setInterval(updateMasterStatus, 3000);
-    updateMasterStatus();
-}
-
-// Update selected team count
-document.querySelectorAll('input[name="team_ids"]').forEach(cb => {
-    cb.addEventListener('change', updateCount);
-});
-
-function updateCount() {
+function updateTeamCount() {
     const checked = document.querySelectorAll('input[name="team_ids"]:checked').length;
     const total = {{ total_teams }};
     document.getElementById('selectedCount').textContent = checked;
@@ -1080,7 +752,7 @@ function continueSession(sessionId) {
     });
 }
 
-// Initialize count
-updateCount();
+// Initialize
+updateTeamCount();
 </script>
 {% endblock %}
