@@ -44,7 +44,7 @@ def auction_room():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify auction exists and is active
+        # Verify auction exists
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
         auction = cursor.fetchone()
         
