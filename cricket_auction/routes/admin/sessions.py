@@ -4,18 +4,12 @@ import json
 
 bp = Blueprint('admin_sessions', __name__, url_prefix='/admin/sessions')
 
-# Session time slots configuration
-SESSION_SLOTS = {
-    'morning': {'name': 'Morning', 'start': '06:00', 'end': '12:00'},
-    'afternoon': {'name': 'Afternoon', 'start': '12:00', 'end': '17:00'},
-    'evening': {'name': 'Evening', 'start': '17:00', 'end': '21:00'},
-    'night': {'name': 'Night', 'start': '21:00', 'end': '23:59'}
-}
+
 
 @bp.route('/')
 def list_sessions():
     """Main sessions page - shows auction context and session management"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -32,7 +26,7 @@ def list_sessions():
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
         auction = cursor.fetchone()
         
-        # All teams in this auction - ONLY use owner_id (single owner)
+        # All teams in this auction
         cursor.execute("""
             SELECT t.*, u.username as owner_name
             FROM teams t
