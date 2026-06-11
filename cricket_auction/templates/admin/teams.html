@@ -542,19 +542,19 @@
                             <div class="owner-tags">
                                 {% if team.owner_id %}
                                     <span class="owner-tag">
-                                        👤 {{ team.owner_1_name }}
+                                        👤 {{ team.owner_name }}
                                         <span class="remove" onclick="removeOwner({{ team.id }}, 1)">×</span>
                                     </span>
                                 {% endif %}
-                                {% if team.owner_id_2 %}
+                                {% if team.owner_id %}
                                     <span class="owner-tag">
-                                        👤 {{ team.owner_2_name }}
+                                        👤 {{ team.owner_name }}
                                         <span class="remove" onclick="removeOwner({{ team.id }}, 2)">×</span>
                                     </span>
                                 {% endif %}
-                                {% if team.owner_id_3 %}
+                                {% if team.owner_id %}
                                     <span class="owner-tag">
-                                        👤 {{ team.owner_3_name }}
+                                        👤 {{ team.owner_name }}
                                         <span class="remove" onclick="removeOwner({{ team.id }}, 3)">×</span>
                                     </span>
                                 {% endif %}
@@ -658,7 +658,7 @@
                         <div class="num">1</div>
                         <div class="title">Team Owner 1</div>
                     </div>
-                    <select name="owner_id_1" id="editOwner1">
+                    <select name="owner_id" id="editOwner1">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
                         <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
@@ -670,7 +670,7 @@
                         <div class="num">2</div>
                         <div class="title">Team Owner 2</div>
                     </div>
-                    <select name="owner_id_2" id="editOwner2">
+                    <select name="owner_id" id="editOwner2">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
                         <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
@@ -682,7 +682,7 @@
                         <div class="num">3</div>
                         <div class="title">Team Owner 3</div>
                     </div>
-                    <select name="owner_id_3" id="editOwner3">
+                    <select name="owner_id" id="editOwner3">
                         <option value="">-- Select Owner --</option>
                         {% for user in available_owners %}
                         <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>

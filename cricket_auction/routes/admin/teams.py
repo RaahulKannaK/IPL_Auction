@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
-from database.db import get_db, get_cached, clear_cache
+from database.db import get_db
 
-bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
+bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams', strict_slashes=False)
 
 @bp.route('/')
 def list_teams():
@@ -16,30 +16,24 @@ def list_teams():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Current auction details
         if auction_id:
             cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
             auction = cursor.fetchone()
         else:
             auction = None
         
-        # All teams with owner details (up to 3 owners)
+        # Single owner only - matches your database schema
         cursor.execute("""
             SELECT t.*, 
-                   u1.username as owner_1_name,
-                   u2.username as owner_2_name,
-                   u3.username as owner_3_name,
+                   u.username as owner_name,
                    a.league_name
             FROM teams t 
-            LEFT JOIN users u1 ON t.owner_id = u1.id
-            LEFT JOIN users u2 ON t.owner_id_2 = u2.id
-            LEFT JOIN users u3 ON t.owner_id_3 = u3.id
+            LEFT JOIN users u ON t.owner_id = u.id
             LEFT JOIN auctions a ON t.auction_id = a.id
             ORDER BY t.created_at DESC
         """)
         teams = cursor.fetchall()
         
-        # Available users for owner assignment
         cursor.execute("""
             SELECT id, username, role 
             FROM users 
@@ -48,7 +42,6 @@ def list_teams():
         """)
         available_owners = cursor.fetchall()
         
-        # Stats
         total_teams = len(teams)
         assigned_teams = sum(1 for t in teams if t['owner_id'])
         unassigned_teams = total_teams - assigned_teams
@@ -70,9 +63,10 @@ def list_teams():
         stats=stats
     )
 
+
 @bp.route('/create', methods=['POST'])
 def create_team():
-    """Create new team with multiple owners support"""
+    """Create new team with single owner"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
@@ -82,38 +76,18 @@ def create_team():
     purse_limit = float(request.form.get('purse_limit', 100))
     squad_size = int(request.form.get('squad_size', 18))
     overseas_limit = int(request.form.get('overseas_limit', 8))
-    
-    # Get owner IDs (1-3 owners)
-    owner_ids = []
-    for i in range(1, 4):
-        owner_id = request.form.get(f'owner_id_{i}')
-        if owner_id and owner_id.strip():
-            owner_ids.append(int(owner_id))
-    
-    # Remove duplicates while preserving order
-    owner_ids = list(dict.fromkeys(owner_ids))
+    owner_id = request.form.get('owner_id') or None
     
     db = get_db()
     cursor = db.cursor()
     
     try:
-        if len(owner_ids) >= 1:
-            owner_id = owner_ids[0]
-            owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
-            owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
-            
-            cursor.execute("""
-                INSERT INTO teams (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit))
-        else:
-            cursor.execute("""
-                INSERT INTO teams (auction_id, team_name, purse_limit, squad_size, overseas_limit)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (auction_id, team_name, purse_limit, squad_size, overseas_limit))
+        cursor.execute("""
+            INSERT INTO teams (auction_id, team_name, owner_id, purse_limit, squad_size, overseas_limit)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (auction_id, team_name, owner_id, purse_limit, squad_size, overseas_limit))
         
         db.commit()
-        team_id = cursor.lastrowid
         
     finally:
         cursor.close()
@@ -122,9 +96,10 @@ def create_team():
     flash(f'Team "{team_name}" created successfully!')
     return redirect('/admin/teams')
 
+
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
-    """Edit team details and owners"""
+    """Edit team details and owner"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -132,35 +107,21 @@ def edit_team(id):
     purse_limit = float(request.form.get('purse_limit', 100))
     squad_size = int(request.form.get('squad_size', 18))
     overseas_limit = int(request.form.get('overseas_limit', 8))
-    
-    # Get updated owner IDs
-    owner_ids = []
-    for i in range(1, 4):
-        owner_id = request.form.get(f'owner_id_{i}')
-        if owner_id and owner_id.strip():
-            owner_ids.append(int(owner_id))
-    
-    owner_ids = list(dict.fromkeys(owner_ids))
+    owner_id = request.form.get('owner_id') or None
     
     db = get_db()
     cursor = db.cursor()
     
     try:
-        owner_id = owner_ids[0] if len(owner_ids) > 0 else None
-        owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
-        owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
-        
         cursor.execute("""
             UPDATE teams 
             SET team_name = %s, 
                 owner_id = %s,
-                owner_id_2 = %s,
-                owner_id_3 = %s,
                 purse_limit = %s,
                 squad_size = %s,
                 overseas_limit = %s
             WHERE id = %s
-        """, (team_name, owner_id, owner_id_2, owner_id_3, purse_limit, squad_size, overseas_limit, id))
+        """, (team_name, owner_id, purse_limit, squad_size, overseas_limit, id))
         
         db.commit()
         
@@ -170,6 +131,7 @@ def edit_team(id):
     
     flash('Team updated successfully!')
     return redirect('/admin/teams')
+
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 def delete_team(id):
@@ -181,7 +143,6 @@ def delete_team(id):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if team has players
         cursor.execute("SELECT COUNT(*) as cnt FROM team_players WHERE team_id = %s", (id,))
         result = cursor.fetchone()
         
@@ -199,9 +160,10 @@ def delete_team(id):
     flash('Team deleted!')
     return redirect('/admin/teams')
 
-@bp.route('/remove_owner/<int:team_id>/<int:owner_num>', methods=['POST'])
-def remove_owner(team_id, owner_num):
-    """Remove specific owner from team (1, 2, or 3)"""
+
+@bp.route('/remove_owner/<int:team_id>', methods=['POST'])
+def remove_owner(team_id):
+    """Remove owner from team"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -209,20 +171,7 @@ def remove_owner(team_id, owner_num):
     cursor = db.cursor()
     
     try:
-        if owner_num == 1:
-            # Shift owner 2 to 1, owner 3 to 2
-            cursor.execute("""
-                UPDATE teams 
-                SET owner_id = owner_id_2,
-                    owner_id_2 = owner_id_3,
-                    owner_id_3 = NULL
-                WHERE id = %s
-            """, (team_id,))
-        elif owner_num == 2:
-            cursor.execute("UPDATE teams SET owner_id_2 = owner_id_3, owner_id_3 = NULL WHERE id = %s", (team_id,))
-        elif owner_num == 3:
-            cursor.execute("UPDATE teams SET owner_id_3 = NULL WHERE id = %s", (team_id,))
-        
+        cursor.execute("UPDATE teams SET owner_id = NULL WHERE id = %s", (team_id,))
         db.commit()
         
     finally:
@@ -231,6 +180,7 @@ def remove_owner(team_id, owner_num):
     
     flash('Owner removed!')
     return redirect('/admin/teams')
+
 
 @bp.route('/purse/<int:team_id>')
 def view_purse(team_id):
@@ -260,6 +210,7 @@ def view_purse(team_id):
         'available': float(team['purse_limit']) - float(team['spent'] or 0) - float(team['reserved'] or 0)
     })
 
+
 @bp.route('/squad/<int:team_id>')
 def view_squad(team_id):
     """Get team squad details"""
@@ -280,7 +231,6 @@ def view_squad(team_id):
         """, (team_id,))
         players = cursor.fetchall()
         
-        # Category breakdown
         categories = {}
         for player in players:
             cat = player['category']
@@ -298,6 +248,7 @@ def view_squad(team_id):
         'total_players': len(players),
         'overseas_count': sum(1 for p in players if p['overseas'])
     })
+
 
 @bp.route('/available_owners')
 def available_owners():
