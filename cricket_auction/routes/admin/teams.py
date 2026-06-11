@@ -6,7 +6,7 @@ bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
 @bp.route('/')
 def list_teams():
     """List all teams for current auction with owner details"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
