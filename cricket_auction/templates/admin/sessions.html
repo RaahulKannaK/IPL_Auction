@@ -658,10 +658,10 @@
                         {% if sess.status == 'active' %}
                         <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">➕ Continue</button>
-                        <a href="/admin/auction?session={{ sess.id }}" class="btn-small btn-enter">🔨 Enter Auction</a>
+                        <a href="/admin/auction?auction={{ auction.id }}&session={{ sess.id }}" class="btn-small btn-enter">🔨 Enter Auction</a>
                         {% else %}
                         <button class="btn-small btn-continue" onclick="continueSession({{ sess.id }})">🔄 Continue</button>
-                        <a href="/admin/auction?session={{ sess.id }}" class="btn-small btn-enter">📊 View</a>
+                        <a href="/admin/auction?auction={{ auction.id }}&session={{ sess.id }}" class="btn-small btn-enter">📊 View</a>
                         {% endif %}
                     </div>
                 </div>
@@ -751,7 +751,6 @@ function continueSession(sessionId) {
         if (data && data.success) location.reload();
     });
 }
-
 // Initialize
 updateTeamCount();
 </script>
