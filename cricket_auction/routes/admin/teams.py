@@ -10,7 +10,6 @@ def list_teams():
         flash('Unauthorized')
         return redirect('/')
     
-    # Check URL parameter first, then session, then latest active
     auction_id = request.args.get('auction') or session.get('active_auction_id')
     
     db = get_db()
@@ -24,18 +23,21 @@ def list_teams():
             cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
             auction = cursor.fetchone()
         
-        # Set session if auction found
         if auction:
             session['active_auction_id'] = auction['id']
             session['active_league_name'] = auction['league_name']
         
-        # Single owner only
+        # Multiple owners support
         cursor.execute("""
             SELECT t.*, 
-                   u.username as owner_name,
+                   u1.username as owner_1_name,
+                   u2.username as owner_2_name,
+                   u3.username as owner_3_name,
                    a.league_name
             FROM teams t 
-            LEFT JOIN users u ON t.owner_id = u.id
+            LEFT JOIN users u1 ON t.owner_id = u1.id
+            LEFT JOIN users u2 ON t.owner_id_2 = u2.id
+            LEFT JOIN users u3 ON t.owner_id_3 = u3.id
             LEFT JOIN auctions a ON t.auction_id = a.id
             ORDER BY t.created_at DESC
         """)
@@ -73,15 +75,12 @@ def list_teams():
 
 @bp.route('/create', methods=['POST'])
 def create_team():
-    """Create new team with single owner"""
+    """Create new team with up to 3 owners"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
     
-    # Get auction_id from form, session, or default to 1
     auction_id_raw = request.form.get('auction_id') or session.get('active_auction_id') or '1'
-    
-    # Clean up empty string
     if str(auction_id_raw).strip() == '':
         auction_id_raw = '1'
     
@@ -91,21 +90,33 @@ def create_team():
         flash('Invalid auction ID.')
         return redirect('/admin/teams')
     
-    # Set in session for future use
     session['active_auction_id'] = auction_id
     
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
-    owner_id = request.form.get('owner_id') or None
+    
+    # Get up to 3 owner IDs from form
+    owner_ids = []
+    for i in range(1, 4):
+        owner_id = request.form.get(f'owner_id_{i}')
+        if owner_id and owner_id.strip():
+            owner_ids.append(int(owner_id))
+    
+    # Remove duplicates while preserving order
+    owner_ids = list(dict.fromkeys(owner_ids))
+    
+    owner_id = owner_ids[0] if len(owner_ids) > 0 else None
+    owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
+    owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
     
     db = get_db()
     cursor = db.cursor()
     
     try:
         cursor.execute("""
-            INSERT INTO teams (auction_id, team_name, owner_id, purse_limit)
-            VALUES (%s, %s, %s, %s)
-        """, (auction_id, team_name, owner_id, purse_limit))
+            INSERT INTO teams (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit))
         
         db.commit()
         
@@ -116,15 +127,28 @@ def create_team():
     flash(f'Team "{team_name}" created successfully!')
     return redirect('/admin/teams')
 
+
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
-    """Edit team details and owner"""
+    """Edit team details and up to 3 owners"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
-    owner_id = request.form.get('owner_id') or None
+    
+    # Get up to 3 owner IDs from form
+    owner_ids = []
+    for i in range(1, 4):
+        owner_id = request.form.get(f'owner_id_{i}')
+        if owner_id and owner_id.strip():
+            owner_ids.append(int(owner_id))
+    
+    owner_ids = list(dict.fromkeys(owner_ids))
+    
+    owner_id = owner_ids[0] if len(owner_ids) > 0 else None
+    owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
+    owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
     
     db = get_db()
     cursor = db.cursor()
@@ -134,9 +158,11 @@ def edit_team(id):
             UPDATE teams 
             SET team_name = %s, 
                 owner_id = %s,
+                owner_id_2 = %s,
+                owner_id_3 = %s,
                 purse_limit = %s
             WHERE id = %s
-        """, (team_name, owner_id, purse_limit, id))
+        """, (team_name, owner_id, owner_id_2, owner_id_3, purse_limit, id))
         
         db.commit()
         
@@ -176,9 +202,9 @@ def delete_team(id):
     return redirect('/admin/teams')
 
 
-@bp.route('/remove_owner/<int:team_id>', methods=['POST'])
-def remove_owner(team_id):
-    """Remove owner from team"""
+@bp.route('/remove_owner/<int:team_id>/<int:owner_num>', methods=['POST'])
+def remove_owner(team_id, owner_num):
+    """Remove specific owner from team (1, 2, or 3)"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -186,7 +212,20 @@ def remove_owner(team_id):
     cursor = db.cursor()
     
     try:
-        cursor.execute("UPDATE teams SET owner_id = NULL WHERE id = %s", (team_id,))
+        if owner_num == 1:
+            # Shift owner 2 to 1, owner 3 to 2
+            cursor.execute("""
+                UPDATE teams 
+                SET owner_id = owner_id_2,
+                    owner_id_2 = owner_id_3,
+                    owner_id_3 = NULL
+                WHERE id = %s
+            """, (team_id,))
+        elif owner_num == 2:
+            cursor.execute("UPDATE teams SET owner_id_2 = owner_id_3, owner_id_3 = NULL WHERE id = %s", (team_id,))
+        elif owner_num == 3:
+            cursor.execute("UPDATE teams SET owner_id_3 = NULL WHERE id = %s", (team_id,))
+        
         db.commit()
         
     finally:
