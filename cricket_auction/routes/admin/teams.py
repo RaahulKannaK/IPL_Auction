@@ -71,7 +71,15 @@ def create_team():
         flash('Unauthorized')
         return redirect('/admin/teams')
     
-    auction_id = session.get('active_auction_id') or request.form.get('auction_id', 1)
+    # Fix: Handle empty string auction_id
+    auction_id = session.get('active_auction_id')
+    if not auction_id:
+        auction_id = request.form.get('auction_id')
+        if not auction_id or auction_id.strip() == '':
+            flash('No active auction. Please create or join an auction first.')
+            return redirect('/admin/teams')
+        auction_id = int(auction_id)
+    
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
     owner_id = request.form.get('owner_id') or None
@@ -93,7 +101,6 @@ def create_team():
     
     flash(f'Team "{team_name}" created successfully!')
     return redirect('/admin/teams')
-
 
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
