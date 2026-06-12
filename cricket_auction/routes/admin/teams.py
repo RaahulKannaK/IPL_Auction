@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db
 
-bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams', strict_slashes=False)
+bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
 
 @bp.route('/')
 def list_teams():
