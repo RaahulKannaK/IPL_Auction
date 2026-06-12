@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db
 
-bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
+bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams', strict_slashes=False)
 
 @bp.route('/')
 def list_teams():
@@ -22,7 +22,6 @@ def list_teams():
         else:
             auction = None
         
-        # Single owner only - matches your database schema
         cursor.execute("""
             SELECT t.*, 
                    u.username as owner_name,
@@ -67,15 +66,13 @@ def list_teams():
 @bp.route('/create', methods=['POST'])
 def create_team():
     """Create new team with single owner"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
     
     auction_id = session.get('active_auction_id') or request.form.get('auction_id', 1)
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
-    squad_size = int(request.form.get('squad_size', 18))
-    overseas_limit = int(request.form.get('overseas_limit', 8))
     owner_id = request.form.get('owner_id') or None
     
     db = get_db()
@@ -83,9 +80,9 @@ def create_team():
     
     try:
         cursor.execute("""
-            INSERT INTO teams (auction_id, team_name, owner_id, purse_limit, squad_size, overseas_limit)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (auction_id, team_name, owner_id, purse_limit, squad_size, overseas_limit))
+            INSERT INTO teams (auction_id, team_name, owner_id, purse_limit)
+            VALUES (%s, %s, %s, %s)
+        """, (auction_id, team_name, owner_id, purse_limit))
         
         db.commit()
         
@@ -100,13 +97,11 @@ def create_team():
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
     """Edit team details and owner"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
-    squad_size = int(request.form.get('squad_size', 18))
-    overseas_limit = int(request.form.get('overseas_limit', 8))
     owner_id = request.form.get('owner_id') or None
     
     db = get_db()
@@ -117,11 +112,9 @@ def edit_team(id):
             UPDATE teams 
             SET team_name = %s, 
                 owner_id = %s,
-                purse_limit = %s,
-                squad_size = %s,
-                overseas_limit = %s
+                purse_limit = %s
             WHERE id = %s
-        """, (team_name, owner_id, purse_limit, squad_size, overseas_limit, id))
+        """, (team_name, owner_id, purse_limit, id))
         
         db.commit()
         
@@ -164,7 +157,7 @@ def delete_team(id):
 @bp.route('/remove_owner/<int:team_id>', methods=['POST'])
 def remove_owner(team_id):
     """Remove owner from team"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -185,7 +178,7 @@ def remove_owner(team_id):
 @bp.route('/purse/<int:team_id>')
 def view_purse(team_id):
     """Get team purse details"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -214,7 +207,7 @@ def view_purse(team_id):
 @bp.route('/squad/<int:team_id>')
 def view_squad(team_id):
     """Get team squad details"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -253,7 +246,7 @@ def view_squad(team_id):
 @bp.route('/available_owners')
 def available_owners():
     """Get list of users available for team ownership"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
