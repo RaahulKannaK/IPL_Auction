@@ -469,7 +469,7 @@
             <p style="color: var(--text-dim); margin-top: 5px;">Create time slots, assign teams, and manage auction sessions</p>
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="/admin/teams" class="nav-btn">👥 Teams</a>
+            <a href="/admin/teams?auction={{ auction.id if auction else '' }}" class="nav-btn">👥 Teams</a>
             <a href="/admin/players" class="nav-btn">🏏 Players</a>
         </div>
     </div>
@@ -530,7 +530,7 @@
             {% endif %}
             
             <form method="POST" action="/admin/auction/sessions" id="createSessionForm">
-                <input type="hidden" name="auction_id" value="{{ auction.id if auction else '' }}">
+                <input type="hidden" name="auction_id" value="{{ auction.id if auction else (session.get('active_auction_id') or 1) }}">
                 
                 <div class="input-group">
                     <label>Session Name</label>

@@ -389,7 +389,7 @@
             <h2>➕ Create Team</h2>
             
             <form method="POST" action="/admin/teams/create">
-                <input type="hidden" name="auction_id" value="{{ auction.id if auction else '' }}">
+                <input type="hidden" name="auction_id" value="{{ auction.id if auction else (session.get('active_auction_id') or 1) }}">
                 
                 <div class="input-group">
                     <label>Team Name</label>

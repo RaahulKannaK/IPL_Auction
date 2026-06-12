@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db
 
-bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
+bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams', strict_slashes=False)
 
 @bp.route('/')
 def list_teams():
@@ -10,7 +10,8 @@ def list_teams():
         flash('Unauthorized')
         return redirect('/')
     
-    auction_id = session.get('active_auction_id')
+    # Check URL parameter first, then session, then latest active
+    auction_id = request.args.get('auction') or session.get('active_auction_id')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -20,9 +21,15 @@ def list_teams():
             cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
             auction = cursor.fetchone()
         else:
-            auction = None
+            cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
+            auction = cursor.fetchone()
         
-        # Single owner only - matches your database schema
+        # Set session if auction found
+        if auction:
+            session['active_auction_id'] = auction['id']
+            session['active_league_name'] = auction['league_name']
+        
+        # Single owner only
         cursor.execute("""
             SELECT t.*, 
                    u.username as owner_name,
@@ -71,14 +78,21 @@ def create_team():
         flash('Unauthorized')
         return redirect('/admin/teams')
     
-    # Fix: Handle empty string auction_id
-    auction_id = session.get('active_auction_id')
-    if not auction_id:
-        auction_id = request.form.get('auction_id')
-        if not auction_id or auction_id.strip() == '':
-            flash('No active auction. Please create or join an auction first.')
-            return redirect('/admin/teams')
-        auction_id = int(auction_id)
+    # Get auction_id from form, session, or default to 1
+    auction_id_raw = request.form.get('auction_id') or session.get('active_auction_id') or '1'
+    
+    # Clean up empty string
+    if str(auction_id_raw).strip() == '':
+        auction_id_raw = '1'
+    
+    try:
+        auction_id = int(auction_id_raw)
+    except (ValueError, TypeError):
+        flash('Invalid auction ID.')
+        return redirect('/admin/teams')
+    
+    # Set in session for future use
+    session['active_auction_id'] = auction_id
     
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
