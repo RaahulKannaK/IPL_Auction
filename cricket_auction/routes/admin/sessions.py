@@ -183,7 +183,7 @@ def get_session_teams(session_id):
 @bp.route('/<int:session_id>/add-teams', methods=['POST'])
 def add_teams_to_session(session_id):
     """Add teams to an existing session"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['teamowner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     new_team_ids = request.form.getlist('team_ids')

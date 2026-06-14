@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db, get_cached, clear_cache
 import json
+import time  # ← ADDED: Missing import that caused the error
 
 bp = Blueprint('admin_auction', __name__, url_prefix='/admin')
 
@@ -96,14 +97,38 @@ def manage_sessions():
             import json
             team_ids_json = json.dumps([int(t) for t in team_ids])
             
-            # Set time based on slot type (optional enhancement)
+            # === USE ADMIN-SELECTED TIME SLOT ===
             slot_type = request.form.get('slot_type', 'morning')
-            start_time = time.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Time slot definitions
+            SESSION_SLOTS = {
+                'morning':   {'start': '06:00', 'end': '12:00'},
+                'afternoon': {'start': '12:00', 'end': '17:00'},
+                'evening':   {'start': '17:00', 'end': '21:00'},
+                'custom':    {'start': None,    'end': None}
+            }
+            
+            slot = SESSION_SLOTS.get(slot_type, SESSION_SLOTS['morning'])
+            
+            # Build start/end datetime strings
+            from datetime import datetime, date
+            today = date.today().isoformat()
+            
+            if slot_type == 'custom':
+                # Use admin's custom time inputs
+                custom_start = request.form.get('custom_start', '')
+                custom_end = request.form.get('custom_end', '')
+                start_time = f"{today} {custom_start}:00" if custom_start else None
+                end_time = f"{today} {custom_end}:00" if custom_end else None
+            else:
+                # Use predefined slot times
+                start_time = f"{today} {slot['start']}:00"
+                end_time = f"{today} {slot['end']}:00"
             
             cursor.execute("""
-                INSERT INTO auction_sessions (auction_id, session_name, team_ids, status, start_time)
-                VALUES (%s, %s, %s, 'active', %s)
-            """, (auction_id, session_name, team_ids_json, start_time))
+                INSERT INTO auction_sessions (auction_id, session_name, team_ids, status, start_time, end_time)
+                VALUES (%s, %s, %s, 'active', %s, %s)
+            """, (auction_id, session_name, team_ids_json, start_time, end_time))
             
             db.commit()
             new_session_id = cursor.lastrowid
@@ -688,10 +713,10 @@ def rebid_player():
         
         cursor.execute("""
             UPDATE teams t
-            SET reserved = GREATEST(0, t.reserved - COALESCE((((
+            SET reserved = GREATEST(0, t.reserved - COALESCE(((((
                 SELECT reserved_amount FROM purse_reservations 
                 WHERE auction_player_id = %s AND team_id = t.id AND status = 'released'
-            ), 0)))
+            ), 0))))
             WHERE t.auction_id = %s
         """, (auction_player_id, auction_id))
         
