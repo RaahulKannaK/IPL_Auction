@@ -471,25 +471,14 @@
                         <div class="team-info">
                             <div class="team-name">{{ team.team_name }}</div>
                             <div class="owner-tags">
-                                {% if team.owner_id and team.owner_1_name %}
+                                {% if team.owner_names %}
+                                    {% for name in team.owner_names %}
                                     <span class="owner-tag">
-                                        👤 {{ team.owner_1_name }}
-                                        <span class="remove" onclick="removeOwner({{ team.id }}, 1)">×</span>
+                                        👤 {{ name }}
+                                        <span class="remove" onclick="removeOwner({{ team.id }}, {{ loop.index }})">×</span>
                                     </span>
-                                {% endif %}
-                                {% if team.owner_id_2 and team.owner_2_name %}
-                                    <span class="owner-tag">
-                                        👤 {{ team.owner_2_name }}
-                                        <span class="remove" onclick="removeOwner({{ team.id }}, 2)">×</span>
-                                    </span>
-                                {% endif %}
-                                {% if team.owner_id_3 and team.owner_3_name %}
-                                    <span class="owner-tag">
-                                        👤 {{ team.owner_3_name }}
-                                        <span class="remove" onclick="removeOwner({{ team.id }}, 3)">×</span>
-                                    </span>
-                                {% endif %}
-                                {% if not team.owner_id %}
+                                    {% endfor %}
+                                {% else %}
                                     <span class="owner-tag unassigned">⚠ Unassigned</span>
                                 {% endif %}
                             </div>
@@ -644,7 +633,6 @@ function openEditModal(id) {
     const cards = document.querySelectorAll('.team-card');
     let card = null;
     for (let i = 0; i < cards.length; i++) {
-        // Find card by checking if it contains the edit button with this id
         const editBtn = cards[i].querySelector(`[onclick="openEditModal(${id})"]`);
         if (editBtn) {
             card = cards[i];

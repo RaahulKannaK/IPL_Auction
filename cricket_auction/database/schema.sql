@@ -181,3 +181,14 @@ ADD COLUMN last_sold_price DECIMAL(10,2) NULL,
 ADD COLUMN last_sold_auction_player_id INT NULL,
 ADD COLUMN last_sold_at TIMESTAMP NULL;
 
+
+CREATE TABLE team_owners (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    user_id INT NOT NULL,
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_team_user (team_id, user_id)
+);

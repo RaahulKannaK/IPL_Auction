@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db
+import json
 
 bp = Blueprint('admin_teams', __name__, url_prefix='/admin/teams')
 
@@ -27,21 +28,40 @@ def list_teams():
             session['active_auction_id'] = auction['id']
             session['active_league_name'] = auction['league_name']
         
-        # Multiple owners support
         cursor.execute("""
             SELECT t.*, 
-                   u1.username as owner_1_name,
-                   u2.username as owner_2_name,
-                   u3.username as owner_3_name,
+                   u.username as owner_name,
                    a.league_name
             FROM teams t 
-            LEFT JOIN users u1 ON t.owner_id = u1.id
-            LEFT JOIN users u2 ON t.owner_id_2 = u2.id
-            LEFT JOIN users u3 ON t.owner_id_3 = u3.id
+            LEFT JOIN users u ON t.owner_id = u.id
             LEFT JOIN auctions a ON t.auction_id = a.id
             ORDER BY t.created_at DESC
         """)
         teams = cursor.fetchall()
+        
+        # Parse owner_ids JSON and fetch all owner names
+        for team in teams:
+            owner_ids = []
+            if team.get('owner_ids'):
+                try:
+                    owner_ids = json.loads(team['owner_ids'])
+                except:
+                    owner_ids = []
+            
+            # Ensure owner_id is included
+            if team['owner_id'] and team['owner_id'] not in owner_ids:
+                owner_ids.insert(0, team['owner_id'])
+            
+            team['all_owner_ids'] = owner_ids
+            
+            # Fetch all owner names
+            if owner_ids:
+                format_ids = ','.join(['%s'] * len(owner_ids))
+                cursor.execute(f"SELECT id, username FROM users WHERE id IN ({format_ids})", tuple(owner_ids))
+                owners_map = {u['id']: u['username'] for u in cursor.fetchall()}
+                team['owner_names'] = [owners_map.get(oid, 'Unknown') for oid in owner_ids]
+            else:
+                team['owner_names'] = []
         
         cursor.execute("""
             SELECT id, username, role 
@@ -75,7 +95,7 @@ def list_teams():
 
 @bp.route('/create', methods=['POST'])
 def create_team():
-    """Create new team with up to 3 owners"""
+    """Create new team with multiple owners (stored as JSON in owner_ids)"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/teams')
@@ -95,28 +115,28 @@ def create_team():
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
     
-    # Get up to 3 owner IDs from form
+    # Collect all owner IDs from form
     owner_ids = []
     for i in range(1, 4):
         owner_id = request.form.get(f'owner_id_{i}')
         if owner_id and owner_id.strip():
             owner_ids.append(int(owner_id))
     
-    # Remove duplicates while preserving order
+    # Remove duplicates, keep order
     owner_ids = list(dict.fromkeys(owner_ids))
     
-    owner_id = owner_ids[0] if len(owner_ids) > 0 else None
-    owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
-    owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
+    # First owner is primary (owner_id), rest go to owner_ids JSON
+    primary_owner = owner_ids[0] if owner_ids else None
+    additional_owners = owner_ids[1:] if len(owner_ids) > 1 else []
     
     db = get_db()
     cursor = db.cursor()
     
     try:
         cursor.execute("""
-            INSERT INTO teams (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (auction_id, team_name, owner_id, owner_id_2, owner_id_3, purse_limit))
+            INSERT INTO teams (auction_id, team_name, owner_id, owner_ids, purse_limit)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (auction_id, team_name, primary_owner, json.dumps(additional_owners) if additional_owners else None, purse_limit))
         
         db.commit()
         
@@ -124,20 +144,20 @@ def create_team():
         cursor.close()
         db.close()
     
-    flash(f'Team "{team_name}" created successfully!')
+    flash(f'Team "{team_name}" created with {len(owner_ids)} owner(s)!')
     return redirect('/admin/teams')
 
 
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
-    """Edit team details and up to 3 owners"""
+    """Edit team with multiple owners"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     team_name = request.form['team_name'].strip()
     purse_limit = float(request.form.get('purse_limit', 100))
     
-    # Get up to 3 owner IDs from form
+    # Collect all owner IDs
     owner_ids = []
     for i in range(1, 4):
         owner_id = request.form.get(f'owner_id_{i}')
@@ -146,9 +166,8 @@ def edit_team(id):
     
     owner_ids = list(dict.fromkeys(owner_ids))
     
-    owner_id = owner_ids[0] if len(owner_ids) > 0 else None
-    owner_id_2 = owner_ids[1] if len(owner_ids) > 1 else None
-    owner_id_3 = owner_ids[2] if len(owner_ids) > 2 else None
+    primary_owner = owner_ids[0] if owner_ids else None
+    additional_owners = owner_ids[1:] if len(owner_ids) > 1 else []
     
     db = get_db()
     cursor = db.cursor()
@@ -158,11 +177,10 @@ def edit_team(id):
             UPDATE teams 
             SET team_name = %s, 
                 owner_id = %s,
-                owner_id_2 = %s,
-                owner_id_3 = %s,
+                owner_ids = %s,
                 purse_limit = %s
             WHERE id = %s
-        """, (team_name, owner_id, owner_id_2, owner_id_3, purse_limit, id))
+        """, (team_name, primary_owner, json.dumps(additional_owners) if additional_owners else None, purse_limit, id))
         
         db.commit()
         
@@ -204,27 +222,43 @@ def delete_team(id):
 
 @bp.route('/remove_owner/<int:team_id>/<int:owner_num>', methods=['POST'])
 def remove_owner(team_id, owner_num):
-    """Remove specific owner from team (1, 2, or 3)"""
+    """Remove specific owner from team (1=primary, 2+=additional)"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     
     try:
-        if owner_num == 1:
-            # Shift owner 2 to 1, owner 3 to 2
-            cursor.execute("""
-                UPDATE teams 
-                SET owner_id = owner_id_2,
-                    owner_id_2 = owner_id_3,
-                    owner_id_3 = NULL
-                WHERE id = %s
-            """, (team_id,))
-        elif owner_num == 2:
-            cursor.execute("UPDATE teams SET owner_id_2 = owner_id_3, owner_id_3 = NULL WHERE id = %s", (team_id,))
-        elif owner_num == 3:
-            cursor.execute("UPDATE teams SET owner_id_3 = NULL WHERE id = %s", (team_id,))
+        cursor.execute("SELECT owner_id, owner_ids FROM teams WHERE id = %s", (team_id,))
+        team = cursor.fetchone()
+        
+        if not team:
+            return jsonify({'error': 'Team not found'}), 404
+        
+        owner_ids = []
+        if team['owner_ids']:
+            try:
+                owner_ids = json.loads(team['owner_ids'])
+            except:
+                owner_ids = []
+        
+        all_owners = [team['owner_id']] + owner_ids
+        
+        if owner_num < 1 or owner_num > len(all_owners):
+            return jsonify({'error': 'Invalid owner number'}), 400
+        
+        # Remove the owner
+        all_owners.pop(owner_num - 1)
+        
+        new_primary = all_owners[0] if all_owners else None
+        new_additional = all_owners[1:] if len(all_owners) > 1 else []
+        
+        cursor.execute("""
+            UPDATE teams 
+            SET owner_id = %s, owner_ids = %s 
+            WHERE id = %s
+        """, (new_primary, json.dumps(new_additional) if new_additional else None, team_id))
         
         db.commit()
         
