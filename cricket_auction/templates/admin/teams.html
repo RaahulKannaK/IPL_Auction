@@ -625,9 +625,9 @@
                             <div class="team-name">{{ team.team_name }}</div>
                             <div class="owner-tags">
                                 {% if team.owner_names %}
-                                    {% for name in team.owner_names %}
-                                    <span class="owner-tag">
-                                        👤 {{ name }}
+                                    {% for owner_id in team.all_owner_ids %}
+                                    <span class="owner-tag" data-owner-id="{{ owner_id }}">
+                                        👤 {{ team.owner_names[loop.index0] }}
                                         <span class="remove" onclick="removeOwner({{ team.id }}, {{ loop.index }})">×</span>
                                     </span>
                                     {% endfor %}
@@ -795,23 +795,75 @@ function openEditModal(id) {
     
     if (!card) return;
     
-    // Get current values from display
+    // Get current team name
     const name = card.querySelector('.team-name')?.textContent?.trim() || '';
     
-    // Get purse from first stat value (Purse stat)
+    // Get current purse from first stat (Purse: ₹XXCr)
     const purseStat = card.querySelector('.team-stat:nth-child(1) .value');
     const currentPurse = purseStat ? purseStat.textContent.trim() : '100';
     
-    // Get owner names from tags to pre-select (simplified - just clear for now)
+    // Get current owner IDs from the removeOwner onclick attributes
+    // Format: removeOwner(teamId, ownerNum) — we need to extract owner IDs
+    const ownerTags = card.querySelectorAll('.owner-tag:not(.unassigned)');
+    const currentOwnerIds = [];
     
+    ownerTags.forEach((tag, index) => {
+        const removeBtn = tag.querySelector('.remove');
+        if (removeBtn) {
+            const onclickAttr = removeBtn.getAttribute('onclick');
+            // Extract ownerNum from "removeOwner(teamId, ownerNum)"
+            const match = onclickAttr.match(/removeOwner\(\d+,\s*(\d+)\)/);
+            if (match) {
+                // We need actual user IDs, not just position numbers
+                // Fetch from data attribute if available, or use position-based lookup
+                const ownerNum = parseInt(match[1]);
+                // Try to get from data-owner-id attribute on the tag
+                const dataId = tag.getAttribute('data-owner-id');
+                if (dataId) {
+                    currentOwnerIds.push(parseInt(dataId));
+                }
+            }
+        }
+    });
+    
+    // Set form action
     document.getElementById('editForm').action = '/admin/teams/edit/' + id;
     document.getElementById('editTeamName').value = name;
     document.getElementById('editPurseLimit').value = currentPurse;
     
-    // Clear owner selects
-    document.getElementById('editOwner1').value = '';
-    document.getElementById('editOwner2').value = '';
-    document.getElementById('editOwner3').value = '';
+    // Pre-select owners in dropdowns
+    const selects = [
+        document.getElementById('editOwner1'),
+        document.getElementById('editOwner2'),
+        document.getElementById('editOwner3')
+    ];
+    
+    // Clear all first
+    selects.forEach(s => s.value = '');
+    
+    // Set selected values
+    currentOwnerIds.forEach((ownerId, index) => {
+        if (selects[index]) {
+            selects[index].value = ownerId;
+        }
+    });
+    
+    // Show/hide owner boxes based on how many owners exist
+    const count = currentOwnerIds.length || 1;
+    document.querySelectorAll('.owner-count-btn').forEach((btn, idx) => {
+        btn.classList.toggle('selected', idx + 1 === count);
+    });
+    
+    for (let i = 1; i <= 3; i++) {
+        const box = document.getElementById('ownerBox' + i);
+        if (box) {
+            if (i <= count) {
+                box.classList.add('visible');
+            } else {
+                box.classList.remove('visible');
+            }
+        }
+    }
     
     document.getElementById('editModal').classList.add('show');
 }
