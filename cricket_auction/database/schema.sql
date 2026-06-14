@@ -192,3 +192,5 @@ CREATE TABLE team_owners (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_team_user (team_id, user_id)
 );
+
+ALTER TABLE teams ADD COLUMN owner_ids JSON NULL AFTER owner_id;

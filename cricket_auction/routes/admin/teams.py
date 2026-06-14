@@ -150,29 +150,58 @@ def create_team():
 
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_team(id):
-    """Edit team with multiple owners"""
+    """Edit team with multiple owners - only update changed fields"""
     if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    team_name = request.form['team_name'].strip()
-    purse_limit = float(request.form.get('purse_limit', 100))
-    
-    # Collect all owner IDs
-    owner_ids = []
-    for i in range(1, 4):
-        owner_id = request.form.get(f'owner_id_{i}')
-        if owner_id and owner_id.strip():
-            owner_ids.append(int(owner_id))
-    
-    owner_ids = list(dict.fromkeys(owner_ids))
-    
-    primary_owner = owner_ids[0] if owner_ids else None
-    additional_owners = owner_ids[1:] if len(owner_ids) > 1 else []
-    
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     
     try:
+        # Get current team data first
+        cursor.execute("SELECT * FROM teams WHERE id = %s", (id,))
+        current_team = cursor.fetchone()
+        
+        if not current_team:
+            flash('Team not found')
+            return redirect('/admin/teams')
+        
+        # Only update fields that are provided (not empty)
+        team_name = request.form.get('team_name', '').strip()
+        if not team_name:
+            team_name = current_team['team_name']
+        
+        # Purse: keep previous if empty or invalid
+        purse_limit_raw = request.form.get('purse_limit', '').strip()
+        if purse_limit_raw:
+            try:
+                purse_limit = float(purse_limit_raw)
+            except ValueError:
+                purse_limit = float(current_team['purse_limit'] or 100)
+        else:
+            purse_limit = float(current_team['purse_limit'] or 100)
+        
+        # Collect owner IDs
+        owner_ids = []
+        for i in range(1, 4):
+            owner_id = request.form.get(f'owner_id_{i}')
+            if owner_id and owner_id.strip():
+                owner_ids.append(int(owner_id))
+        
+        owner_ids = list(dict.fromkeys(owner_ids))
+        
+        # If no owners selected, keep previous
+        if not owner_ids:
+            primary_owner = current_team['owner_id']
+            try:
+                additional_owners = json.loads(current_team['owner_ids']) if current_team.get('owner_ids') else []
+            except:
+                additional_owners = []
+        else:
+            primary_owner = owner_ids[0]
+            additional_owners = owner_ids[1:] if len(owner_ids) > 1 else []
+        
+        # Update
         cursor.execute("""
             UPDATE teams 
             SET team_name = %s, 
@@ -180,7 +209,13 @@ def edit_team(id):
                 owner_ids = %s,
                 purse_limit = %s
             WHERE id = %s
-        """, (team_name, primary_owner, json.dumps(additional_owners) if additional_owners else None, purse_limit, id))
+        """, (
+            team_name, 
+            primary_owner, 
+            json.dumps(additional_owners) if additional_owners else None,
+            purse_limit, 
+            id
+        ))
         
         db.commit()
         
@@ -190,7 +225,6 @@ def edit_team(id):
     
     flash('Team updated successfully!')
     return redirect('/admin/teams')
-
 
 @bp.route('/delete/<int:id>', methods=['POST'])
 def delete_team(id):

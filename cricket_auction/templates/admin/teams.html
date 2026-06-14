@@ -793,10 +793,26 @@ function openEditModal(id) {
         }
     }
     
-    const name = card ? card.querySelector('.team-name')?.textContent || '' : '';
+    if (!card) return;
+    
+    // Get current values from display
+    const name = card.querySelector('.team-name')?.textContent?.trim() || '';
+    
+    // Get purse from first stat value (Purse stat)
+    const purseStat = card.querySelector('.team-stat:nth-child(1) .value');
+    const currentPurse = purseStat ? purseStat.textContent.trim() : '100';
+    
+    // Get owner names from tags to pre-select (simplified - just clear for now)
     
     document.getElementById('editForm').action = '/admin/teams/edit/' + id;
     document.getElementById('editTeamName').value = name;
+    document.getElementById('editPurseLimit').value = currentPurse;
+    
+    // Clear owner selects
+    document.getElementById('editOwner1').value = '';
+    document.getElementById('editOwner2').value = '';
+    document.getElementById('editOwner3').value = '';
+    
     document.getElementById('editModal').classList.add('show');
 }
 
