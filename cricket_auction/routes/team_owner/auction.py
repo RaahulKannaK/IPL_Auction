@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db, get_cached, clear_cache
+import json
 
 bp = Blueprint('team_owner_auction', __name__, url_prefix='/team-owner/auction')
 
@@ -47,8 +48,16 @@ def auction_room():
             flash('No team assigned')
             return redirect('/dashboard')
         
-        cursor.execute("SELECT * FROM auctions WHERE status = 'live' ORDER BY id DESC LIMIT 1")
-        auction = cursor.fetchone()
+        # Get auction from session or find latest live
+        auction_id = session.get('active_auction_id')
+        auction = None
+        
+        if auction_id:
+            cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
+            auction = cursor.fetchone()
+        else:
+            cursor.execute("SELECT * FROM auctions WHERE status = 'live' ORDER BY id DESC LIMIT 1")
+            auction = cursor.fetchone()
         
         total_teams = 0
         if auction:
@@ -123,6 +132,120 @@ def auction_room():
         skip_votes=skip_votes,
         total_teams=total_teams
     )
+
+@bp.route('/sessions')
+def get_sessions():
+    """Get available sessions for this auction"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    auction_id = request.args.get('auction_id', type=int)
+    
+    if not auction_id:
+        return jsonify({'error': 'Missing auction_id'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Verify user's team in this auction
+        user_team = get_user_team(cursor, session['user_id'])
+        if not user_team or user_team['auction_id'] != auction_id:
+            return jsonify({'error': 'Not your auction'}), 403
+        
+        # Get all sessions for this auction
+        cursor.execute("""
+            SELECT s.* 
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
+            ORDER BY s.created_at DESC
+        """, (auction_id,))
+        all_sessions = cursor.fetchall()
+        
+        # Get all teams for names
+        cursor.execute("SELECT id, team_name FROM teams WHERE auction_id = %s", (auction_id,))
+        all_teams = {row['id']: row['team_name'] for row in cursor.fetchall()}
+        
+        # Get total teams count
+        total_teams = len(all_teams)
+        
+        # Process sessions
+        processed = []
+        for sess in all_sessions:
+            team_ids = []
+            if sess['team_ids']:
+                try:
+                    team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                except:
+                    team_ids = []
+            
+            processed.append({
+                'id': sess['id'],
+                'session_name': sess['session_name'],
+                'status': sess['status'],
+                'start_time': str(sess['start_time']) if sess['start_time'] else None,
+                'end_time': str(sess['end_time']) if sess['end_time'] else None,
+                'team_ids_list': team_ids,
+                'total_teams': total_teams
+            })
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({
+        'sessions': processed,
+        'my_team_id': user_team['id'],
+        'all_teams': all_teams
+    })
+
+@bp.route('/join-session/<int:session_id>', methods=['POST'])
+def join_session(session_id):
+    """Join a session and set session context"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Get session
+        cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
+        sess = cursor.fetchone()
+        
+        if not sess:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Verify user's team
+        user_team = get_user_team(cursor, session['user_id'])
+        if not user_team or user_team['auction_id'] != sess['auction_id']:
+            return jsonify({'error': 'Not your auction'}), 403
+        
+        # Parse team_ids
+        team_ids = []
+        if sess['team_ids']:
+            try:
+                team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+            except:
+                team_ids = []
+        
+        # Add team if not already in
+        if user_team['id'] not in team_ids:
+            team_ids.append(user_team['id'])
+            cursor.execute("""
+                UPDATE auction_sessions SET team_ids = %s WHERE id = %s
+            """, (json.dumps(team_ids), session_id))
+            db.commit()
+        
+        # Set session in flask session
+        session['active_session_id'] = session_id
+        session['active_auction_id'] = sess['auction_id']
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True})
 
 @bp.route('/players')
 def get_players():

@@ -107,7 +107,6 @@
     }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-    /* NEW: User bar styles */
     .user-bar {
         display: flex;
         align-items: center;
@@ -438,7 +437,6 @@
         cursor: pointer; transition: all 0.3s;
     }
 
-    /* NEW: Players toggle button */
     .players-toggle-btn {
         display: inline-flex;
         align-items: center;
@@ -550,10 +548,256 @@
         color: var(--text-dim); cursor: pointer; font-weight: 600;
         font-size: 0.85rem; margin-bottom: 10px;
     }
+
+    /* ===== SESSION SELECTOR STYLES ===== */
+    .session-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 11, 22, 0.95);
+        backdrop-filter: blur(20px);
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    .session-overlay.hidden { display: none; }
+    .session-panel {
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .session-panel::-webkit-scrollbar { width: 6px; }
+    .session-panel::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 3px; }
+
+    .session-panel-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+    }
+    .session-panel-header h2 {
+        font-family: 'Space Grotesk';
+        font-size: 1.8rem;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    .session-panel-header p {
+        color: var(--text-dim);
+        font-size: 0.95rem;
+    }
+
+    .session-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        padding: 0 10px;
+    }
+
+    .session-card {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        transition: all 0.3s;
+        position: relative;
+    }
+    .session-card:hover {
+        border-color: rgba(124, 77, 255, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+    .session-card.active-session {
+        border-color: rgba(34, 197, 94, 0.3);
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.1);
+    }
+
+    .session-card .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .session-card .name {
+        font-family: 'Space Grotesk';
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .session-card .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .session-card .time {
+        font-family: 'JetBrains Mono';
+        font-size: 0.8rem;
+        color: var(--cosmic-purple-light);
+        background: rgba(124, 77, 255, 0.1);
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        margin-bottom: 15px;
+        display: inline-block;
+    }
+
+    .session-card .stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .session-card .stat {
+        text-align: center;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+    }
+    .session-card .stat .value {
+        font-family: 'JetBrains Mono';
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    .session-card .stat .label {
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+    }
+
+    .session-card .teams-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 18px;
+        max-height: 70px;
+        overflow-y: auto;
+    }
+    .session-card .teams-preview::-webkit-scrollbar { width: 3px; }
+    .session-card .teams-preview::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
+    .session-card .team-tag {
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(124, 77, 255, 0.1);
+        color: var(--cosmic-purple-light);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+    }
+    .session-card .team-tag.my-team {
+        background: rgba(34, 197, 94, 0.12);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-session-action {
+        width: 100%;
+        padding: 14px;
+        border-radius: 16px;
+        border: none;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk';
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-join {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+    }
+    .btn-join:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(34, 197, 94, 0.3);
+    }
+    .btn-enter {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+    }
+    .btn-enter:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3);
+    }
+    .btn-closed {
+        background: rgba(100, 116, 139, 0.15);
+        color: #64748b;
+        border: 1px solid rgba(100, 116, 139, 0.25);
+        cursor: not-allowed;
+    }
+
+    .empty-sessions {
+        text-align: center;
+        padding: 60px 20px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 20px;
+        border: 1px dashed rgba(100, 120, 200, 0.2);
+    }
+    .empty-sessions .icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
+    .empty-sessions h3 { color: var(--text-secondary); font-family: 'Space Grotesk'; margin-bottom: 10px; }
+    .empty-sessions p { color: var(--text-dim); }
+
+    .no-sessions-msg {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-dim);
+    }
+    .no-sessions-msg h3 {
+        font-family: 'Space Grotesk';
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+    }
 </style>
 
+<!-- ==================== SESSION SELECTOR OVERLAY ==================== -->
+<div id="sessionSelector" class="session-overlay">
+    <div class="session-panel">
+        <div class="session-panel-header">
+            <h2>📅 Select Session</h2>
+            <p>Choose an active session to enter the auction room</p>
+        </div>
+
+        <div id="sessionsLoading" class="no-sessions-msg">
+            <div class="icon" style="font-size: 3rem; margin-bottom: 15px;">⏳</div>
+            <h3>Loading sessions...</h3>
+        </div>
+
+        <div id="sessionsList" class="session-grid" style="display: none;">
+            <!-- Sessions loaded dynamically -->
+        </div>
+
+        <div id="noSessions" class="empty-sessions" style="display: none;">
+            <div class="icon">📅</div>
+            <h3>No Active Sessions</h3>
+            <p>There are no active sessions for your auction yet. Please wait for the admin to create one.</p>
+            <button onclick="refreshSessions()" class="refresh-btn" style="margin-top: 20px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+                Refresh
+            </button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/team-owner/dashboard" class="back-btn">← Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
 <!-- ==================== LOBBY SCREEN ==================== -->
-<div id="lobbyScreen" class="lobby-screen">
+<div id="lobbyScreen" class="lobby-screen" style="display: none;">
     <div class="icon">🏏</div>
     <h1>Auction Room</h1>
     <p class="subtitle">Enter the arena</p>
@@ -568,7 +812,7 @@
     
     <div class="auction-container">
         
-        <!-- TOP BAR: Live Status + League Name + Refresh + My Squad -->
+        <!-- TOP BAR -->
         <div class="top-bar">
             <div class="left-group">
                 <div class="live-badge" id="roomStatus">
@@ -589,7 +833,7 @@
             </div>
         </div>
 
-        <!-- USER BAR: Username, Role, Logout -->
+        <!-- USER BAR -->
         <div class="user-bar">
             <div class="user-info">
                 <span>👤 {{ session.username }}</span>
@@ -611,7 +855,7 @@
         </div>
         {% endif %}
 
-        <!-- CURRENT PLAYER COMPACT -->
+        <!-- CURRENT PLAYER -->
         <div id="playerSection">
             <div class="waiting-box" id="waitingBox">
                 <div class="icon">⏳</div>
@@ -638,7 +882,7 @@
             </div>
         </div>
 
-        <!-- TIMER STRIP -->
+        <!-- TIMER -->
         <div class="timer-strip" id="timerStrip" style="display: none;">
             <span class="label">⏰ FINAL CALL</span>
             <span class="value" id="countdown">10</span>
@@ -650,11 +894,10 @@
             <span class="count" id="skipCount">0 / {{ total_teams }}</span>
         </div>
 
-        <!-- BID CENTER: ALL ACTION HERE -->
+        <!-- BID CENTER -->
         <div class="glass-panel bid-center" id="bidCenter">
             <div class="section-title">💰 Quick Bid</div>
             
-            <!-- Initial Bid (No bids yet) -->
             <div id="initialBidSection" style="display: none;">
                 <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 15px;">
                     No bids yet. Start at base price:
@@ -666,7 +909,6 @@
                 <button onclick="toggleSkip()" class="btn-skip" id="initialSkipBtn">⏭️ Skip</button>
             </div>
 
-            <!-- Active Bidding -->
             <div id="activeBidSection">
                 <div class="bid-chips" id="bidChips">
                     <button class="bid-chip" onclick="quickBid(0.05)" id="chip1"><span class="amount">+5L</span></button>
@@ -701,7 +943,7 @@
             <div class="status-text" id="bidStatus"></div>
         </div>
 
-        <!-- BID HISTORY COMPACT -->
+        <!-- BID HISTORY -->
         <div class="glass-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <span style="color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">📜 History</span>
@@ -712,7 +954,7 @@
             </div>
         </div>
 
-        <!-- PLAYERS POOL - TOGGLE BUTTON -->
+        <!-- PLAYERS -->
         <div class="players-section">
             <button onclick="togglePlayers()" class="players-toggle-btn" id="playersToggleBtn">
                 🏏 Available Players <span class="count-badge" id="playerCountBadge">{{ players|length }}</span>
@@ -762,7 +1004,7 @@
     <p id="soldMessage"></p>
 </div>
 
-<!-- COMPACT WILLING PRICE POPUP -->
+<!-- WILLING PRICE POPUP -->
 <div class="willing-popup-overlay" id="willingPopup">
     <div class="willing-popup">
         <h3>🔒 Set Willing Price</h3>
@@ -777,7 +1019,8 @@
 
 <script>
 // ==================== GLOBAL STATE ====================
-let currentAuctionId = null;
+let currentAuctionId = {{ auction.id if auction else 'null' }};
+let currentSessionId = null;
 let pollInterval = null;
 let lastPlayerId = null;
 let currentAuctionPlayerId = null;
@@ -794,20 +1037,153 @@ let myTeamName = "{{ team.team_name if team else '' }}";
 let pendingWillingPricePlayer = null;
 let previousHasBids = false;
 let currentLeagueName = '';
+let allTeamsMap = {};
 
-// ==================== LOBBY ====================
-function joinAuction() {
-    const id = document.getElementById('joinAuctionId').value;
-    if (!id) { alert('Enter an auction ID'); return; }
-    enterRoom(parseInt(id));
+// ==================== SESSION SELECTOR ====================
+function loadSessions() {
+    const loading = document.getElementById('sessionsLoading');
+    const list = document.getElementById('sessionsList');
+    const empty = document.getElementById('noSessions');
+    
+    loading.style.display = 'block';
+    list.style.display = 'none';
+    empty.style.display = 'none';
+    
+    fetch('/team-owner/auction/sessions?auction_id=' + currentAuctionId)
+    .then(r => r.json())
+    .then(data => {
+        loading.style.display = 'none';
+        
+        if (!data.sessions || data.sessions.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+        
+        allTeamsMap = data.all_teams || {};
+        renderSessions(data.sessions, data.my_team_id);
+        list.style.display = 'grid';
+    })
+    .catch(err => {
+        loading.style.display = 'none';
+        empty.style.display = 'block';
+        console.error('Error loading sessions:', err);
+    });
 }
 
-function enterRoom(auctionId) {
-    currentAuctionId = auctionId;
-    document.getElementById('lobbyScreen').style.display = 'none';
+function renderSessions(sessions, myTeamId) {
+    const list = document.getElementById('sessionsList');
+    let html = '';
+    
+    sessions.forEach(sess => {
+        const isMySession = sess.team_ids_list && sess.team_ids_list.includes(myTeamId);
+        const teamCount = sess.team_ids_list ? sess.team_ids_list.length : 0;
+        const totalTeamsCount = sess.total_teams || teamCount;
+        const isActive = sess.status === 'active' || sess.status === 'paused';
+        
+        let timeDisplay = '⏰ Timing not set';
+        if (sess.start_time && sess.end_time) {
+            const start = formatTime(sess.start_time);
+            const end = formatTime(sess.end_time);
+            timeDisplay = `⏰ ${start} → ${end}`;
+        }
+        
+        let teamsHtml = '';
+        if (sess.team_ids_list) {
+            sess.team_ids_list.forEach(tid => {
+                const tname = allTeamsMap[tid] || 'Team ' + tid;
+                const isMe = tid === myTeamId;
+                teamsHtml += `<span class="team-tag ${isMe ? 'my-team' : ''}">${isMe ? '👑 ' : ''}${tname}</span>`;
+            });
+        }
+        
+        let btnHtml = '';
+        if (isActive) {
+            if (isMySession) {
+                btnHtml = `<button class="btn-session-action btn-enter" onclick="enterSession(${sess.id})">🚀 Enter Auction Room</button>`;
+            } else {
+                btnHtml = `<button class="btn-session-action btn-join" onclick="joinSession(${sess.id})">➕ Join Session</button>`;
+            }
+        } else {
+            btnHtml = `<button class="btn-session-action btn-closed" disabled>🔒 ${sess.status.toUpperCase()}</button>`;
+        }
+        
+        html += `
+        <div class="session-card ${isMySession ? 'active-session' : ''}">
+            <div class="header">
+                <div class="name">${sess.session_name}</div>
+                <span class="status-badge status-${sess.status}">
+                    ${sess.status === 'active' ? '●' : '⏸'} ${sess.status.toUpperCase()}
+                </span>
+            </div>
+            <div class="time">${timeDisplay}</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="value" style="color: #22c55e;">${teamCount}</div>
+                    <div class="label">Teams</div>
+                </div>
+                <div class="stat">
+                    <div class="value" style="color: var(--cosmic-purple-light);">${totalTeamsCount - teamCount}</div>
+                    <div class="label">Slots Left</div>
+                </div>
+            </div>
+            <div class="teams-preview">
+                ${teamsHtml}
+            </div>
+            ${btnHtml}
+        </div>`;
+    });
+    
+    list.innerHTML = html;
+}
+
+function formatTime(timeStr) {
+    if (!timeStr) return '--:--';
+    if (typeof timeStr === 'string' && timeStr.includes(' ')) {
+        return timeStr.split(' ')[1].substring(0, 5);
+    }
+    if (typeof timeStr === 'string' && timeStr.includes('T')) {
+        return timeStr.split('T')[1].substring(0, 5);
+    }
+    return timeStr.substring(0, 5) || '--:--';
+}
+
+function joinSession(sessionId) {
+    fetch('/team-owner/join-session/' + sessionId, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            enterSession(sessionId);
+        } else {
+            alert(data.error || 'Failed to join session');
+        }
+    })
+    .catch(err => {
+        alert('Error joining session');
+        console.error(err);
+    });
+}
+
+function enterSession(sessionId) {
+    currentSessionId = sessionId;
+    document.getElementById('sessionSelector').classList.add('hidden');
     document.getElementById('auctionRoom').style.display = 'block';
     
-    fetch('/admin/auction/status?auction_id=' + auctionId)
+    // Initialize auction room
+    initAuctionRoom();
+}
+
+function refreshSessions() {
+    loadSessions();
+}
+
+// ==================== AUCTION ROOM ====================
+function initAuctionRoom() {
+    if (!currentAuctionId) return;
+    
+    fetch('/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + (currentSessionId || ''))
     .then(r => r.json())
     .then(data => {
         if (data.status !== 'none') {
@@ -838,26 +1214,33 @@ function enterRoom(auctionId) {
 }
 
 function leaveRoom() {
-    currentAuctionId = null; lastPlayerId = null; currentAuctionPlayerId = null;
-    bidHistory = []; hasSkippedCurrentPlayer = false;
-    currentBasePrice = 2.0; currentBidAmount = 0; hasBids = false; currentBidderId = null;
+    currentAuctionId = null; 
+    currentSessionId = null;
+    lastPlayerId = null; 
+    currentAuctionPlayerId = null;
+    bidHistory = []; 
+    hasSkippedCurrentPlayer = false;
+    currentBasePrice = 2.0; 
+    currentBidAmount = 0; 
+    hasBids = false; 
+    currentBidderId = null;
     previousHasBids = false;
     pendingWillingPricePlayer = null;
     currentLeagueName = '';
     stopCountdown();
     document.getElementById('auctionRoom').style.display = 'none';
-    document.getElementById('lobbyScreen').style.display = 'block';
-    document.getElementById('leagueNameDisplay').style.display = 'none';
+    document.getElementById('sessionSelector').classList.remove('hidden');
     stopPolling();
     closeWillingPopup();
+    loadSessions();
 }
 
-// ==================== FAST POLLING (200ms) ====================
+// ==================== FAST POLLING ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
         if (!currentAuctionId) return;
-        const url = '/admin/auction/status?auction_id=' + currentAuctionId + '&team_id=' + (myTeamId || '');
+        const url = '/admin/auction/status?auction_id=' + currentAuctionId + '&team_id=' + (myTeamId || '') + '&session_id=' + (currentSessionId || '');
         
         fetch(url)
         .then(r => r.json())
@@ -1100,7 +1483,7 @@ function placeInitialBid() {
     executeBid(currentBasePrice);
 }
 
-// ==================== EXECUTE BID (OPTIMISTIC) ====================
+// ==================== EXECUTE BID ====================
 function executeBid(amount) {
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ Join auction first', '#ef4444');
@@ -1111,7 +1494,6 @@ function executeBid(amount) {
         return;
     }
     
-    // INSTANT UI UPDATE
     if (!hasBids) {
         hasBids = true;
         previousHasBids = true;
@@ -1128,7 +1510,6 @@ function executeBid(amount) {
     addHistory(myTeamName, amount, false);
     updateBidControls(amount, currentBasePrice, true, myTeamId);
     
-    // Server request
     fetch('/team-owner/auction/bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1142,7 +1523,6 @@ function executeBid(amount) {
     .then(data => {
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
-            // Revert - fetch correct state
             fetch('/admin/auction/status?auction_id=' + currentAuctionId)
             .then(r => r.json())
             .then(serverData => {
@@ -1221,7 +1601,7 @@ function skipPlayer() {
     });
 }
 
-// ==================== WILLING PRICE POPUP ====================
+// ==================== WILLING PRICE ====================
 function showWillingPopup(playerName, purchasePrice, auctionPlayerId) {
     if (pendingWillingPricePlayer === auctionPlayerId) return;
     pendingWillingPricePlayer = auctionPlayerId;
@@ -1276,7 +1656,7 @@ function skipWillingPrice() {
     showStatus('bidStatus', '⏭️ Set later in My Squad', '#f59e0b');
 }
 
-// ==================== TIMER & HISTORY ====================
+// ==================== TIMER ====================
 function startCountdown() {
     const strip = document.getElementById('timerStrip');
     const cd = document.getElementById('countdown');
@@ -1325,11 +1705,9 @@ function checkAutoBid(currentBid) {
     });
 }
 
-// ==================== PLAYERS TOGGLE ====================
+// ==================== PLAYERS ====================
 function togglePlayers() {
     const panel = document.getElementById('playersPanel');
-    const btn = document.getElementById('playersToggleBtn');
-    
     if (panel.style.display === 'none') {
         panel.style.display = 'block';
         refreshPlayers();
@@ -1338,7 +1716,6 @@ function togglePlayers() {
     }
 }
 
-// ==================== PLAYERS REFRESH ====================
 function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
@@ -1398,6 +1775,17 @@ function showStatus(id, msg, color) {
     el.textContent = msg; el.style.color = color;
     setTimeout(() => { el.textContent = ''; el.style.color = 'var(--text-dim)'; }, 4000);
 }
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // Load sessions on page load
+    if (currentAuctionId) {
+        loadSessions();
+    } else {
+        document.getElementById('sessionSelector').classList.add('hidden');
+        document.getElementById('lobbyScreen').style.display = 'block';
+    }
+});
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && document.activeElement.id === 'customBidAmount') placeCustomBid();
