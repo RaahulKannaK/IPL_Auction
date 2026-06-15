@@ -86,12 +86,40 @@
         border: 1px solid rgba(124, 77, 255, 0.15);
     }
 
+    /* Passcode input styling */
+    .passcode-input {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(124, 77, 255, 0.25);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        text-align: center;
+        outline: none;
+        transition: all 0.3s ease;
+        margin-bottom: 10px;
+    }
+    .passcode-input:focus {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 15px rgba(124, 77, 255, 0.15);
+    }
+    .passcode-input::placeholder {
+        color: var(--text-dim);
+        font-family: 'Inter', sans-serif;
+        letter-spacing: normal;
+    }
+
     .action-btn {
         display: flex; align-items: center; justify-content: center; gap: 10px;
         padding: 14px 24px; border-radius: 16px;
         text-decoration: none; font-weight: 600; font-size: 0.9rem;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid; cursor: pointer; margin-top: auto;
+        width: 100%;
+        border: none;
     }
     .btn-enter {
         background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
@@ -126,6 +154,16 @@
     .empty-state .icon { font-size: 4rem; margin-bottom: 20px; opacity: 0.3; }
     .empty-state h3 { color: var(--text-secondary); margin-bottom: 10px; font-family: 'Space Grotesk'; }
     .empty-state p { color: var(--text-dim); }
+
+    /* Error message */
+    .passcode-error {
+        color: var(--lava-red);
+        font-size: 0.75rem;
+        text-align: center;
+        margin-top: -5px;
+        margin-bottom: 5px;
+        display: none;
+    }
 </style>
 
 <h1>⚡ My Teams</h1>
@@ -176,9 +214,20 @@
         </div>
         
         {% if team.auction_status in ['live', 'paused'] %}
-        <a href="/team-owner/auction-room/{{ team.auction_id }}" class="action-btn btn-enter">
-            🚀 Enter Auction Room →
-        </a>
+        <div class="auction-entry" style="margin-top: auto;">
+            <input type="password" 
+                   class="passcode-input" 
+                   id="passcode-{{ team.auction_id }}"
+                   placeholder="Enter Auction Passcode" 
+                   maxlength="8"
+                   autocomplete="off">
+            <div class="passcode-error" id="error-{{ team.auction_id }}">Invalid passcode</div>
+            <button type="button" 
+                    class="action-btn btn-enter" 
+                    onclick="enterAuction('{{ team.auction_id }}', '{{ team.passcode or '' }}')">
+                🚀 Enter Auction Room →
+            </button>
+        </div>
         {% elif team.auction_status == 'completed' %}
         <a href="/team-owner/auction-room/{{ team.auction_id }}" class="action-btn btn-view">
             📊 View Results →
@@ -191,6 +240,28 @@
     </div>
     {% endfor %}
 </div>
+
+<script>
+function enterAuction(auctionId, correctPasscode) {
+    const input = document.getElementById('passcode-' + auctionId);
+    const error = document.getElementById('error-' + auctionId);
+    const enteredPasscode = input.value.trim();
+    
+    // If no passcode is set (correctPasscode is empty), allow direct entry
+    // Or if entered passcode matches
+    if (!correctPasscode || enteredPasscode === correctPasscode) {
+        window.location.href = '/team-owner/auction-room/' + auctionId;
+    } else {
+        error.style.display = 'block';
+        input.style.borderColor = 'var(--lava-red)';
+        setTimeout(() => {
+            input.style.borderColor = '';
+            error.style.display = 'none';
+        }, 2000);
+    }
+}
+</script>
+
 {% else %}
 <div class="empty-state">
     <div class="icon">🏏</div>
