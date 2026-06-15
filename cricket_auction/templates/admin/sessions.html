@@ -168,45 +168,83 @@
         pointer-events: none;
     }
 
+    /* ===== TEAM SELECTOR FIX ===== */
     .team-selector {
-        max-height: 300px;
+        max-height: 320px;
         overflow-y: auto;
         border: 1px solid rgba(100, 120, 200, 0.1);
         border-radius: 14px;
-        padding: 15px;
+        padding: 12px;
         margin-bottom: 20px;
+        background: rgba(0, 0, 0, 0.15);
     }
-    .team-selector::-webkit-scrollbar { width: 4px; }
-    .team-selector::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
+    .team-selector::-webkit-scrollbar { width: 6px; }
+    .team-selector::-webkit-scrollbar-track { background: transparent; }
+    .team-selector::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 3px; }
 
     .team-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 14px;
+        gap: 14px;
+        padding: 14px 16px;
         border-radius: 12px;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.25s ease;
         margin-bottom: 8px;
-        background: rgba(0, 0, 0, 0.15);
-        border: 1px solid transparent;
+        background: rgba(0, 0, 0, 0.2);
+        border: 2px solid transparent;
+        user-select: none;
+        -webkit-user-select: none;
     }
     .team-row:hover {
-        background: rgba(124, 77, 255, 0.05);
-        border-color: rgba(124, 77, 255, 0.2);
+        background: rgba(124, 77, 255, 0.08);
+        border-color: rgba(124, 77, 255, 0.25);
+        transform: translateX(4px);
     }
     .team-row.selected {
-        background: rgba(34, 197, 94, 0.08);
-        border-color: rgba(34, 197, 94, 0.3);
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.4);
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1);
+    }
+    .team-row .checkbox-wrapper {
+        position: relative;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
     }
     .team-row input[type="checkbox"] {
-        width: 20px; height: 20px;
-        accent-color: var(--cosmic-purple);
+        width: 22px;
+        height: 22px;
+        margin: 0;
         cursor: pointer;
+        accent-color: #22c55e;
+        opacity: 0.7;
+        transition: all 0.2s;
     }
-    .team-row .team-info { flex: 1; }
-    .team-row .team-name { font-weight: 600; color: var(--text-primary); }
-    .team-row .team-owners { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+    .team-row input[type="checkbox"]:checked {
+        opacity: 1;
+    }
+    .team-row .team-info { flex: 1; min-width: 0; }
+    .team-row .team-name { font-weight: 600; color: var(--text-primary); font-size: 1rem; }
+    .team-row .team-owners { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+    .team-row .check-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        border: 2px solid rgba(100, 120, 200, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        color: transparent;
+    }
+    .team-row.selected .check-indicator {
+        background: #22c55e;
+        border-color: #22c55e;
+        color: white;
+    }
 
     .btn {
         padding: 14px 28px;
@@ -563,11 +601,12 @@
                 <!-- Team Selection -->
                 <div class="input-group">
                     <label>Select Teams ({{ teams|length }} available)</label>
-                    <div class="team-selector">
+                    <div class="team-selector" id="teamSelector">
                         {% if teams %}
                             {% for team in teams %}
-                            <div class="team-row" onclick="toggleTeam(this)">
-                                <input type="checkbox" name="team_ids" value="{{ team.id }}" onchange="updateTeamCount()">
+                            <div class="team-row" data-team-id="{{ team.id }}" onclick="toggleTeamRow(this)">
+                                <div class="check-indicator">✓</div>
+                                <input type="checkbox" name="team_ids" value="{{ team.id }}" style="display:none;" onchange="syncRowState(this)">
                                 <div class="team-info">
                                     <div class="team-name">{{ team.team_name }}</div>
                                     <div class="team-owners">
@@ -699,11 +738,27 @@
 </div>
 
 <script>
-function toggleTeam(row) {
+// ===== TEAM SELECTION FIX =====
+function toggleTeamRow(row) {
     const checkbox = row.querySelector('input[type="checkbox"]');
     checkbox.checked = !checkbox.checked;
-    row.classList.toggle('selected', checkbox.checked);
+    updateRowVisual(row, checkbox.checked);
     updateTeamCount();
+}
+
+function syncRowState(checkbox) {
+    // This handles any direct checkbox changes (if visible)
+    const row = checkbox.closest('.team-row');
+    updateRowVisual(row, checkbox.checked);
+    updateTeamCount();
+}
+
+function updateRowVisual(row, isChecked) {
+    if (isChecked) {
+        row.classList.add('selected');
+    } else {
+        row.classList.remove('selected');
+    }
 }
 
 function updateTeamCount() {
@@ -740,7 +795,9 @@ function closeSession(sessionId) {
     });
 }
 
-// Initialize
-updateTeamCount();
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateTeamCount();
+});
 </script>
 {% endblock %}
