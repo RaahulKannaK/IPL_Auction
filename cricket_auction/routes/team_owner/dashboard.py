@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, flash, redirect, jsonify, request
+from flask import Blueprint, render_template, session, flash, redirect, jsonify, request, abort
 from database.db import get_db, get_cached, clear_cache
 import json
 
@@ -53,7 +53,7 @@ def dashboard():
             team['batsmen'] = categories.get('batsman', 0)
             team['bowlers'] = categories.get('bowler', 0)
             team['all_rounders'] = categories.get('all_rounder', 0)
-            team['wicket_keepers'] = categories.get('wicket_keeper', 0)
+            team['wicket_keepers'] = categories.get('wicket_keepers', 0)
             
             # Overseas count
             cursor.execute("""
@@ -75,16 +75,28 @@ def dashboard():
 
 @bp.route('/auction-room/<int:auction_id>')
 def auction_room_entry(auction_id):
-    """Entry point - sets auction context and redirects to auction page with session selector"""
+    """Entry point - validates auction_id matches user's team, sets session, redirects"""
     if session.get('role') != 'team_owner':
         flash('Unauthorized')
         return redirect('/')
+    
+    # Check if user already has an active auction in session
+    active_auction_id = session.get('active_auction_id')
+    
+    # If already in an auction room, verify it's the same one
+    if active_auction_id is not None:
+        if active_auction_id != auction_id:
+            # User is trying to enter a different auction room while already in one
+            flash(f'You are already in auction room {active_auction_id}. Exit first to enter another.')
+            return redirect('/team-owner/auction')
+        # Same auction - just redirect to auction page
+        return redirect('/team-owner/auction')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify this user owns a team in this auction
+        # Verify this user owns a team in THIS SPECIFIC auction
         cursor.execute("""
             SELECT t.*, a.league_name, a.status as auction_status
             FROM teams t
@@ -110,51 +122,48 @@ def auction_room_entry(auction_id):
     
     return redirect('/team-owner/auction')
 
-@bp.route('/verify-passcode', methods=['POST'])
-def verify_passcode():
-    """Verify auction passcode before allowing entry"""
+
+@bp.route('/auction')
+def auction_page():
+    """Main auction page - validates session has active auction"""
     if session.get('role') != 'team_owner':
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+        flash('Unauthorized')
+        return redirect('/')
     
-    data = request.get_json()
-    auction_id = data.get('auction_id')
-    entered_passcode = data.get('passcode', '').strip()
+    active_auction_id = session.get('active_auction_id')
     
-    if not auction_id:
-        return jsonify({'success': False, 'message': 'Auction ID required'}), 400
+    if not active_auction_id:
+        flash('No active auction selected')
+        return redirect('/team-owner/dashboard')
     
+    # Verify user still owns team in this auction (prevent stale session)
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Get the passcode for this auction and verify user owns a team here
         cursor.execute("""
-            SELECT a.passcode, t.id as team_id
-            FROM auctions a
-            JOIN teams t ON t.auction_id = a.id
-            WHERE a.id = %s AND t.owner_id = %s
-        """, (auction_id, session['user_id']))
-        result = cursor.fetchone()
-        
-        if not result:
-            return jsonify({'success': False, 'message': 'Auction not found'}), 404
-        
-        stored_passcode = result.get('passcode', '')
-        
-        # If no passcode is set, allow entry (optional - remove this if you require passcodes)
-        if not stored_passcode:
-            return jsonify({'success': True})
-        
-        # Check if entered passcode matches
-        if entered_passcode == stored_passcode:
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'message': 'Invalid passcode'})
-            
+            SELECT t.*, a.league_name, a.status as auction_status
+            FROM teams t
+            JOIN auctions a ON t.auction_id = a.id
+            WHERE t.auction_id = %s AND t.owner_id = %s
+        """, (active_auction_id, session['user_id']))
+        team = cursor.fetchone()
     finally:
         cursor.close()
         db.close()
-        
+    
+    if not team:
+        # Clear invalid session
+        session.pop('active_auction_id', None)
+        session.pop('active_team_id', None)
+        session.pop('active_league_name', None)
+        session.pop('active_session_id', None)
+        flash('Invalid auction session. Please select again.')
+        return redirect('/team-owner/dashboard')
+    
+    return render_template('team_owner/auction.html', team=team, auction_id=active_auction_id)
+
+
 @bp.route('/exit-auction')
 def exit_auction():
     """Clear all auction/session context and return to dashboard"""
@@ -163,4 +172,3 @@ def exit_auction():
     session.pop('active_league_name', None)
     session.pop('active_session_id', None)
     return redirect('/team-owner/dashboard')
-
