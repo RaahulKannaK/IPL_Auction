@@ -86,33 +86,6 @@
         border: 1px solid rgba(124, 77, 255, 0.15);
     }
 
-    /* Session info on dashboard card */
-    .session-info {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 12px;
-        padding: 12px 16px;
-        margin: 8px 0;
-    }
-    .session-info .label {
-        font-size: 0.7rem;
-        color: var(--text-dim);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 6px;
-    }
-    .session-info .session-name {
-        font-family: 'Space Grotesk';
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-    }
-    .session-info .session-time {
-        font-family: 'JetBrains Mono';
-        font-size: 0.8rem;
-        color: var(--cosmic-purple-light);
-        margin-top: 4px;
-    }
-
     .action-btn {
         display: flex; align-items: center; justify-content: center; gap: 10px;
         padding: 14px 24px; border-radius: 16px;
@@ -120,24 +93,24 @@
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid; cursor: pointer; margin-top: auto;
     }
-    .btn-primary {
+    .btn-enter {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
+        border-color: rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+    }
+    .btn-enter:hover {
+        border-color: #22c55e;
+        box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
+        transform: translateY(-2px);
+    }
+    .btn-view {
         background: rgba(124, 77, 255, 0.08);
         border-color: rgba(124, 77, 255, 0.25);
         color: var(--cosmic-purple-light);
     }
-    .btn-primary:hover {
+    .btn-view:hover {
         border-color: var(--cosmic-purple-light);
         box-shadow: 0 0 25px rgba(124, 77, 255, 0.2);
-        transform: translateY(-2px);
-    }
-    .btn-session {
-        background: rgba(34, 197, 94, 0.08);
-        border-color: rgba(34, 197, 94, 0.25);
-        color: #22c55e;
-    }
-    .btn-session:hover {
-        border-color: #22c55e;
-        box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
         transform: translateY(-2px);
     }
     .btn-disabled {
@@ -201,41 +174,18 @@
             <span class="cat-tag">🧤 {{ team.wicket_keepers }} Keepers</span>
             <span class="cat-tag">🌍 {{ team.overseas }} Overseas</span>
         </div>
-
-        <!-- Session Info -->
-        {% if team.sessions %}
-            {% for sess in team.sessions %}
-            <div class="session-info">
-                <div class="label">📅 Active Session</div>
-                <div class="session-name">{{ sess.session_name }}</div>
-                <div class="session-time">
-                    {% if sess.start_time and sess.end_time %}
-                        ⏰ {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time.split(' ')[1][:5] if ' ' in (sess.start_time|string) else sess.start_time }} 
-                        → 
-                        {{ sess.end_time.strftime('%H:%M') if sess.end_time is not string else sess.end_time.split(' ')[1][:5] if ' ' in (sess.end_time|string) else sess.end_time }}
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        {% endif %}
         
         {% if team.auction_status in ['live', 'paused'] %}
-            {% if team.has_active_session %}
-            <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-session">
-                🚀 Enter Auction Room →
-            </a>
-            {% else %}
-            <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-primary">
-                📅 Select Session →
-            </a>
-            {% endif %}
+        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-enter">
+            🚀 Enter Auction Room →
+        </a>
         {% elif team.auction_status == 'completed' %}
-        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-primary" style="background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.25); color: #22c55e;">
-            View Results →
+        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-view">
+            📊 View Results →
         </a>
         {% else %}
         <div class="action-btn btn-disabled">
-            Auction Not Started
+            ⏳ Auction Not Started
         </div>
         {% endif %}
     </div>

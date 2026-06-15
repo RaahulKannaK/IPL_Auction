@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, session, flash, redirect, jsonify, request
 from database.db import get_db, get_cached, clear_cache
-import json
 
 bp = Blueprint('team_owner_dashboard', __name__, url_prefix='/team-owner')
 
@@ -95,7 +94,7 @@ def enter_auction(auction_id):
         flash('You do not own a team in this auction')
         return redirect('/team-owner/dashboard')
     
-    # Set auction context and redirect to auction room
+    # Set auction context and redirect to auction room (session selector will show first)
     session['active_auction_id'] = auction_id
     session['active_team_id'] = team['id']
     session['active_league_name'] = team['league_name']
