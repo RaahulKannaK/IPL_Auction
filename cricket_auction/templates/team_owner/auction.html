@@ -22,7 +22,6 @@
         flex-direction: column;
         gap: 12px;
     }
-
     @media (min-width: 768px) {
         .auction-container {
             max-width: 1400px;
@@ -361,7 +360,7 @@
     }
     .willing-popup-overlay.show { display: flex; }
     .willing-popup {
-        background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(12, 16, 32, 0.98));
+        background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(5, 8, 16, 0.98));
         border: 1px solid rgba(139, 92, 246, 0.3);
         border-radius: 20px;
         padding: 25px;
@@ -777,26 +776,80 @@
             </div>
         </div>
 
-        <div id="sessionsLoading" class="no-sessions-msg">
-            <div style="font-size: 3rem; margin-bottom: 15px;">⏳</div>
-            <h3>Loading sessions...</h3>
-        </div>
+        <!-- SERVER-RENDERED SESSIONS (NO AJAX LOADING) -->
+        {% if auction_sessions %}
+        <div class="session-grid">
+            {% for sess in auction_sessions %}
+            <div class="session-card {% if team and sess.team_ids_list and team.id in sess.team_ids_list %}my-session{% endif %}">
+                <div class="header">
+                    <div class="name">{{ sess.session_name or 'Session ' + sess.id|string }}</div>
+                    <span class="status-badge" style="
+                        {% if sess.status == 'active' %}
+                        background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25);
+                        {% else %}
+                        background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25);
+                        {% endif %}
+                    ">
+                        {% if sess.status == 'active' %}●{% else %}⏸{% endif %} {{ (sess.status or 'pending').upper() }}
+                    </span>
+                </div>
+                
+                {% if sess.start_time and sess.end_time %}
+                <div class="time">
+                    ⏰ {{ sess.start_time }} → {{ sess.end_time }}
+                </div>
+                {% endif %}
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="value" style="color: #22c55e;">
+                            {{ sess.team_ids_list|length if sess.team_ids_list else 0 }}
+                        </div>
+                        <div class="label">Teams</div>
+                    </div>
+                    <div class="stat">
+                        <div class="value" style="color: var(--cosmic-purple-light);">
+                            {{ (sess.total_teams or 0) - (sess.team_ids_list|length if sess.team_ids_list else 0) }}
+                        </div>
+                        <div class="label">Slots Left</div>
+                    </div>
+                </div>
 
-        <div id="sessionsList" class="session-grid" style="display: none;">
-            <!-- Sessions loaded dynamically -->
-        </div>
+                {% if sess.team_ids_list %}
+                <div class="teams-preview">
+                    {% for tid in sess.team_ids_list %}
+                    <span class="team-tag {% if team and tid == team.id %}my-team{% endif %}">
+                        {% if team and tid == team.id %}👑 {% endif %}{{ all_teams[tid] if all_teams and all_teams[tid] else 'Team ' + tid|string }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
-        <div id="noSessions" class="empty-sessions" style="display: none;">
+                {% if sess.status == 'active' or sess.status == 'paused' %}
+                    {% if team and sess.team_ids_list and team.id in sess.team_ids_list %}
+                    <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }})">
+                        🚀 Enter Auction Room
+                    </button>
+                    {% else %}
+                    <button class="btn-session-action btn-join" onclick="joinSession({{ sess.id }})">
+                        ➕ Join Session
+                    </button>
+                    {% endif %}
+                {% else %}
+                <button class="btn-session-action btn-closed" disabled>
+                    🔒 {{ (sess.status or 'closed').upper() }}
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-sessions">
             <div class="icon">📅</div>
             <h3>No Active Sessions</h3>
             <p>There are no active sessions for your auction yet. Please wait for the admin to create one.</p>
-            <button onclick="refreshSessions()" class="refresh-btn" style="margin-top: 20px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-                </svg>
-                Refresh
-            </button>
         </div>
+        {% endif %}
 
         <div style="text-align: center; margin-top: 20px;">
             <a href="/team-owner/dashboard" class="back-btn">← Back to Dashboard</a>
@@ -1017,7 +1070,7 @@
 
 <script>
 // ==================== GLOBAL STATE ====================
-let currentAuctionId = {{ auction.id if auction else 'null' }};
+let currentAuctionId = {{ auction_id }};
 let currentSessionId = null;
 let pollInterval = null;
 let lastPlayerId = null;
@@ -1035,114 +1088,13 @@ let myTeamName = "{{ team.team_name if team else '' }}";
 let pendingWillingPricePlayer = null;
 let previousHasBids = false;
 let currentLeagueName = '';
-let allTeamsMap = {};
 
 // ==================== SESSION SELECTOR ====================
-function loadSessions() {
-    const loading = document.getElementById('sessionsLoading');
-    const list = document.getElementById('sessionsList');
-    const empty = document.getElementById('noSessions');
-    
-    loading.style.display = 'block';
-    list.style.display = 'none';
-    empty.style.display = 'none';
-    
-    fetch('/team-owner/auction/sessions?auction_id=' + currentAuctionId)
-    .then(r => r.json())
-    .then(data => {
-        loading.style.display = 'none';
-        
-        if (!data.sessions || data.sessions.length === 0) {
-            empty.style.display = 'block';
-            return;
-        }
-        
-        allTeamsMap = data.all_teams || {};
-        renderSessions(data.sessions, data.my_team_id);
-        list.style.display = 'grid';
-    })
-    .catch(err => {
-        loading.style.display = 'none';
-        empty.style.display = 'block';
-        console.error('Error loading sessions:', err);
-    });
-}
-
-function renderSessions(sessions, myTeamId) {
-    const list = document.getElementById('sessionsList');
-    let html = '';
-    
-    sessions.forEach(sess => {
-        const isMySession = sess.team_ids_list && sess.team_ids_list.includes(myTeamId);
-        const teamCount = sess.team_ids_list ? sess.team_ids_list.length : 0;
-        const totalTeamsCount = sess.total_teams || teamCount;
-        const isActive = sess.status === 'active' || sess.status === 'paused';
-        
-        let timeDisplay = '⏰ Timing not set';
-        if (sess.start_time && sess.end_time) {
-            const start = formatTime(sess.start_time);
-            const end = formatTime(sess.end_time);
-            timeDisplay = `⏰ ${start} → ${end}`;
-        }
-        
-        let teamsHtml = '';
-        if (sess.team_ids_list) {
-            sess.team_ids_list.forEach(tid => {
-                const tname = allTeamsMap[tid] || 'Team ' + tid;
-                const isMe = tid === myTeamId;
-                teamsHtml += `<span class="team-tag ${isMe ? 'my-team' : ''}">${isMe ? '👑 ' : ''}${tname}</span>`;
-            });
-        }
-        
-        let btnHtml = '';
-        if (isActive) {
-            if (isMySession) {
-                btnHtml = `<button class="btn-session-action btn-enter" onclick="enterSession(${sess.id})">🚀 Enter Auction Room</button>`;
-            } else {
-                btnHtml = `<button class="btn-session-action btn-join" onclick="joinSession(${sess.id})">➕ Join Session</button>`;
-            }
-        } else {
-            btnHtml = `<button class="btn-session-action btn-closed" disabled>🔒 ${sess.status.toUpperCase()}</button>`;
-        }
-        
-        html += `
-        <div class="session-card ${isMySession ? 'my-session' : ''}">
-            <div class="header">
-                <div class="name">${sess.session_name}</div>
-                <span class="status-badge status-${sess.status}">
-                    ${sess.status === 'active' ? '●' : '⏸'} ${sess.status.toUpperCase()}
-                </span>
-            </div>
-            <div class="time">${timeDisplay}</div>
-            <div class="stats">
-                <div class="stat">
-                    <div class="value" style="color: #22c55e;">${teamCount}</div>
-                    <div class="label">Teams</div>
-                </div>
-                <div class="stat">
-                    <div class="value" style="color: var(--cosmic-purple-light);">${totalTeamsCount - teamCount}</div>
-                    <div class="label">Slots Left</div>
-                </div>
-            </div>
-            <div class="teams-preview">
-                ${teamsHtml}
-            </div>
-            ${btnHtml}
-        </div>`;
-    });
-    
-    list.innerHTML = html;
-}
-
-function formatTime(timeStr) {
-    if (!timeStr) return '--:--';
-    if (typeof timeStr === 'string' && timeStr.includes(' ')) {
-        return timeStr.split(' ')[1].substring(0, 5);
-    }
-    if (typeof timeStr === 'string' && timeStr.includes('T')) {
-        return timeStr.split('T')[1].substring(0, 5);
-    }
-    return timeStr.substring(0, 5) || '--:--';
+function enterSession(sessionId) {
+    currentSessionId = sessionId;
+    document.getElementById('sessionSelector').classList.add('hidden');
+    document.getElementById('auctionRoom').style.display = 'block';
+    initAuctionRoom();
 }
 
 function joinSession(sessionId) {
@@ -1162,17 +1114,6 @@ function joinSession(sessionId) {
         alert('Error joining session');
         console.error(err);
     });
-}
-
-function enterSession(sessionId) {
-    currentSessionId = sessionId;
-    document.getElementById('sessionSelector').classList.add('hidden');
-    document.getElementById('auctionRoom').style.display = 'block';
-    initAuctionRoom();
-}
-
-function refreshSessions() {
-    loadSessions();
 }
 
 // ==================== AUCTION ROOM ====================
@@ -1210,7 +1151,7 @@ function initAuctionRoom() {
 }
 
 function leaveRoom() {
-    currentAuctionId = null; 
+    currentAuctionId = {{ auction_id }}; 
     currentSessionId = null;
     lastPlayerId = null; 
     currentAuctionPlayerId = null;
@@ -1228,7 +1169,6 @@ function leaveRoom() {
     document.getElementById('sessionSelector').classList.remove('hidden');
     stopPolling();
     closeWillingPopup();
-    loadSessions();
 }
 
 // ==================== FAST POLLING ====================
@@ -1773,12 +1713,6 @@ function showStatus(id, msg, color) {
 }
 
 // ==================== INIT ====================
-document.addEventListener('DOMContentLoaded', function() {
-    if (currentAuctionId) {
-        loadSessions();
-    }
-});
-
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && document.activeElement.id === 'customBidAmount') placeCustomBid();
     if (e.key === 'Enter' && document.activeElement.id === 'wpWillingPrice') submitWillingPrice();

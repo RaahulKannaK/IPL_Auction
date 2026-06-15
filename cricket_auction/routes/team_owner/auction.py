@@ -69,6 +69,56 @@ def auction_room():
         
         total_teams = get_total_teams(cursor, auction_id)
         
+        # ============================================
+        # FETCH SESSIONS FOR THIS AUCTION - KEY FIX
+        # ============================================
+        cursor.execute("""
+            SELECT s.* 
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
+            ORDER BY 
+                CASE s.status 
+                    WHEN 'active' THEN 1 
+                    WHEN 'paused' THEN 2 
+                    ELSE 3 
+                END,
+                s.created_at DESC
+        """, (auction_id,))
+        auction_sessions = cursor.fetchall()
+        
+        # Process sessions for template
+        processed_sessions = []
+        for sess in auction_sessions:
+            team_ids = []
+            if sess['team_ids']:
+                try:
+                    team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                    team_ids = [int(tid) for tid in team_ids]
+                except:
+                    team_ids = []
+            
+            processed_sessions.append({
+                'id': sess['id'],
+                'session_name': sess['session_name'],
+                'status': sess['status'],
+                'start_time': str(sess['start_time']) if sess['start_time'] else None,
+                'end_time': str(sess['end_time']) if sess['end_time'] else None,
+                'team_ids_list': team_ids,
+                'total_teams': total_teams
+            })
+        
+        # Get all teams for names
+        cursor.execute("SELECT id, team_name FROM teams WHERE auction_id = %s", (auction_id,))
+        all_teams = {row['id']: row['team_name'] for row in cursor.fetchall()}
+        
+        # Get currently selected session if any
+        active_session_id = session.get('active_session_id')
+        current_session = None
+        
+        if active_session_id:
+            cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (active_session_id,))
+            current_session = cursor.fetchone()
+        
         # Get players for this auction
         cursor.execute("""
             SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, ap.sold_price
@@ -132,6 +182,10 @@ def auction_room():
     
     return render_template('team_owner/auction.html',
         auction=auction,
+        auction_id=auction_id,
+        auction_sessions=processed_sessions,
+        current_session=current_session,
+        all_teams=all_teams,
         players=players,
         current_player=current_player,
         team=user_team,
