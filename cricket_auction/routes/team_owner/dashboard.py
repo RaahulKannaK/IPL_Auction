@@ -117,7 +117,7 @@ def auction_room_entry(auction_id):
     session['active_auction_id'] = auction_id
     session['active_team_id'] = team['id']
     session['active_league_name'] = team['league_name']
-    # Clear any previous session - user must select again
+    # Clear any previous session selection - user must select again
     session.pop('active_session_id', None)
     
     return redirect('/team-owner/auction')
@@ -125,22 +125,23 @@ def auction_room_entry(auction_id):
 
 @bp.route('/auction')
 def auction_page():
-    """Main auction page - validates session has active auction"""
+    """Main auction page - validates session has active auction and loads sessions"""
     if session.get('role') != 'team_owner':
         flash('Unauthorized')
         return redirect('/')
     
     active_auction_id = session.get('active_auction_id')
+    active_team_id = session.get('active_team_id')
     
-    if not active_auction_id:
+    if not active_auction_id or not active_team_id:
         flash('No active auction selected')
         return redirect('/team-owner/dashboard')
     
-    # Verify user still owns team in this auction (prevent stale session)
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
+        # Verify user still owns team in this auction (prevent stale session)
         cursor.execute("""
             SELECT t.*, a.league_name, a.status as auction_status
             FROM teams t
@@ -148,20 +149,92 @@ def auction_page():
             WHERE t.auction_id = %s AND t.owner_id = %s
         """, (active_auction_id, session['user_id']))
         team = cursor.fetchone()
+        
+        if not team:
+            # Clear invalid session
+            session.pop('active_auction_id', None)
+            session.pop('active_team_id', None)
+            session.pop('active_league_name', None)
+            session.pop('active_session_id', None)
+            flash('Invalid auction session. Please select again.')
+            return redirect('/team-owner/dashboard')
+        
+        # ============================================
+        # FETCH SESSIONS FOR THIS AUCTION - KEY FIX
+        # ============================================
+        cursor.execute("""
+            SELECT s.*, 
+                   COUNT(DISTINCT ap.id) as total_players,
+                   COUNT(DISTINCT CASE WHEN ap.sold_to IS NOT NULL THEN ap.id END) as sold_players
+            FROM auction_sessions s
+            LEFT JOIN auction_players ap ON ap.session_id = s.id
+            WHERE s.auction_id = %s
+            GROUP BY s.id
+            ORDER BY s.session_date, s.start_time
+        """, (active_auction_id,))
+        auction_sessions = cursor.fetchall()
+        
+        # Get currently selected session if any
+        active_session_id = session.get('active_session_id')
+        current_session = None
+        
+        if active_session_id:
+            cursor.execute("""
+                SELECT * FROM auction_sessions 
+                WHERE id = %s AND auction_id = %s
+            """, (active_session_id, active_auction_id))
+            current_session = cursor.fetchone()
+        
     finally:
         cursor.close()
         db.close()
     
-    if not team:
-        # Clear invalid session
-        session.pop('active_auction_id', None)
-        session.pop('active_team_id', None)
-        session.pop('active_league_name', None)
-        session.pop('active_session_id', None)
-        flash('Invalid auction session. Please select again.')
-        return redirect('/team-owner/dashboard')
+    return render_template('team_owner/auction.html', 
+                         team=team, 
+                         auction_id=active_auction_id,
+                         auction_sessions=auction_sessions,
+                         current_session=current_session)
+
+
+@bp.route('/select-session', methods=['POST'])
+def select_session():
+    """Handle session selection from dropdown"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
-    return render_template('team_owner/auction.html', team=team, auction_id=active_auction_id)
+    data = request.get_json()
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Session ID required'}), 400
+    
+    active_auction_id = session.get('active_auction_id')
+    
+    if not active_auction_id:
+        return jsonify({'success': False, 'message': 'No active auction'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Verify session belongs to this auction
+        cursor.execute("""
+            SELECT * FROM auction_sessions 
+            WHERE id = %s AND auction_id = %s
+        """, (session_id, active_auction_id))
+        sess = cursor.fetchone()
+        
+        if not sess:
+            return jsonify({'success': False, 'message': 'Invalid session for this auction'}), 400
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    # Set active session in session
+    session['active_session_id'] = session_id
+    
+    return jsonify({'success': True, 'redirect': '/team-owner/auction'})
 
 
 @bp.route('/exit-auction')
