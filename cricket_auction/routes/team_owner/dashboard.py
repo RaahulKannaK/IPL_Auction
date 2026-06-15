@@ -159,13 +159,12 @@ def auction_page():
             return redirect('/team-owner/dashboard')
         
         # ============================================
-        # FETCH SESSIONS - FIXED QUERY (no sold_to assumed)
+        # FETCH SESSIONS - MINIMAL SAFE QUERY
         # ============================================
         cursor.execute("""
             SELECT s.* 
             FROM auction_sessions s
             WHERE s.auction_id = %s
-            ORDER BY s.session_date, s.start_time
         """, (active_auction_id,))
         auction_sessions = cursor.fetchall()
         
