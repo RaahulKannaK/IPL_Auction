@@ -141,7 +141,7 @@ def auction_page():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify user still owns team in this auction (prevent stale session)
+        # Verify user still owns team in this auction
         cursor.execute("""
             SELECT t.*, a.league_name, a.status as auction_status
             FROM teams t
@@ -151,7 +151,6 @@ def auction_page():
         team = cursor.fetchone()
         
         if not team:
-            # Clear invalid session
             session.pop('active_auction_id', None)
             session.pop('active_team_id', None)
             session.pop('active_league_name', None)
@@ -160,16 +159,12 @@ def auction_page():
             return redirect('/team-owner/dashboard')
         
         # ============================================
-        # FETCH SESSIONS FOR THIS AUCTION - KEY FIX
+        # FETCH SESSIONS - FIXED QUERY (no sold_to assumed)
         # ============================================
         cursor.execute("""
-            SELECT s.*, 
-                   COUNT(DISTINCT ap.id) as total_players,
-                   COUNT(DISTINCT CASE WHEN ap.sold_to IS NOT NULL THEN ap.id END) as sold_players
+            SELECT s.* 
             FROM auction_sessions s
-            LEFT JOIN auction_players ap ON ap.session_id = s.id
             WHERE s.auction_id = %s
-            GROUP BY s.id
             ORDER BY s.session_date, s.start_time
         """, (active_auction_id,))
         auction_sessions = cursor.fetchall()
