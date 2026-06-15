@@ -133,6 +133,8 @@ def auction_room():
         total_teams=total_teams
     )
 
+# ==================== SESSION MANAGEMENT ====================
+
 @bp.route('/sessions')
 def get_sessions():
     """Get available sessions for this auction"""
@@ -246,6 +248,8 @@ def join_session(session_id):
         db.close()
     
     return jsonify({'success': True})
+
+# ==================== PLAYERS & BIDDING ====================
 
 @bp.route('/players')
 def get_players():
