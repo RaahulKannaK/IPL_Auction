@@ -127,54 +127,45 @@
         box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
     }
 
-    /* Time Slot Cards */
-    .slot-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-    .slot-card {
-        padding: 20px;
-        background: rgba(0, 0, 0, 0.2);
-        border: 2px solid rgba(100, 120, 200, 0.1);
-        border-radius: 16px;
-        cursor: pointer;
-        text-align: center;
-        transition: all 0.3s;
-        position: relative;
-        overflow: hidden;
-    }
-    .slot-card::before {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(135deg, rgba(124,77,255,0.1), rgba(0,212,255,0.05));
-        opacity: 0; transition: opacity 0.3s;
-    }
-    .slot-card:hover {
-        border-color: rgba(124, 77, 255, 0.3);
-        transform: translateY(-2px);
-    }
-    .slot-card:hover::before { opacity: 1; }
-    .slot-card.selected {
-        border-color: var(--cosmic-purple);
-        background: rgba(124, 77, 255, 0.1);
-        box-shadow: 0 0 20px rgba(124, 77, 255, 0.15);
-    }
-    .slot-card.selected::before { opacity: 1; }
-    .slot-card .icon { font-size: 2rem; margin-bottom: 8px; position: relative; z-index: 1; }
-    .slot-card .name { font-family: 'Space Grotesk'; font-weight: 700; color: var(--text-primary); font-size: 1.1rem; margin-bottom: 4px; position: relative; z-index: 1; }
-    .slot-card .time { color: var(--cosmic-purple-light); font-size: 0.85rem; font-family: 'JetBrains Mono'; position: relative; z-index: 1; }
-
-    .custom-time {
+    /* Time Inputs */
+    .time-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 15px;
         margin-bottom: 20px;
-        animation: slideDown 0.3s ease;
     }
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
+    .time-input-wrapper {
+        position: relative;
+    }
+    .time-input-wrapper input[type="time"] {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-primary);
+        padding: 14px 18px;
+        border-radius: 14px;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.3s;
+        font-family: 'JetBrains Mono', monospace;
+        cursor: pointer;
+    }
+    .time-input-wrapper input[type="time"]:focus {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
+    }
+    .time-input-wrapper input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(0.8);
+        cursor: pointer;
+    }
+    .time-icon {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--cosmic-purple-light);
+        font-size: 1.2rem;
+        pointer-events: none;
     }
 
     .team-selector {
@@ -459,8 +450,7 @@
         .sessions-container { padding: 15px; }
         .stats-bar { grid-template-columns: repeat(2, 1fr); }
         .session-stats { grid-template-columns: 1fr; }
-        .slot-grid { grid-template-columns: 1fr; }
-        .custom-time { grid-template-columns: 1fr; }
+        .time-grid { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -483,7 +473,7 @@
     <div class="top-bar">
         <div>
             <h1>📅 Session Management</h1>
-            <p style="color: var(--text-dim); margin-top: 5px;">Create time slots, assign teams, and manage auction sessions</p>
+            <p style="color: var(--text-dim); margin-top: 5px;">Create sessions, set custom timing, assign teams, and manage auction sessions</p>
         </div>
         <div style="display: flex; gap: 10px;">
             <a href="/admin/teams?auction={{ auction.id if auction else '' }}" class="nav-btn">👥 Teams</a>
@@ -548,46 +538,25 @@
             
             <form method="POST" action="/admin/auction/sessions" id="createSessionForm">
                 <input type="hidden" name="auction_id" value="{{ auction.id if auction else (session.get('active_auction_id') or 1) }}">
+                <input type="hidden" name="slot_type" value="custom">
                 
                 <div class="input-group">
                     <label>Session Name</label>
                     <input type="text" name="session_name" placeholder="e.g., Saturday Morning" required>
                 </div>
 
-                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Select Time Slot</label>
-                <div class="slot-grid">
-                    <div class="slot-card selected" onclick="selectSlot(this, 'morning')" data-slot="morning">
-                        <div class="icon">🌅</div>
-                        <div class="name">Morning</div>
-                        <div class="time">06:00 - 12:00</div>
+                <!-- Custom Time Inputs -->
+                <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Set Session Timing</label>
+                <div class="time-grid">
+                    <div class="time-input-wrapper">
+                        <label style="display: block; color: var(--text-dim); font-size: 0.75rem; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">Start Time</label>
+                        <input type="time" name="custom_start" id="customStart" required>
+                        <span class="time-icon">🕐</span>
                     </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'afternoon')" data-slot="afternoon">
-                        <div class="icon">☀️</div>
-                        <div class="name">Afternoon</div>
-                        <div class="time">12:00 - 17:00</div>
-                    </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'evening')" data-slot="evening">
-                        <div class="icon">🌆</div>
-                        <div class="name">Evening</div>
-                        <div class="time">17:00 - 21:00</div>
-                    </div>
-                    <div class="slot-card" onclick="selectSlot(this, 'custom')" data-slot="custom">
-                        <div class="icon">⚙️</div>
-                        <div class="name">Custom</div>
-                        <div class="time">Set your own</div>
-                    </div>
-                </div>
-                <input type="hidden" name="slot_type" id="slotType" value="morning">
-
-                <!-- Custom Time (hidden by default) -->
-                <div class="custom-time" id="customTime" style="display: none;">
-                    <div class="input-group">
-                        <label>Start Time</label>
-                        <input type="time" name="custom_start" id="customStart">
-                    </div>
-                    <div class="input-group">
-                        <label>End Time</label>
-                        <input type="time" name="custom_end" id="customEnd">
+                    <div class="time-input-wrapper">
+                        <label style="display: block; color: var(--text-dim); font-size: 0.75rem; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">End Time</label>
+                        <input type="time" name="custom_end" id="customEnd" required>
+                        <span class="time-icon">🕑</span>
                     </div>
                 </div>
 
@@ -637,30 +606,23 @@
             
             {% if sessions %}
                 {% for sess in sessions %}
+                {% set team_count = (sess.team_ids|length if sess.team_ids is iterable and sess.team_ids is not string else ((sess.team_ids|fromjson)|length if sess.team_ids is string and sess.team_ids else 0)) %}
                 <div class="session-card">
                     <div class="session-header">
                         <div>
                             <div class="session-name">{{ sess.session_name }}</div>
                             <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
-                                {% if sess.start_time %}
-                                    ⏰ {{ sess.start_time.strftime('%Y-%m-%d %H:%M') if sess.start_time is not string else sess.start_time }}
-                                    {% if sess.end_time %}
-                                        → {{ sess.end_time.strftime('%H:%M') if sess.end_time is not string else sess.end_time }}
-                                    {% endif %}
+                                {% if sess.start_time and sess.end_time %}
+                                    ⏰ {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time.split(' ')[1][:5] if ' ' in (sess.start_time|string) else sess.start_time }} 
+                                    → 
+                                    {{ sess.end_time.strftime('%H:%M') if sess.end_time is not string else sess.end_time.split(' ')[1][:5] if ' ' in (sess.end_time|string) else sess.end_time }}
+                                {% elif sess.start_time %}
+                                    ⏰ Started at {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time }}
                                 {% endif %}
                             </div>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <span class="session-time">
-                                {% if sess.team_ids is iterable and sess.team_ids is not string %}
-                                    {{ sess.team_ids|length }}
-                                {% elif sess.team_ids is string %}
-                                    {{ (sess.team_ids|fromjson)|length if sess.team_ids else 0 }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                                / {{ total_teams }} teams
-                            </span>
+                            <span class="session-time">{{ team_count }} / {{ total_teams }} teams</span>
                             {% if sess.status == 'active' %}
                             <span class="status-badge status-active">● Active</span>
                             {% elif sess.status == 'paused' %}
@@ -671,7 +633,6 @@
                         </div>
                     </div>
 
-                    {% set team_count = (sess.team_ids|length if sess.team_ids is iterable and sess.team_ids is not string else ((sess.team_ids|fromjson)|length if sess.team_ids is string and sess.team_ids else 0)) %}
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: {{ (team_count / total_teams * 100) if total_teams > 0 else 0 }}%;"></div>
                     </div>
@@ -738,26 +699,6 @@
 </div>
 
 <script>
-let selectedSlot = 'morning';
-
-function selectSlot(el, slot) {
-    document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedSlot = slot;
-    document.getElementById('slotType').value = slot;
-    
-    const customTime = document.getElementById('customTime');
-    if (slot === 'custom') {
-        customTime.style.display = 'grid';
-        document.getElementById('customStart').required = true;
-        document.getElementById('customEnd').required = true;
-    } else {
-        customTime.style.display = 'none';
-        document.getElementById('customStart').required = false;
-        document.getElementById('customEnd').required = false;
-    }
-}
-
 function toggleTeam(row) {
     const checkbox = row.querySelector('input[type="checkbox"]');
     checkbox.checked = !checkbox.checked;
