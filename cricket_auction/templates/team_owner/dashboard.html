@@ -176,11 +176,11 @@
         </div>
         
         {% if team.auction_status in ['live', 'paused'] %}
-        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-enter">
+        <a href="/team-owner/auction-room/{{ team.auction_id }}" class="action-btn btn-enter">
             🚀 Enter Auction Room →
         </a>
         {% elif team.auction_status == 'completed' %}
-        <a href="/team-owner/enter-auction/{{ team.auction_id }}" class="action-btn btn-view">
+        <a href="/team-owner/auction-room/{{ team.auction_id }}" class="action-btn btn-view">
             📊 View Results →
         </a>
         {% else %}

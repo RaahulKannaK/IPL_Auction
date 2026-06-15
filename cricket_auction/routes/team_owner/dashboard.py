@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, session, flash, redirect, jsonify, request
 from database.db import get_db, get_cached, clear_cache
+import json
 
 bp = Blueprint('team_owner_dashboard', __name__, url_prefix='/team-owner')
 
@@ -24,6 +25,7 @@ def dashboard():
         teams = cursor.fetchall()
         
         for team in teams:
+            # Squad count
             cursor.execute("""
                 SELECT COUNT(*) as cnt 
                 FROM team_players tp
@@ -33,10 +35,12 @@ def dashboard():
             result = cursor.fetchone()
             team['squad_count'] = result['cnt'] if result else 0
             
+            # Available purse
             spent = float(team['spent'] or 0)
             reserved = float(team['reserved'] or 0)
             team['available'] = float(team['purse_limit']) - spent - reserved
             
+            # Category breakdown
             cursor.execute("""
                 SELECT p.category, COUNT(*) as cnt
                 FROM team_players tp
@@ -51,6 +55,7 @@ def dashboard():
             team['all_rounders'] = categories.get('all_rounder', 0)
             team['wicket_keepers'] = categories.get('wicket_keeper', 0)
             
+            # Overseas count
             cursor.execute("""
                 SELECT COUNT(*) as cnt
                 FROM team_players tp
@@ -68,8 +73,9 @@ def dashboard():
     return render_template('team_owner/dashboard.html', teams=teams)
 
 
-@bp.route('/enter-auction/<int:auction_id>')
-def enter_auction(auction_id):
+@bp.route('/auction-room/<int:auction_id>')
+def auction_room_entry(auction_id):
+    """Entry point - sets auction context and redirects to auction page with session selector"""
     if session.get('role') != 'team_owner':
         flash('Unauthorized')
         return redirect('/')
@@ -78,6 +84,7 @@ def enter_auction(auction_id):
     cursor = db.cursor(dictionary=True)
     
     try:
+        # Verify this user owns a team in this auction
         cursor.execute("""
             SELECT t.*, a.league_name, a.status as auction_status
             FROM teams t
@@ -94,16 +101,19 @@ def enter_auction(auction_id):
         flash('You do not own a team in this auction')
         return redirect('/team-owner/dashboard')
     
-    # Set auction context and redirect to auction room (session selector will show first)
+    # Set auction context in session
     session['active_auction_id'] = auction_id
     session['active_team_id'] = team['id']
     session['active_league_name'] = team['league_name']
+    # Clear any previous session - user must select again
+    session.pop('active_session_id', None)
     
     return redirect('/team-owner/auction')
 
 
 @bp.route('/exit-auction')
 def exit_auction():
+    """Clear all auction/session context and return to dashboard"""
     session.pop('active_auction_id', None)
     session.pop('active_team_id', None)
     session.pop('active_league_name', None)
