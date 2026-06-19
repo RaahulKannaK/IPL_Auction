@@ -449,9 +449,9 @@ template_content = '''{% extends "base.html" %}
                 <p style="color: var(--text-dim); margin: 0;">
                     Upload a CSV file with player data for this session.
                 </p>
-                <a href="/static/templates/player_template.csv" download class="download-btn">
-                    📥 Download Template CSV
-                </a>
+                <button type="button" class="download-btn" onclick="downloadTemplate()">
+    📥 Download Template CSV
+</button>
             </div>
 
             <!-- Example Data Table -->
@@ -699,7 +699,31 @@ function uploadCSV() {
         }
     });
 }
+function downloadTemplate() {
+    const csvContent = `player_name,category,overseas,base_price
+Andre Russell,all_rounder,true,2.0
+Virat Kohli,batsman,false,2.0
+Jasprit Bumrah,bowler,false,1.5
+MS Dhoni,wicket_keeper,false,1.5
+Ben Stokes,all_rounder,true,2.0
+Rohit Sharma,batsman,false,2.0
+Rashid Khan,bowler,true,1.5
+Jos Buttler,wicket_keeper,true,1.5
+Hardik Pandya,all_rounder,false,2.0
+Trent Boult,bowler,true,1.5`;
 
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'player_template.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 document.getElementById('csvFile').addEventListener('change', function() {
     const label = document.querySelector('.file-input-label');
     label.textContent = '📎 ' + (this.files[0]?.name || 'Choose CSV File');
