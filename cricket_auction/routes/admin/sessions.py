@@ -1,14 +1,16 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
 from database.db import get_db, get_cached, clear_cache
 import json
+import csv
+from io import StringIO
 
 bp = Blueprint('admin_sessions', __name__, url_prefix='/admin/sessions')
 
 SESSION_SLOTS = {
-    'morning': {'start': '09:00', 'end': '12:00', 'label': 'Morning'},
-    'afternoon': {'start': '14:00', 'end': '17:00', 'label': 'Afternoon'},
-    'evening': {'start': '17:00', 'end': '20:00', 'label': 'Evening'},
-    'night': {'start': '20:00', 'end': '23:00', 'label': 'Night'},
+    'morning': {'start': '06:00', 'end': '12:00', 'label': 'Morning'},
+    'afternoon': {'start': '12:00', 'end': '17:00', 'label': 'Afternoon'},
+    'evening': {'start': '17:00', 'end': '21:00', 'label': 'Evening'},
+    'night': {'start': '21:00', 'end': '23:59', 'label': 'Night'},
     'custom': {'start': '', 'end': '', 'label': 'Custom'}
 }
 
@@ -30,9 +32,11 @@ def list_sessions():
     cursor = db.cursor(dictionary=True)
     
     try:
+        # Current auction details
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
         auction = cursor.fetchone()
         
+        # All teams in this auction
         cursor.execute("""
             SELECT t.*, u.username as owner_name
             FROM teams t
@@ -42,7 +46,7 @@ def list_sessions():
         """, (auction_id,))
         teams = cursor.fetchall()
         
-        # Get sessions with player counts
+        # All sessions for this auction with player counts
         cursor.execute("""
             SELECT s.*, 
                    (SELECT COUNT(*) FROM teams WHERE JSON_CONTAINS(s.team_ids, CAST(id AS JSON))) as team_count,
@@ -54,6 +58,7 @@ def list_sessions():
         """, (auction_id,))
         sessions = cursor.fetchall()
         
+        # Parse team_ids JSON for each session
         for sess in sessions:
             if sess['team_ids']:
                 try:
@@ -63,23 +68,23 @@ def list_sessions():
             else:
                 sess['team_ids_list'] = []
         
+        # Calculate session stats
         total_teams = len(teams)
         for sess in sessions:
             participating = len(sess['team_ids_list'])
             sess['participating'] = participating
-            sess['remaining'] = total_teams - participating
+            sess['remaining_teams'] = total_teams - participating
             sess['percentage'] = (participating / total_teams * 100) if total_teams > 0 else 0
+            sess['has_players'] = (sess.get('player_count') or 0) > 0
+            sess['is_full'] = participating == total_teams  # 10/10 teams
         
+        # Available teams for new session (not in any active session)
         active_team_ids = set()
         for sess in sessions:
             if sess['status'] == 'active':
                 active_team_ids.update(sess['team_ids_list'])
         
         available_teams = [t for t in teams if t['id'] not in active_team_ids]
-        
-        # Check if any session has players assigned
-        for sess in sessions:
-            sess['has_players'] = (sess['player_count'] or 0) > 0
         
     finally:
         cursor.close()
@@ -97,8 +102,8 @@ def list_sessions():
 
 @bp.route('/create', methods=['POST'])
 def create_session():
-    """Create a new session - then redirect to player assignment"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    """Create a new session with selected teams and time slot"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     auction_id = session.get('active_auction_id')
@@ -106,7 +111,7 @@ def create_session():
         return jsonify({'error': 'No active auction'}), 400
     
     session_name = request.form.get('session_name', '')
-    slot_type = request.form.get('slot_type', 'custom')
+    slot_type = request.form.get('slot_type', 'morning')
     custom_start = request.form.get('custom_start', '')
     custom_end = request.form.get('custom_end', '')
     team_ids = request.form.getlist('team_ids')
@@ -114,6 +119,11 @@ def create_session():
     if len(team_ids) < 2:
         flash('Need at least 2 teams for a session')
         return redirect('/admin/sessions')
+    
+    # Get time range
+    slot = SESSION_SLOTS.get(slot_type, SESSION_SLOTS['morning'])
+    start_time = custom_start if custom_start else slot['start']
+    end_time = custom_end if custom_end else slot['end']
     
     db = get_db()
     cursor = db.cursor()
@@ -125,8 +135,8 @@ def create_session():
         """, (
             auction_id, 
             session_name, 
-            custom_start, 
-            custom_end, 
+            start_time, 
+            end_time, 
             json.dumps([int(t) for t in team_ids])
         ))
         db.commit()
@@ -136,14 +146,14 @@ def create_session():
         cursor.close()
         db.close()
     
-    flash(f'Session "{session_name}" created! Now assign players.')
+    # Redirect to player assignment page
     return redirect(f'/admin/sessions/{new_session_id}/assign-players')
 
 
 @bp.route('/<int:session_id>/assign-players')
 def assign_players_page(session_id):
-    """Page to assign players to a session - shows previous session options"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    """Page to assign players to a session - smart logic based on team coverage"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -160,12 +170,27 @@ def assign_players_page(session_id):
             flash('Session not found')
             return redirect('/admin/sessions')
         
-        # Get all previous sessions in this auction (before current)
+        # Get total teams in auction
+        cursor.execute("SELECT COUNT(*) as cnt FROM teams WHERE auction_id = %s", (auction_id,))
+        total_teams = cursor.fetchone()['cnt']
+        
+        # Parse team_ids for current session
+        current_team_ids = []
+        if current_sess.get('team_ids'):
+            try:
+                current_team_ids = json.loads(current_sess['team_ids']) if isinstance(current_sess['team_ids'], str) else current_sess['team_ids']
+            except:
+                current_team_ids = []
+        
+        current_sess['team_count'] = len(current_team_ids)
+        current_sess['is_full'] = len(current_team_ids) == total_teams
+        
+        # Get all previous COMPLETED sessions in this auction
         cursor.execute("""
             SELECT s.*, 
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as total_count,
                    (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'sold') as sold_count,
-                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'available') as available_count,
-                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as total_count
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'available') as available_count
             FROM auction_sessions s
             WHERE s.auction_id = %s AND s.id < %s AND s.status = 'completed'
             ORDER BY s.created_at DESC
@@ -198,27 +223,52 @@ def assign_players_page(session_id):
             """, (session_id,))
             session_players = cursor.fetchall()
         
+        # === SMART LOGIC ===
+        # If this session has ALL teams (10/10) and there's a previous session with same set
+        # Auto-suggest continuing with same player set
+        auto_continue = False
+        if current_sess['is_full'] and previous_sessions:
+            # Check if previous session also had full teams
+            prev = previous_sessions[0]  # Most recent
+            prev_team_ids = []
+            if prev.get('team_ids'):
+                try:
+                    prev_team_ids = json.loads(prev['team_ids']) if isinstance(prev['team_ids'], str) else prev['team_ids']
+                except:
+                    prev_team_ids = []
+            
+            # If previous was also full (10/10), auto-continue with same set
+            if len(prev_team_ids) == total_teams:
+                auto_continue = True
+                current_sess['auto_previous_id'] = prev['id']
+        
     finally:
         cursor.close()
         db.close()
     
-    return render_template('admin/players.html',
+    return render_template('admin/assign_players.html',
         session=current_sess,
         previous_sessions=previous_sessions,
         all_players=all_players,
         has_players=has_players,
-        session_players=session_players
+        session_players=session_players,
+        total_teams=total_teams,
+        auto_continue=auto_continue
     )
 
 
 @bp.route('/<int:session_id>/assign-players', methods=['POST'])
 def assign_players(session_id):
-    """Assign players to session - either from previous session or fresh selection"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    """Assign players to session - from previous session, CSV upload, or fresh selection"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
+    # Check if this is a CSV upload
+    if 'file' in request.files:
+        return import_players_to_session(session_id)
+    
     data = request.get_json() or request.form
-    source_type = data.get('source_type')  # 'previous', 'fresh', 'same_set'
+    source_type = data.get('source_type')  # 'previous', 'fresh', 'same_set', 'csv'
     previous_session_id = data.get('previous_session_id')
     player_ids = data.getlist('player_ids') if hasattr(data, 'getlist') else data.get('player_ids', [])
     if isinstance(player_ids, str):
@@ -238,41 +288,8 @@ def assign_players(session_id):
         # Clear any existing session players for this session
         cursor.execute("DELETE FROM session_players WHERE session_id = %s", (session_id,))
         
-        if source_type == 'previous' and previous_session_id:
-            # Copy UNSOLD players from previous session with fresh status
-            cursor.execute("""
-                SELECT sp.*, p.player_name
-                FROM session_players sp
-                JOIN players p ON sp.player_id = p.id
-                WHERE sp.session_id = %s AND sp.status != 'sold'
-            """, (previous_session_id,))
-            unsold_players = cursor.fetchall()
-            
-            for p in unsold_players:
-                cursor.execute("""
-                    INSERT INTO session_players (session_id, player_id, base_price, status)
-                    VALUES (%s, %s, %s, 'available')
-                """, (session_id, p['player_id'], p['base_price']))
-            
-            # Also copy SOLD players but keep them as available for this new session
-            # (Each session is independent - Russell can be sold in morning AND night)
-            cursor.execute("""
-                SELECT sp.* FROM session_players sp
-                WHERE sp.session_id = %s AND sp.status = 'sold'
-            """, (previous_session_id,))
-            sold_players = cursor.fetchall()
-            
-            for p in sold_players:
-                cursor.execute("""
-                    INSERT INTO session_players (session_id, player_id, base_price, status)
-                    VALUES (%s, %s, %s, 'available')
-                """, (session_id, p['player_id'], p['base_price']))
-            
-            count = len(unsold_players) + len(sold_players)
-            message = f'Copied {count} players from previous session (all reset to available for bidding)'
-            
-        elif source_type == 'same_set':
-            # Use EXACT same player set as previous session (same IDs)
+        if source_type == 'same_set' and previous_session_id:
+            # Copy ALL players from previous session, ALL reset to available
             cursor.execute("""
                 SELECT sp.* FROM session_players sp
                 WHERE sp.session_id = %s
@@ -286,7 +303,24 @@ def assign_players(session_id):
                 """, (session_id, p['player_id'], p['base_price']))
             
             count = len(prev_players)
-            message = f'Using same set of {count} players (all reset to available)'
+            message = f'Using same set of {count} players (all reset to available for fresh bidding)'
+            
+        elif source_type == 'previous' and previous_session_id:
+            # Copy ONLY UNSOLD players from previous session
+            cursor.execute("""
+                SELECT sp.* FROM session_players sp
+                WHERE sp.session_id = %s AND sp.status != 'sold'
+            """, (previous_session_id,))
+            unsold_players = cursor.fetchall()
+            
+            for p in unsold_players:
+                cursor.execute("""
+                    INSERT INTO session_players (session_id, player_id, base_price, status)
+                    VALUES (%s, %s, %s, 'available')
+                """, (session_id, p['player_id'], p['base_price']))
+            
+            count = len(unsold_players)
+            message = f'Carried forward {count} unsold players from previous session'
             
         else:
             # Fresh selection - user selected specific players
@@ -322,10 +356,75 @@ def assign_players(session_id):
     return jsonify({'success': True, 'message': message, 'count': count})
 
 
+def import_players_to_session(session_id):
+    """Bulk import players from CSV into a session"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    auction_id = session.get('active_auction_id')
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        # Clear existing session players
+        cursor.execute("DELETE FROM session_players WHERE session_id = %s", (session_id,))
+        
+        stream = StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.reader(stream)
+        next(csv_input)  # Skip header
+        
+        count = 0
+        for row in csv_input:
+            if len(row) >= 3:
+                player_name = row[0].strip()
+                category = row[1]
+                overseas = row[2].lower() == 'true'
+                base_price = float(row[3]) if len(row) > 3 else 0.5
+                
+                # Check if player exists in master pool
+                cursor.execute("SELECT id FROM players WHERE player_name = %s", (player_name,))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    player_id = existing[0]
+                else:
+                    # Create new player in master pool
+                    cursor.execute(
+                        "INSERT INTO players (player_name, category, overseas) VALUES (%s, %s, %s)",
+                        (player_name, category, overseas)
+                    )
+                    player_id = cursor.lastrowid
+                    
+                    # Add to auction_players
+                    cursor.execute(
+                        "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (%s, %s, %s, 'available')",
+                        (auction_id, player_id, base_price)
+                    )
+                
+                # Add to session_players
+                cursor.execute("""
+                    INSERT INTO session_players (session_id, player_id, base_price, status)
+                    VALUES (%s, %s, %s, 'available')
+                """, (session_id, player_id, base_price))
+                count += 1
+        
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'message': f'{count} players imported to session', 'count': count})
+
+
 @bp.route('/<int:session_id>/players')
 def get_session_players(session_id):
     """Get players in a session with their session-local status"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -360,7 +459,7 @@ def get_session_players(session_id):
 @bp.route('/<int:session_id>/enter')
 def enter_session_room(session_id):
     """Enter auction room for a specific session - shows ONLY session players"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -422,7 +521,7 @@ def enter_session_room(session_id):
         cursor.close()
         db.close()
     
-    return render_template('admin/sessions.html',
+    return render_template('admin/session_room.html',
         session=sess,
         teams=teams,
         players=players,
@@ -434,7 +533,7 @@ def enter_session_room(session_id):
 @bp.route('/<int:session_id>/close', methods=['POST'])
 def close_session(session_id):
     """Close session and summarize"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -464,14 +563,14 @@ def close_session(session_id):
     sold = summary.get('sold', 0)
     unsold = summary.get('available', 0) + summary.get('unsold', 0)
     
-    flash(f'Session closed! {sold} sold, {unsold} unsold. Unsold players available for next session.')
+    flash(f'Session closed! {sold} sold, {unsold} unsold.')
     return redirect('/admin/sessions')
 
 
 @bp.route('/<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
 def remove_team_from_session(session_id, team_id):
     """Remove a team from session"""
-    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()

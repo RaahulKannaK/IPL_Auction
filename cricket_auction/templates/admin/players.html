@@ -40,10 +40,20 @@
         margin-bottom: 25px;
     }
 
+    .info-banner {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid rgba(0, 212, 255, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    .info-banner .title { color: var(--ice-blue); font-weight: 700; margin-bottom: 8px; }
+    .info-banner .text { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+
     /* Option Cards */
     .option-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
@@ -77,12 +87,7 @@
     .option-desc { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
 
     /* Previous Session List */
-    .prev-session-list {
-        display: none;
-        margin-top: 20px;
-    }
-    .prev-session-list.active { display: block; }
-
+    .prev-session-list { margin-top: 20px; }
     .prev-session-card {
         background: rgba(0, 0, 0, 0.2);
         border: 1px solid rgba(100, 120, 200, 0.1);
@@ -95,35 +100,34 @@
         justify-content: space-between;
         align-items: center;
     }
-    .prev-session-card:hover {
-        border-color: var(--cosmic-purple);
-        background: rgba(124, 77, 255, 0.05);
-    }
+    .prev-session-card:hover { border-color: var(--cosmic-purple); background: rgba(124, 77, 255, 0.05); }
     .prev-session-card.selected {
         border-color: #22c55e;
         background: rgba(34, 197, 94, 0.08);
     }
 
-    .prev-stats {
-        display: flex;
-        gap: 15px;
-    }
+    .prev-stats { display: flex; gap: 15px; }
     .prev-stat {
-        text-align: center;
-        padding: 8px 15px;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 10px;
+        text-align: center; padding: 8px 15px;
+        background: rgba(0, 0, 0, 0.2); border-radius: 10px;
     }
     .prev-stat .val { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--text-primary); font-size: 1.1rem; }
     .prev-stat .lbl { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
 
-    /* Player Selector */
-    .player-selector {
-        display: none;
-        margin-top: 20px;
+    /* CSV Upload */
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+    .file-input-wrapper input[type=file] { position: absolute; left: -9999px; }
+    .file-input-label {
+        padding: 14px 28px; border-radius: 16px;
+        border: 2px dashed rgba(124, 77, 255, 0.4);
+        background: rgba(124, 77, 255, 0.05);
+        color: var(--cosmic-purple-light);
+        cursor: pointer; font-weight: 600; transition: all 0.3s;
+        display: inline-flex; align-items: center; gap: 10px;
     }
-    .player-selector.active { display: block; }
+    .file-input-label:hover { background: rgba(124, 77, 255, 0.1); border-color: var(--cosmic-purple-light); }
 
+    /* Player Selector */
     .player-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -234,7 +238,18 @@
         border-color: #22c55e;
     }
 
-    /* Already assigned banner */
+    /* Auto-continue banner */
+    .auto-banner {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+    .auto-banner .title { color: #22c55e; font-weight: 700; font-size: 1.2rem; margin-bottom: 10px; }
+    .auto-banner .text { color: var(--text-secondary); margin-bottom: 15px; }
+
     .assigned-banner {
         background: rgba(34, 197, 94, 0.1);
         border: 1px solid rgba(34, 197, 94, 0.3);
@@ -252,12 +267,13 @@
     <a href="/admin/sessions" class="back-link">← Back to Sessions</a>
 
     <div class="session-badge">
-        🎯 Assigning Players to: {{ session.session_name }}
+        🎯 {{ session.session_name }} | {{ session.team_count }}/{{ total_teams }} Teams
+        {% if session.is_full %}<span style="color: #22c55e;">(FULL)</span>{% endif %}
     </div>
 
     <h1>Player Set Assignment</h1>
     <p style="color: var(--text-dim); margin-bottom: 25px;">
-        Choose how to populate this session with players. Each session has its own independent player pool.
+        Choose how to populate this session with players. Each session maintains independent bidding status.
     </p>
 
     <div class="step-indicator">
@@ -273,13 +289,33 @@
     </div>
     {% endif %}
 
-    <!-- Option 1: Continue from Previous Session -->
-    {% if previous_sessions %}
+    <!-- SMART AUTO-CONTINUE: Full teams (10/10) detected -->
+    {% if auto_continue and not has_players %}
+    <div class="auto-banner">
+        <div class="title">🔄 Auto-Detected: Full Team Coverage</div>
+        <div class="text">
+            This session has <strong>ALL {{ total_teams }} teams</strong> (same as previous session).<br>
+            Same player set will be used. All players reset to AVAILABLE for fresh bidding.
+        </div>
+        <button class="btn btn-success" onclick="autoContinueSameSet()">
+            ✅ Continue with Same Player Set
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Option 1: Continue from Previous Session (Partial teams) -->
+    {% if previous_sessions and not auto_continue %}
     <div class="glass-panel" style="margin-bottom: 25px;">
         <h2>📋 Continue from Previous Session</h2>
-        <p style="color: var(--text-dim); margin-bottom: 20px;">
-            Previous sessions found. Choose one to continue from:
-        </p>
+        
+        <div class="info-banner">
+            <div class="title">⚠️ Partial Team Coverage Detected</div>
+            <div class="text">
+                This session has <strong>{{ session.team_count }}/{{ total_teams }} teams</strong>. 
+                Previous session had different team coverage.<br>
+                Choose whether to use the same player set or select fresh players.
+            </div>
+        </div>
 
         <div class="prev-session-list active">
             {% for prev in previous_sessions %}
@@ -287,11 +323,7 @@
                 <div>
                     <div style="font-weight: 700; color: var(--text-primary); font-size: 1.1rem;">{{ prev.session_name }}</div>
                     <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
-                        {% if prev.total_count > 0 %}
-                            {{ prev.total_count }} players total
-                        {% else %}
-                            No players assigned
-                        {% endif %}
+                        {{ prev.total_count or 0 }} players assigned
                     </div>
                 </div>
                 <div class="prev-stats">
@@ -315,22 +347,43 @@
                     🔄 Same Set (Reset All to Available)
                 </button>
                 <button class="btn btn-success" onclick="continueWithUnsoldOnly()">
-                    ✂️ Continue with Unsold Only
+                    ✂️ Unsold Only
                 </button>
             </div>
             <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 10px;">
-                "Same Set" = All players from previous session, reset to available (Russell can be re-bid)<br>
-                "Unsold Only" = Only unsold players carry forward
+                "Same Set" = All players from previous session, reset to available (Russell can be re-bid from start)<br>
+                "Unsold Only" = Only unsold players carry forward (sold players skipped)
             </p>
         </div>
     </div>
     {% endif %}
 
-    <!-- Option 2: Fresh Player Selection -->
+    <!-- Option 2: CSV Upload -->
+    <div class="glass-panel" style="margin-bottom: 25px;">
+        <h2>📁 Upload Player Set (CSV)</h2>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">
+            Upload a CSV file with player data. Format: Name, Category, Overseas(true/false), BasePrice
+        </p>
+        
+        <form id="csvUploadForm" enctype="multipart/form-data">
+            <div class="file-input-wrapper">
+                <input type="file" name="file" id="csvFile" accept=".csv" required>
+                <label for="csvFile" class="file-input-label">📎 Choose CSV File</label>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="uploadCSV()" style="margin-left: 10px;">
+                📤 Upload & Assign
+            </button>
+        </form>
+        <p style="color: var(--text-dim); font-size: 0.8rem; margin-top: 12px;">
+            Example: Andre Russell, All Rounder, true, 2.0
+        </p>
+    </div>
+
+    <!-- Option 3: Fresh Player Selection -->
     <div class="glass-panel" style="margin-bottom: 25px;">
         <h2>🆕 Fresh Player Selection</h2>
         <p style="color: var(--text-dim); margin-bottom: 20px;">
-            Select players from the master pool for this session.
+            Select players individually from the master pool.
         </p>
 
         <div class="count-bar">
@@ -361,7 +414,6 @@
         </div>
     </div>
 
-    <!-- Skip & Enter -->
     <div style="text-align: center; margin-top: 30px;">
         <a href="/admin/sessions" class="back-link">← Back to Sessions List</a>
     </div>
@@ -370,6 +422,30 @@
 <script>
 let selectedPreviousSessionId = null;
 let selectedPlayers = new Set();
+const sessionId = {{ session.id }};
+
+// Auto-continue for full team coverage
+function autoContinueSameSet() {
+    const prevId = {{ session.auto_previous_id or 'null' }};
+    if (!prevId) return;
+    
+    fetch(`/admin/sessions/${sessionId}/assign-players`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            source_type: 'same_set',
+            previous_session_id: prevId
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/admin/sessions/${sessionId}/enter`;
+        } else {
+            alert(data.error || 'Failed');
+        }
+    });
+}
 
 function selectPreviousSession(card, sessionId) {
     document.querySelectorAll('.prev-session-card').forEach(c => c.classList.remove('selected'));
@@ -399,7 +475,7 @@ function continueWithSameSet() {
     if (!selectedPreviousSessionId) return;
     if (!confirm('Use SAME player set as previous session? All players will be reset to AVAILABLE for bidding (sold status does NOT carry over).')) return;
 
-    fetch(`/admin/sessions/${ {{ session.id }} }/assign-players`, {
+    fetch(`/admin/sessions/${sessionId}/assign-players`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -410,8 +486,7 @@ function continueWithSameSet() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            window.location.href = `/admin/sessions/${ {{ session.id }} }/enter`;
+            window.location.href = `/admin/sessions/${sessionId}/enter`;
         } else {
             alert(data.error || 'Failed');
         }
@@ -420,9 +495,9 @@ function continueWithSameSet() {
 
 function continueWithUnsoldOnly() {
     if (!selectedPreviousSessionId) return;
-    if (!confirm('Continue with UNSOLD players only from previous session? Sold players will NOT be available.')) return;
+    if (!confirm('Continue with UNSOLD players only? Sold players will NOT be available.')) return;
 
-    fetch(`/admin/sessions/${ {{ session.id }} }/assign-players`, {
+    fetch(`/admin/sessions/${sessionId}/assign-players`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -433,8 +508,7 @@ function continueWithUnsoldOnly() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            window.location.href = `/admin/sessions/${ {{ session.id }} }/enter`;
+            window.location.href = `/admin/sessions/${sessionId}/enter`;
         } else {
             alert(data.error || 'Failed');
         }
@@ -449,7 +523,31 @@ function assignFreshPlayers() {
     formData.append('source_type', 'fresh');
     selectedPlayers.forEach(pid => formData.append('player_ids', pid));
 
-    fetch(`/admin/sessions/${ {{ session.id }} }/assign-players`, {
+    fetch(`/admin/sessions/${sessionId}/assign-players`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/admin/sessions/${sessionId}/enter`;
+        } else {
+            alert(data.error || 'Failed');
+        }
+    });
+}
+
+function uploadCSV() {
+    const fileInput = document.getElementById('csvFile');
+    if (!fileInput.files.length) {
+        alert('Please select a CSV file');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    fetch(`/admin/sessions/${sessionId}/assign-players`, {
         method: 'POST',
         body: formData
     })
@@ -457,11 +555,16 @@ function assignFreshPlayers() {
     .then(data => {
         if (data.success) {
             alert(data.message);
-            window.location.href = `/admin/sessions/${ {{ session.id }} }/enter`;
+            window.location.href = `/admin/sessions/${sessionId}/enter`;
         } else {
-            alert(data.error || 'Failed');
+            alert(data.error || 'Upload failed');
         }
     });
 }
+
+document.getElementById('csvFile').addEventListener('change', function() {
+    const label = document.querySelector('.file-input-label');
+    label.textContent = '📎 ' + (this.files[0]?.name || 'Choose CSV File');
+});
 </script>
 {% endblock %}
