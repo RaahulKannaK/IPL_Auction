@@ -65,7 +65,7 @@
         margin-bottom: 30px;
     }
     @media (min-width: 768px) {
-        .stats-grid { grid-template-columns: repeat(5, 1fr); }
+        .stats-grid { grid-template-columns: repeat(4, 1fr); }
     }
     .stat-card {
         background: rgba(0, 0, 0, 0.2);
@@ -84,14 +84,13 @@
     }
     .stat-card .value {
         font-family: 'JetBrains Mono';
-        font-size: 1.3rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
     }
     .stat-card .value.available { color: #22c55e; }
     .stat-card .value.spent { color: #ef4444; }
     .stat-card .value.reserved { color: #f59e0b; }
-    .stat-card .value.committed { color: #a855f7; }
     .stat-card .value.total { color: var(--cosmic-purple-light); }
 
     /* PROGRESS BAR */
@@ -335,7 +334,7 @@
         <a href="/team-owner/auction" class="nav-btn">⚡ Auction Room</a>
     </div>
 
-    <!-- PURSE STATS -->
+    <!-- PURSE STATS - 4 CARDS ONLY -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="label">💰 Total Purse</div>
@@ -351,10 +350,9 @@
         <div class="stat-card">
             <div class="label">🔒 Reserved (Willing)</div>
             <div class="value reserved">₹{{ "%.2f"|format(stats.reserved) }}Cr</div>
-        </div>
-        <div class="stat-card">
-            <div class="label">📊 Committed</div>
-            <div class="value committed">₹{{ "%.2f"|format(stats.committed) }}Cr</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar reserved" style="width: {{ stats.reserved_pct }}%"></div>
+            </div>
         </div>
         <div class="stat-card">
             <div class="label">✅ Available</div>
@@ -369,11 +367,11 @@
             When you set a <span class="highlight">Willing Price</span> for a player, it acts as a 
             <strong>substitute/auto-bid shield</strong>. If that player appears in a later session and another team bids, 
             your bot automatically bids up to your willing price. If no one bids, you keep the player at the original price. 
-            The willing price amount is <strong>reserved</strong> from your purse until the player is fully resolved 
-            (won at final price or lost).
+            The willing price amount is <strong>reserved</strong> from your purse until the player is fully resolved.
             <br><br>
             <span style="color: var(--gold-light);">Example:</span> Russell won at ₹6Cr, willing price ₹9Cr → 
-            ₹9Cr reserved. If night session bids reach ₹7Cr, auto-bid to ₹7Cr. If bids exceed ₹9Cr, you lose Russell 
+            ₹9Cr reserved from purse. Available = ₹100Cr - ₹9Cr = <strong>₹91Cr</strong>. 
+            If night session bids reach ₹7Cr, auto-bid to ₹7Cr. If bids exceed ₹9Cr, you lose Russell 
             and ₹9Cr is released back.
         </p>
     </div>

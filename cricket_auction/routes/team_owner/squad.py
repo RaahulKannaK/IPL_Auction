@@ -65,17 +65,21 @@ def view_squad():
         }
         
         # FIXED PURSE CALCULATIONS
-        # Logic: 
-        # - spent = actual money spent on won players
+        # Logic:
+        # - spent = actual money spent on won players (informational only)
         # - reserved = sum of all active willing prices (max auto-bid limits)
-        # - committed = spent + reserved (total locked from purse)
-        # - available = purse_limit - committed
+        #   This is the ONLY deduction from purse. Spent is INCLUDED in reserved.
+        # - available = purse_limit - reserved
+        #
+        # Example: Russell won at 6Cr, willing price 9Cr
+        #   reserved = 9Cr (this 9Cr includes the 6Cr already spent)
+        #   spent = 6Cr (just for display - shows what you actually paid)
+        #   available = 100 - 9 = 91Cr ✓
         
         purse_limit = float(user_team['purse_limit'] or 100)
         spent = float(user_team['spent'] or 0)
         
-        # Calculate reserved from active willing prices (not from team.reserved column)
-        # Reserved = sum of max_bid for all active hidden bids
+        # Calculate reserved from active willing prices
         cursor.execute("""
             SELECT COALESCE(SUM(max_bid), 0) as total_reserved
             FROM hidden_max_bids
@@ -84,8 +88,9 @@ def view_squad():
         reserved_result = cursor.fetchone()
         reserved = float(reserved_result['total_reserved'] or 0) if reserved_result else 0
         
-        committed = spent + reserved
-        available = purse_limit - committed
+        # FIXED: Available = Purse - Reserved (NOT purse - spent - reserved)
+        # Spent is already inside reserved, don't double count
+        available = purse_limit - reserved
         
         # Stats
         total_players = len(squad)
@@ -96,7 +101,6 @@ def view_squad():
             'purse_limit': purse_limit,
             'spent': spent,
             'reserved': reserved,
-            'committed': committed,
             'available': available,
             'spent_pct': (spent / purse_limit * 100) if purse_limit > 0 else 0,
             'reserved_pct': (reserved / purse_limit * 100) if purse_limit > 0 else 0,
