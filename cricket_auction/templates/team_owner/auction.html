@@ -888,7 +888,7 @@
 
                 <!-- Slot progress bar -->
                 <div class="slot-bar">
-                    <div class="fill" style="width: {{ (sess.slots_filled / sess.total_teams * 100) if sess.total_teams > 0 else 0 }}%"></div>
+                    <div class="fill" style="width: {{ (sess.slots_filled / sess.total_teams * 100) if sess.total_teams and sess.total_teams > 0 else 0 }}%"></div>
                 </div>
 
                 {% if sess.team_ids_list %}
