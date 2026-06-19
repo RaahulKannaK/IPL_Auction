@@ -643,79 +643,88 @@
         <div>
             <h2>📋 Sessions</h2>
             
-            {% if sessions %}
+                        {% if sessions %}
                 {% for sess in sessions %}
-<div class="session-card">
-    <div class="session-header">
-        <div>
-            <div class="session-name">{{ sess.session_name }}</div>
-            <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
-                {% if sess.start_time and sess.end_time %}
-                    ⏰ {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time.split(' ')[1][:5] if ' ' in (sess.start_time|string) else sess.start_time }} 
-                    → 
-                    {{ sess.end_time.strftime('%H:%M') if sess.end_time is not string else sess.end_time.split(' ')[1][:5] if ' ' in (sess.end_time|string) else sess.end_time }}
-                {% endif %}
-            </div>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <span class="session-time">{{ sess.team_count or 0 }} / {{ total_teams }} teams</span>
-            {% if sess.status == 'active' %}
-            <span class="status-badge status-active">● Active</span>
-            {% elif sess.status == 'paused' %}
-            <span class="status-badge status-paused">⏸ Paused</span>
+                <div class="session-card">
+                    <div class="session-header">
+                        <div>
+                            <div class="session-name">{{ sess.session_name }}</div>
+                            <div style="color: var(--text-dim); font-size: 0.85rem; margin-top: 5px;">
+                                {% if sess.start_time and sess.end_time %}
+                                    ⏰ {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time.split(' ')[1][:5] if ' ' in (sess.start_time|string) else sess.start_time }} 
+                                    → 
+                                    {{ sess.end_time.strftime('%H:%M') if sess.end_time is not string else sess.end_time.split(' ')[1][:5] if ' ' in (sess.end_time|string) else sess.end_time }}
+                                {% elif sess.start_time %}
+                                    ⏰ Started at {{ sess.start_time.strftime('%H:%M') if sess.start_time is not string else sess.start_time }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="session-time">{{ sess.team_count or 0 }} / {{ total_teams }} teams</span>
+                            {% if sess.status == 'active' %}
+                            <span class="status-badge status-active">● Active</span>
+                            {% elif sess.status == 'paused' %}
+                            <span class="status-badge status-paused">⏸ Paused</span>
+                            {% else %}
+                            <span class="status-badge status-completed">✓ Completed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ (sess.team_count / total_teams * 100) if total_teams > 0 else 0 }}%;"></div>
+                    </div>
+
+                    <div class="session-stats">
+                        <div class="session-stat">
+                            <div class="value" style="color: #22c55e;">{{ sess.participating }}</div>
+                            <div class="label">Participating</div>
+                        </div>
+                        <div class="session-stat">
+                            <div class="value" style="color: #f59e0b;">{{ sess.remaining }}</div>
+                            <div class="label">Remaining</div>
+                        </div>
+                        <div class="session-stat">
+                            <div class="value" style="color: var(--cosmic-purple-light);">{{ "%.0f"|format(sess.percentage) }}%</div>
+                            <div class="label">Full</div>
+                        </div>
+                    </div>
+
+                    <div class="team-tags" id="teamTags-{{ sess.id }}">
+                        {% for team in teams %}
+                            {% if sess.team_ids_list %}
+                                {% if team.id in sess.team_ids_list %}
+                                <span class="team-tag">
+                                    {{ team.team_name }}
+                                    {% if sess.status == 'active' %}
+                                    <span class="remove" onclick="event.stopPropagation(); removeTeam({{ sess.id }}, {{ team.id }})">×</span>
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="session-actions">
+                        {% if sess.status == 'active' %}
+                        <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
+                        <a href="/admin/auction/session/{{ sess.id }}/enter" class="btn-small btn-enter">🔨 Enter Auction</a>
+                        {% else %}
+                        <a href="/admin/auction/session/{{ sess.id }}/enter" class="btn-small btn-enter">📊 View</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
             {% else %}
-            <span class="status-badge status-completed">✓ Completed</span>
+                <div class="glass-panel empty-state">
+                    <div class="icon">📅</div>
+                    <h3>No Sessions Yet</h3>
+                    <p>Create your first session using the form on the left</p>
+                </div>
             {% endif %}
         </div>
-    </div>
-
-    <!-- Player Stats Bar -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
-        <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 10px;">
-            <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--text-primary);">{{ sess.player_count or 0 }}</div>
-            <div style="font-size: 0.7rem; color: var(--text-dim);">Total Players</div>
-        </div>
-        <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 10px;">
-            <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: #22c55e;">{{ sess.sold_count or 0 }}</div>
-            <div style="font-size: 0.7rem; color: var(--text-dim);">Sold</div>
-        </div>
-        <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 10px;">
-            <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: #f59e0b;">{{ (sess.player_count or 0) - (sess.sold_count or 0) }}</div>
-            <div style="font-size: 0.7rem; color: var(--text-dim);">Remaining</div>
-        </div>
-        <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.15); border-radius: 10px;">
-            <div style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--cosmic-purple-light);">
-                {% if sess.has_players %}✅{% else %}❌{% endif %}
-            </div>
-            <div style="font-size: 0.7rem; color: var(--text-dim);">Has Players</div>
-        </div>
-    </div>
-
-    <div class="progress-bar-container">
-        <div class="progress-bar" style="width: {{ ((sess.sold_count or 0) / (sess.player_count or 1) * 100) if (sess.player_count or 0) > 0 else 0 }}%;"></div>
-    </div>
-
-    <div class="team-tags" id="teamTags-{{ sess.id }}">
-        <!-- Team tags here (keep existing) -->
-    </div>
-
-    <div class="session-actions">
-        {% if sess.status == 'active' %}
-            {% if not sess.has_players %}
-            <a href="/admin/sessions/{{ sess.id }}/assign-players" class="btn-small btn-secondary" style="background: rgba(124,77,255,0.15); color: var(--cosmic-purple-light); border: 1px solid var(--cosmic-purple);">
-                🎯 Assign Players
-            </a>
-            {% endif %}
-            <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
-            <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">
-                {% if sess.has_players %}🔨 Enter Auction{% else %}⚠️ Assign First{% endif %}
-            </a>
-        {% else %}
-            <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">📊 View Results</a>
-        {% endif %}
     </div>
 </div>
-{% endfor %}
 
 <script>
 // ===== TEAM SELECTION FIX =====
