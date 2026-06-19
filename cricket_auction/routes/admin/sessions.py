@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, session, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, session, flash, jsonify,Response
 from database.db import get_db, get_cached, clear_cache
 import json
 import csv
@@ -639,3 +639,26 @@ def get_session_status(session_id):
         'current_player': sess['current_player_id'],
         'player_stats': player_stats
     })
+
+@bp.route('/download-template')
+def download_template():
+    csv_content = """player_name,category,overseas,base_price
+Andre Russell,all_rounder,true,2.0
+Virat Kohli,batsman,false,2.0
+Jasprit Bumrah,bowler,false,1.5
+MS Dhoni,wicket_keeper,false,1.5
+Ben Stokes,all_rounder,true,2.0
+Rohit Sharma,batsman,false,2.0
+Rashid Khan,bowler,true,1.5
+Jos Buttler,wicket_keeper,true,1.5
+Hardik Pandya,all_rounder,false,2.0
+Trent Boult,bowler,true,1.5
+"""
+    return Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename="player_template.csv"',
+            'Content-Type': 'text/csv; charset=utf-8'
+        }
+    )
