@@ -235,3 +235,18 @@ def export_players():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=players.csv'}
     )
+
+@bp.route('/download-template')
+def download_template():
+    csv_content = """player_name,category,overseas,base_price
+Andre Russell,all_rounder,true,2.0
+Virat Kohli,batsman,false,2.0
+Jasprit Bumrah,bowler,false,1.5
+MS Dhoni,wicket_keeper,false,1.5
+Ben Stokes,all_rounder,true,2.0
+"""
+    return Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=player_template.csv'}
+    )
