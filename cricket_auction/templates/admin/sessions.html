@@ -672,7 +672,7 @@
                     </div>
 
                     <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: {{ (sess.team_count / total_teams * 100) if total_teams > 0 else 0 }}%;"></div>
+                        <div class="progress-bar" style="width: {{ (sess.participating / total_teams * 100) if total_teams > 0 else 0 }}%;"></div>
                     </div>
 
                     <div class="session-stats">
