@@ -449,9 +449,9 @@ template_content = '''{% extends "base.html" %}
                 <p style="color: var(--text-dim); margin: 0;">
                     Upload a CSV file with player data for this session.
                 </p>
-                <button type="button" class="download-btn" onclick="downloadTemplate()">
-    📥 Download Template CSV
-</button>
+                <a href="/static/templates/player_template.csv" download class="download-btn">
+                    📥 Download Template CSV
+                </a>
             </div>
 
             <!-- Example Data Table -->
