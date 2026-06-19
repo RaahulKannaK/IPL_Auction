@@ -194,3 +194,23 @@ CREATE TABLE team_owners (
 );
 
 ALTER TABLE teams ADD COLUMN owner_ids JSON NULL AFTER owner_id;
+
+-- SESSION_PLAYERS: Links players to specific auction sessions with session-local status
+CREATE TABLE session_players (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    player_id INT NOT NULL,
+    base_price DECIMAL(10,2) DEFAULT 2.00,
+    status ENUM('available', 'in_auction', 'sold', 'unsold') DEFAULT 'available',
+    sold_team_id INT NULL,
+    sold_price DECIMAL(10,2) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY (sold_team_id) REFERENCES teams(id),
+    UNIQUE KEY unique_session_player (session_id, player_id)
+);
+
+-- Add session_id to auction_players to track which session a player was originally assigned to
+ALTER TABLE auction_players ADD COLUMN session_id INT NULL AFTER auction_id;
+ALTER TABLE auction_players ADD FOREIGN KEY (session_id) REFERENCES auction_sessions(id);
