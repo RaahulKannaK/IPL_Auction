@@ -1188,7 +1188,6 @@ let hasActiveSession = {{ 'true' if has_active_session else 'false' }};
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
     if (hasActiveSession && currentSessionId) {
-        // User already has an active session, show auction room directly
         document.getElementById('sessionSelector').classList.add('hidden');
         document.getElementById('auctionRoom').style.display = 'block';
         initAuctionRoom();
@@ -1202,7 +1201,6 @@ function enterSession(sessionId, sessionName) {
     document.getElementById('sessionSelector').classList.add('hidden');
     document.getElementById('auctionRoom').style.display = 'block';
     
-    // Show session info bar
     const infoBar = document.getElementById('sessionInfoBar');
     const infoIcon = document.getElementById('sessionInfoIcon');
     const infoName = document.getElementById('sessionInfoName');
@@ -1210,7 +1208,6 @@ function enterSession(sessionId, sessionName) {
     if (infoBar && infoName) {
         infoBar.style.display = 'block';
         infoName.textContent = currentSessionName;
-        // Set icon based on session name
         const nameLower = currentSessionName.toLowerCase();
         if (nameLower.includes('morning')) infoIcon.textContent = '🌅';
         else if (nameLower.includes('evening') || nameLower.includes('night')) infoIcon.textContent = '🌙';
@@ -1223,24 +1220,19 @@ function enterSession(sessionId, sessionName) {
 }
 
 function joinSession(sessionId, sessionName) {
-    // FIXED: Use correct URL path under /team-owner/auction/ prefix
     fetch('/team-owner/auction/join-session/' + sessionId, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
     })
     .then(r => {
-        if (!r.ok) {
-            throw new Error('HTTP ' + r.status);
-        }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
     })
     .then(data => {
         if (data.success) {
-            // Update the UI to show this session as joined
             const card = document.querySelector('.session-card[data-session-id="' + sessionId + '"]');
             if (card) {
                 card.classList.add('my-session');
-                // Replace button
                 const btn = card.querySelector('.btn-session-action');
                 if (btn) {
                     btn.className = 'btn-session-action btn-enter';
@@ -1248,7 +1240,6 @@ function joinSession(sessionId, sessionName) {
                     btn.onclick = function() { enterSession(sessionId, sessionName); };
                 }
             }
-            // Auto-enter the room
             enterSession(sessionId, sessionName);
         } else {
             alert(data.error || 'Failed to join session');
@@ -1256,7 +1247,7 @@ function joinSession(sessionId, sessionName) {
     })
     .catch(err => {
         console.error('Join session error:', err);
-        alert('Error joining session: ' + err.message + '\n\nMake sure the route /team-owner/auction/join-session/' + sessionId + ' exists.');
+        alert('Error joining session: ' + err.message);
     });
 }
 
@@ -1298,9 +1289,7 @@ function initAuctionRoom() {
             }
         }
     })
-    .catch(err => {
-        console.error('Init auction room error:', err);
-    });
+    .catch(err => console.error('Init auction room error:', err));
     
     startFastPolling();
 }
@@ -1325,15 +1314,12 @@ function leaveRoom() {
     stopPolling();
     closeWillingPopup();
     
-    // Hide session info bar
     const infoBar = document.getElementById('sessionInfoBar');
     if (infoBar) infoBar.style.display = 'none';
     
-    // Hide auction room, show session selector
     document.getElementById('auctionRoom').style.display = 'none';
     document.getElementById('sessionSelector').classList.remove('hidden');
     
-    // Refresh sessions to show updated membership status
     refreshSessionList();
 }
 
@@ -1341,15 +1327,9 @@ function refreshSessionList() {
     fetch('/team-owner/auction/sessions')
     .then(r => r.json())
     .then(data => {
-        if (data.sessions) {
-            // Re-render session cards would require full template replacement
-            // For now, just reload the page to get fresh server-rendered sessions
-            window.location.reload();
-        }
+        if (data.sessions) window.location.reload();
     })
-    .catch(err => {
-        console.error('Refresh sessions error:', err);
-    });
+    .catch(err => console.error('Refresh sessions error:', err));
 }
 
 // ==================== FAST POLLING ====================
@@ -1404,7 +1384,6 @@ function startFastPolling() {
                 const serverHasBids = data.has_bids || false;
                 
                 if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
-                    // Player was reset (unsold/moved to next)
                     hasSkippedCurrentPlayer = false;
                     resetSkipUI();
                     clearBidHistory();
@@ -1416,7 +1395,6 @@ function startFastPolling() {
                 }
                 
                 if (playerId && playerId !== lastPlayerId) {
-                    // New player on block
                     lastPlayerId = playerId; 
                     currentAuctionPlayerId = playerId;
                     hasSkippedCurrentPlayer = false; 
@@ -1439,9 +1417,7 @@ function startFastPolling() {
                 }
             }
         })
-        .catch(err => {
-            // Silently ignore polling errors to prevent console spam
-        });
+        .catch(() => {});
     }, 200);
 }
 
@@ -1454,9 +1430,7 @@ function stopPolling() {
 function clearBidHistory() {
     bidHistory = [];
     const h = document.getElementById('bidHistory');
-    if (h) {
-        h.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 20px; font-size: 0.85rem;">No bids yet</p>';
-    }
+    if (h) h.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 20px; font-size: 0.85rem;">No bids yet</p>';
     const bidCount = document.getElementById('bidCount');
     if (bidCount) bidCount.textContent = '0 bids';
 }
@@ -1474,16 +1448,13 @@ function addHistory(team, amount, isAuto) {
     `).join('');
     
     const bidCount = document.getElementById('bidCount');
-    if (bidCount) {
-        bidCount.textContent = bidHistory.length + ' bid' + (bidHistory.length > 1 ? 's' : '');
-    }
+    if (bidCount) bidCount.textContent = bidHistory.length + ' bid' + (bidHistory.length > 1 ? 's' : '');
 }
 
 // ==================== PLAYER DISPLAY ====================
 function updatePlayerDisplay(name, bid, bidder, category, basePrice) {
     const waitingBox = document.getElementById('waitingBox');
     const activeBox = document.getElementById('activePlayerBox');
-    
     if (!waitingBox || !activeBox) return;
     
     if (name) {
@@ -1525,7 +1496,7 @@ function updatePlayerDisplay(name, bid, bidder, category, basePrice) {
     }
 }
 
-// ==================== BID CONTROLS ====================
+// ==================== BID CONTROLS (INDEPENDENT BIDDING) ====================
 function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId) {
     const cb = parseFloat(currentBid) || 0;
     const bp = parseFloat(basePrice) || 2.0;
@@ -1566,35 +1537,38 @@ function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId)
     }
 }
 
+// INDEPENDENT BIDDING: Quick bid chips show absolute amounts, not increments
 function updateBidChips(currentBid) {
     const chips = document.getElementById('bidChips');
     const customRow = document.getElementById('customBidRow');
     if (!chips) return;
     if (customRow) customRow.style.display = 'none';
     
-    let increments = [];
+    // Absolute bid amounts (not increments) - team owner can click any amount
+    // These are suggestions based on current bid level
+    let amounts = [];
     if (currentBid < 1.0) {
-        increments = [0.05, 0.10, 0.25, 0.50, 1.00, 'custom'];
-    } else if (currentBid < 2.0) {
-        increments = [0.10, 0.20, 0.50, 1.00, 2.00, 'custom'];
+        amounts = [0.50, 0.75, 1.00, 1.50, 2.00, 'custom'];
+    } else if (currentBid < 3.0) {
+        amounts = [1.50, 2.00, 2.50, 3.00, 5.00, 'custom'];
     } else if (currentBid < 7.0) {
-        increments = [0.25, 0.50, 1.00, 2.00, 5.00, 'custom'];
+        amounts = [3.00, 4.00, 5.00, 7.00, 10.00, 'custom'];
+    } else if (currentBid < 15.0) {
+        amounts = [5.00, 7.00, 10.00, 12.00, 15.00, 'custom'];
     } else {
-        increments = [0.50, 1.00, 2.00, 5.00, 10.00, 'custom'];
+        amounts = [10.00, 12.00, 15.00, 20.00, 25.00, 'custom'];
     }
     
-    const labels = {0.05: '+5L', 0.10: '+10L', 0.20: '+20L', 0.25: '+25L', 0.50: '+50L', 1.00: '+1Cr', 2.00: '+2Cr', 5.00: '+5Cr', 10.00: '+10Cr'};
-    
     const chipButtons = chips.querySelectorAll('.bid-chip');
-    increments.forEach((inc, i) => {
+    amounts.forEach((amt, i) => {
         const btn = chipButtons[i];
         if (!btn) return;
-        if (inc === 'custom') {
+        if (amt === 'custom') {
             btn.innerHTML = '<span class="amount">✏️</span><span style="font-size:0.75rem;">Custom</span>';
             btn.onclick = showCustomBid;
         } else {
-            btn.innerHTML = '<span class="amount">' + labels[inc] + '</span>';
-            btn.onclick = () => quickBid(inc);
+            btn.innerHTML = '<span class="amount">₹' + amt.toFixed(2) + 'Cr</span>';
+            btn.onclick = () => placeAbsoluteBid(amt);
         }
     });
 }
@@ -1622,12 +1596,23 @@ function placeCustomBid() {
     executeBid(amount);
 }
 
-function quickBid(increment) {
-    const cb = currentBidAmount;
-    const base = currentBasePrice;
-    const current = cb > 0 ? cb : base;
-    const newAmount = current + increment;
-    executeBid(newAmount);
+// INDEPENDENT BIDDING: Place bid at absolute amount (no increment rules)
+function placeAbsoluteBid(amount) {
+    if (!currentAuctionId || !currentAuctionPlayerId) {
+        showStatus('bidStatus', '❌ No player in auction', '#ef4444');
+        return;
+    }
+    if (hasSkippedCurrentPlayer) {
+        showStatus('bidStatus', '❌ Already skipped', '#ef4444');
+        return;
+    }
+    // Must be higher than current bid
+    const minRequired = hasBids ? currentBidAmount + 0.01 : currentBasePrice;
+    if (amount < minRequired) {
+        showStatus('bidStatus', `❌ Must be at least ₹${minRequired.toFixed(2)}Cr`, '#ef4444');
+        return;
+    }
+    executeBid(amount);
 }
 
 function placeInitialBid() {
@@ -1682,7 +1667,6 @@ function executeBid(amount) {
     .then(data => {
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
-            // Re-sync with server
             fetch('/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + (currentSessionId || ''))
             .then(r => r.json())
             .then(serverData => {
@@ -1926,9 +1910,7 @@ function checkAutoBid(currentBid) {
             setTimeout(() => checkAutoBid(data.amount), 1500);
         }
     })
-    .catch(err => {
-        console.error('Auto bid check error:', err);
-    });
+    .catch(err => console.error('Auto bid check error:', err));
 }
 
 // ==================== PLAYERS ====================
