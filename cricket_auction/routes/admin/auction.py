@@ -58,31 +58,54 @@ def manage_sessions():
         
         # GET - Show sessions list
         if request.method == 'GET':
+            # Get all sessions with player counts from session_players
             cursor.execute("""
-                SELECT * FROM auction_sessions 
-                WHERE auction_id = %s 
-                ORDER BY created_at DESC
+                SELECT s.*, 
+                       (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as player_count,
+                       (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'sold') as sold_count
+                FROM auction_sessions s
+                WHERE s.auction_id = %s 
+                ORDER BY s.created_at DESC
             """, (auction_id,))
             sessions = cursor.fetchall()
             
-            # Parse team_ids JSON for each session
+            # Parse team_ids JSON and calculate stats for each session
             for sess in sessions:
+                # Parse team_ids
                 if sess.get('team_ids'):
                     try:
                         import json
-                        sess['team_ids'] = json.loads(sess['team_ids'])
+                        sess['team_ids_list'] = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
                     except:
-                        sess['team_ids'] = []
+                        sess['team_ids_list'] = []
+                else:
+                    sess['team_ids_list'] = []
+                
+                # Calculate session stats
+                total_teams = len(teams) if 'teams' in dir() else 0
+                sess['participating'] = len(sess['team_ids_list'])
+                sess['remaining'] = total_teams - sess['participating']
+                sess['percentage'] = (sess['participating'] / total_teams * 100) if total_teams > 0 else 0
+                
+                # Check if session has players assigned
+                sess['has_players'] = (sess.get('player_count') or 0) > 0
             
-            # Get all teams for this auction
+            # Get all teams for this auction (needed for total_teams and team names)
             cursor.execute("SELECT * FROM teams WHERE auction_id = %s", (auction_id,))
             teams = cursor.fetchall()
+            
+            # Recalculate with actual total_teams now that we have teams
+            total_teams = len(teams)
+            for sess in sessions:
+                sess['participating'] = len(sess['team_ids_list'])
+                sess['remaining'] = total_teams - sess['participating']
+                sess['percentage'] = (sess['participating'] / total_teams * 100) if total_teams > 0 else 0
             
             return render_template('admin/sessions.html',
                 auction=auction,
                 sessions=sessions,
                 teams=teams,
-                total_teams=len(teams)
+                total_teams=total_teams
             )
         
         # POST - Create new session
@@ -133,8 +156,8 @@ def manage_sessions():
             db.commit()
             new_session_id = cursor.lastrowid
             
-            # INSTANT REDIRECT to enter the session
-            return redirect(f'/admin/auction/session/{new_session_id}/enter')
+            # Redirect to assign players page instead of directly entering
+            return redirect(f'/admin/sessions/{new_session_id}/assign-players')
             
     finally:
         cursor.close()
