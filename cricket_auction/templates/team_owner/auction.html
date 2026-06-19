@@ -1171,7 +1171,6 @@ let pollInterval = null;
 let lastPlayerId = null;
 let currentAuctionPlayerId = null;
 let bidHistory = [];
-let countdownTimer = null;
 let hasSkippedCurrentPlayer = false;
 let currentBasePrice = 2.0;
 let currentBidAmount = 0;
@@ -1184,6 +1183,7 @@ let pendingWillingPricePlayer = null;
 let previousHasBids = false;
 let currentLeagueName = '';
 let hasActiveSession = {{ 'true' if has_active_session else 'false' }};
+let pendingBidAmount = null; // Track pending bid to prevent reversion
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1284,6 +1284,7 @@ function initAuctionRoom() {
                 hasBids = data.has_bids || false;
                 previousHasBids = hasBids;
                 currentBidderId = data.current_bidder_id || null;
+                pendingBidAmount = null; // Clear any pending bid on init
                 updatePlayerDisplay(data.current_player, data.current_bid, data.current_bidder, data.player_category, data.base_price);
                 updateBidControls(data.current_bid, data.base_price, data.has_bids, data.current_bidder_id);
             }
@@ -1307,10 +1308,10 @@ function leaveRoom() {
     currentBidderId = null;
     previousHasBids = false;
     pendingWillingPricePlayer = null;
+    pendingBidAmount = null;
     currentLeagueName = '';
     hasActiveSession = false;
     
-    stopCountdown();
     stopPolling();
     closeWillingPopup();
     
@@ -1383,32 +1384,66 @@ function startFastPolling() {
                 const playerId = data.auction_player_id;
                 const serverHasBids = data.has_bids || false;
                 
-                if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
-                    hasSkippedCurrentPlayer = false;
-                    resetSkipUI();
-                    clearBidHistory();
-                    stopCountdown();
-                    currentBasePrice = parseFloat(data.base_price) || 2.0;
-                    currentBidAmount = parseFloat(data.current_bid) || 0;
-                    hasBids = false;
-                    currentBidderId = null;
-                }
-                
+                // New player - reset everything
                 if (playerId && playerId !== lastPlayerId) {
                     lastPlayerId = playerId; 
                     currentAuctionPlayerId = playerId;
                     hasSkippedCurrentPlayer = false; 
                     resetSkipUI();
                     clearBidHistory();
-                    stopCountdown();
                     currentBasePrice = parseFloat(data.base_price) || 2.0;
                     currentBidAmount = parseFloat(data.current_bid) || 0;
                     hasBids = serverHasBids;
                     currentBidderId = data.current_bidder_id || null;
+                    pendingBidAmount = null; // Clear pending on new player
                 }
                 
-                updatePlayerDisplay(data.current_player, data.current_bid, data.current_bidder, data.player_category, data.base_price);
-                updateBidControls(data.current_bid, data.base_price, data.has_bids, data.current_bidder_id);
+                // Player reset (all bids cleared) - happens when player is skipped by all
+                if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
+                    hasSkippedCurrentPlayer = false;
+                    resetSkipUI();
+                    clearBidHistory();
+                    currentBasePrice = parseFloat(data.base_price) || 2.0;
+                    currentBidAmount = parseFloat(data.current_bid) || 0;
+                    hasBids = false;
+                    currentBidderId = null;
+                    pendingBidAmount = null;
+                }
+                
+                // IMPORTANT: Only update from server if we don't have a pending bid
+                // or if the server data reflects a different/higher bid than our pending
+                const serverBid = parseFloat(data.current_bid) || 0;
+                const serverBidder = data.current_bidder_id || null;
+                
+                // If we have a pending bid, only accept server update if:
+                // 1. Server bid is higher than our pending (someone outbid us)
+                // 2. Server bidder is different and bid matches our pending (server confirmed our bid)
+                // 3. New player
+                if (pendingBidAmount !== null) {
+                    // Our bid is pending - check if server has caught up
+                    if (serverBidder === myTeamId && Math.abs(serverBid - pendingBidAmount) < 0.001) {
+                        // Server confirmed our bid! Clear pending
+                        pendingBidAmount = null;
+                        currentBidAmount = serverBid;
+                        currentBidderId = serverBidder;
+                        hasBids = serverHasBids;
+                    } else if (serverBid > pendingBidAmount || (serverBidder !== myTeamId && serverBidder !== null)) {
+                        // Someone outbid us or different state - accept server
+                        pendingBidAmount = null;
+                        currentBidAmount = serverBid;
+                        currentBidderId = serverBidder;
+                        hasBids = serverHasBids;
+                    }
+                    // Otherwise keep our pending state, don't overwrite
+                } else {
+                    // No pending bid - accept server state normally
+                    currentBidAmount = serverBid;
+                    currentBidderId = serverBidder;
+                    hasBids = serverHasBids;
+                }
+                
+                updatePlayerDisplay(data.current_player, currentBidAmount, data.current_bidder, data.player_category, data.base_price);
+                updateBidControls(currentBidAmount, data.base_price, hasBids, currentBidderId);
                 
                 previousHasBids = serverHasBids;
                 
@@ -1496,14 +1531,11 @@ function updatePlayerDisplay(name, bid, bidder, category, basePrice) {
     }
 }
 
-// ==================== BID CONTROLS (INDEPENDENT BIDDING) ====================
+// ==================== BID CONTROLS ====================
 function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId) {
     const cb = parseFloat(currentBid) || 0;
     const bp = parseFloat(basePrice) || 2.0;
-    currentBidAmount = cb; 
     currentBasePrice = bp;
-    if (serverHasBids !== undefined) hasBids = serverHasBids;
-    if (serverBidderId !== undefined) currentBidderId = serverBidderId;
     
     const initialSection = document.getElementById('initialBidSection');
     const activeSection = document.getElementById('activeBidSection');
@@ -1537,40 +1569,32 @@ function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId)
     }
 }
 
-// INDEPENDENT BIDDING: Quick bid chips show absolute amounts, not increments
+// FIXED: Bid chips show INCREMENTS from current bid, not absolute amounts
 function updateBidChips(currentBid) {
     const chips = document.getElementById('bidChips');
     const customRow = document.getElementById('customBidRow');
     if (!chips) return;
     if (customRow) customRow.style.display = 'none';
     
-    // Absolute bid amounts (not increments) - team owner can click any amount
-    // These are suggestions based on current bid level
-    let amounts = [];
-    if (currentBid < 1.0) {
-        amounts = [0.50, 0.75, 1.00, 1.50, 2.00, 'custom'];
-    } else if (currentBid < 3.0) {
-        amounts = [1.50, 2.00, 2.50, 3.00, 5.00, 'custom'];
-    } else if (currentBid < 7.0) {
-        amounts = [3.00, 4.00, 5.00, 7.00, 10.00, 'custom'];
-    } else if (currentBid < 15.0) {
-        amounts = [5.00, 7.00, 10.00, 12.00, 15.00, 'custom'];
-    } else {
-        amounts = [10.00, 12.00, 15.00, 20.00, 25.00, 'custom'];
-    }
+    // Fixed increments: +10L, +25L, +50L, +1Cr, +2Cr, +5Cr
+    const increments = [0.10, 0.25, 0.50, 1.00, 2.00, 5.00];
+    const labels = ['+10L', '+25L', '+50L', '+1Cr', '+2Cr', '+5Cr'];
     
     const chipButtons = chips.querySelectorAll('.bid-chip');
-    amounts.forEach((amt, i) => {
+    increments.forEach((inc, i) => {
         const btn = chipButtons[i];
         if (!btn) return;
-        if (amt === 'custom') {
-            btn.innerHTML = '<span class="amount">✏️</span><span style="font-size:0.75rem;">Custom</span>';
-            btn.onclick = showCustomBid;
-        } else {
-            btn.innerHTML = '<span class="amount">₹' + amt.toFixed(2) + 'Cr</span>';
-            btn.onclick = () => placeAbsoluteBid(amt);
-        }
+        const newBid = currentBid + inc;
+        btn.innerHTML = '<span class="amount">' + labels[i] + '</span><span style="font-size:0.7rem;opacity:0.7;">₹' + newBid.toFixed(2) + 'Cr</span>';
+        btn.onclick = () => placeBid(newBid);
     });
+    
+    // Last chip is always Custom
+    const customBtn = chipButtons[5];
+    if (customBtn) {
+        customBtn.innerHTML = '<span class="amount">✏️</span><span style="font-size:0.75rem;">Custom</span>';
+        customBtn.onclick = showCustomBid;
+    }
 }
 
 function showCustomBid() {
@@ -1583,6 +1607,14 @@ function showCustomBid() {
     }
 }
 
+// FIXED: Validate custom bid - only allow .00, .25, .50, .75 decimals
+function isValidBidDecimal(amount) {
+    const decimal = Math.round((amount % 1) * 100) / 100;
+    // Allow .00, .25, .50, .75
+    const allowed = [0.00, 0.25, 0.50, 0.75];
+    return allowed.some(a => Math.abs(decimal - a) < 0.001);
+}
+
 function placeCustomBid() {
     const input = document.getElementById('customBidAmount');
     if (!input) return;
@@ -1591,13 +1623,17 @@ function placeCustomBid() {
         showStatus('bidStatus', '❌ Enter valid amount', '#ef4444');
         return;
     }
+    if (!isValidBidDecimal(amount)) {
+        showStatus('bidStatus', '❌ Only .00, .25, .50, .75 allowed', '#ef4444');
+        return;
+    }
     const row = document.getElementById('customBidRow');
     if (row) row.style.display = 'none';
-    executeBid(amount);
+    placeBid(amount);
 }
 
-// INDEPENDENT BIDDING: Place bid at absolute amount (no increment rules)
-function placeAbsoluteBid(amount) {
+// FIXED: Unified bid function - handles both initial and active bidding
+function placeBid(amount) {
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ No player in auction', '#ef4444');
         return;
@@ -1606,12 +1642,14 @@ function placeAbsoluteBid(amount) {
         showStatus('bidStatus', '❌ Already skipped', '#ef4444');
         return;
     }
+    
     // Must be higher than current bid
     const minRequired = hasBids ? currentBidAmount + 0.01 : currentBasePrice;
     if (amount < minRequired) {
         showStatus('bidStatus', `❌ Must be at least ₹${minRequired.toFixed(2)}Cr`, '#ef4444');
         return;
     }
+    
     executeBid(amount);
 }
 
@@ -1638,21 +1676,17 @@ function executeBid(amount) {
         return;
     }
     
-    if (!hasBids) {
-        hasBids = true;
-        previousHasBids = true;
+    // Prevent double-clicking by checking if we already have a pending bid
+    if (pendingBidAmount !== null) {
+        showStatus('bidStatus', '⏳ Bid in progress...', '#f59e0b');
+        return;
     }
-    currentBidAmount = amount;
-    currentBidderId = myTeamId;
-    updatePlayerDisplay(
-        document.getElementById('currentPlayerName') ? document.getElementById('currentPlayerName').textContent : '--',
-        amount,
-        myTeamName + ' (YOU)',
-        null,
-        currentBasePrice
-    );
-    addHistory(myTeamName, amount, false);
-    updateBidControls(amount, currentBasePrice, true, myTeamId);
+    
+    // Set pending state - DON'T update UI optimistically
+    pendingBidAmount = amount;
+    
+    // Show loading state
+    showStatus('bidStatus', '⏳ Placing bid...', '#f59e0b');
     
     fetch('/team-owner/auction/bid', {
         method: 'POST',
@@ -1665,21 +1699,44 @@ function executeBid(amount) {
     })
     .then(r => r.json())
     .then(data => {
+        pendingBidAmount = null; // Clear pending
+        
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
+            // Refresh from server to get correct state
             fetch('/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + (currentSessionId || ''))
             .then(r => r.json())
             .then(serverData => {
+                currentBidAmount = parseFloat(serverData.current_bid) || 0;
+                currentBidderId = serverData.current_bidder_id || null;
+                hasBids = serverData.has_bids || false;
                 updatePlayerDisplay(serverData.current_player, serverData.current_bid, serverData.current_bidder, serverData.player_category, serverData.base_price);
                 updateBidControls(serverData.current_bid, serverData.base_price, serverData.has_bids, serverData.current_bidder_id);
             });
         } else {
-            showStatus('bidStatus', `✅ ₹${data.current_bid.toFixed(2)}Cr`, '#22c55e');
-            startCountdown();
+            // Server confirmed - update with server response
+            currentBidAmount = parseFloat(data.current_bid) || amount;
+            currentBidderId = myTeamId;
+            hasBids = true;
+            previousHasBids = true;
+            
+            updatePlayerDisplay(
+                document.getElementById('currentPlayerName') ? document.getElementById('currentPlayerName').textContent : '--',
+                currentBidAmount,
+                myTeamName + ' (YOU)',
+                null,
+                currentBasePrice
+            );
+            addHistory(myTeamName, currentBidAmount, false);
+            updateBidControls(currentBidAmount, currentBasePrice, true, myTeamId);
+            
+            showStatus('bidStatus', `✅ ₹${currentBidAmount.toFixed(2)}Cr`, '#22c55e');
+            
             if (data.check_auto) setTimeout(() => checkAutoBid(data.current_bid), 1500);
         }
     })
     .catch(err => {
+        pendingBidAmount = null; // Clear pending on error
         console.error('Bid error:', err);
         showStatus('bidStatus', '❌ Network error', '#ef4444');
     });
@@ -1808,6 +1865,13 @@ function submitWillingPrice() {
         }
         return;
     }
+    if (!isValidBidDecimal(amount)) {
+        if (wpStatus) {
+            wpStatus.textContent = '❌ Only .00, .25, .50, .75 allowed';
+            wpStatus.style.color = '#ef4444';
+        }
+        return;
+    }
     if (!pendingWillingPricePlayer) { 
         closeWillingPopup(); 
         return; 
@@ -1854,64 +1918,8 @@ function skipWillingPrice() {
     showStatus('bidStatus', '⏭️ Set later in My Squad', '#f59e0b');
 }
 
-// ==================== TIMER ====================
-function startCountdown() {
-    const strip = document.getElementById('timerStrip');
-    const cd = document.getElementById('countdown');
-    let s = 10;
-    
-    if (strip) strip.style.display = 'flex';
-    if (cd) cd.textContent = s;
-    
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-        s--;
-        if (cd) cd.textContent = s;
-        if (s <= 0) {
-            clearInterval(countdownTimer);
-            countdownTimer = null;
-            if (strip) strip.style.display = 'none';
-            showStatus('bidStatus', '⏰ Time up!', '#f59e0b');
-        }
-    }, 1000);
-}
-
-function stopCountdown() {
-    if (countdownTimer) { 
-        clearInterval(countdownTimer); 
-        countdownTimer = null; 
-    }
-    const strip = document.getElementById('timerStrip');
-    if (strip) strip.style.display = 'none';
-}
-
-function checkAutoBid(currentBid) {
-    if (!currentAuctionPlayerId) return;
-    fetch('/admin/auction/auto_bid', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            auction_id: currentAuctionId,
-            auction_player_id: currentAuctionPlayerId,
-            current_bid: currentBid
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.auto_bid) {
-            currentBidAmount = data.amount;
-            currentBidderId = data.team_id || null;
-            const playerNameEl = document.getElementById('currentPlayerName');
-            const playerName = playerNameEl ? playerNameEl.textContent : '--';
-            updatePlayerDisplay(playerName, data.amount, data.team + ' (Auto)', null, currentBasePrice);
-            addHistory(data.team, data.amount, true);
-            showStatus('bidStatus', `🤖 Auto: ${data.team}`, 'var(--cosmic-purple-light)');
-            updateBidControls(data.amount, currentBasePrice, true, data.team_id);
-            setTimeout(() => checkAutoBid(data.amount), 1500);
-        }
-    })
-    .catch(err => console.error('Auto bid check error:', err));
-}
+// ==================== TIMER REMOVED ====================
+// Countdown timer functionality removed as requested
 
 // ==================== PLAYERS ====================
 function togglePlayers() {
