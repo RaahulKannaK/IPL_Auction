@@ -65,7 +65,7 @@
         margin-bottom: 30px;
     }
     @media (min-width: 768px) {
-        .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        .stats-grid { grid-template-columns: repeat(5, 1fr); }
     }
     .stat-card {
         background: rgba(0, 0, 0, 0.2);
@@ -84,13 +84,14 @@
     }
     .stat-card .value {
         font-family: 'JetBrains Mono';
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         font-weight: 700;
         color: var(--text-primary);
     }
     .stat-card .value.available { color: #22c55e; }
     .stat-card .value.spent { color: #ef4444; }
     .stat-card .value.reserved { color: #f59e0b; }
+    .stat-card .value.committed { color: #a855f7; }
     .stat-card .value.total { color: var(--cosmic-purple-light); }
 
     /* PROGRESS BAR */
@@ -108,6 +109,31 @@
     }
     .progress-bar.spent { background: linear-gradient(90deg, #ef4444, #f87171); }
     .progress-bar.reserved { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+    /* INFO BOX */
+    .info-box {
+        background: rgba(124, 77, 255, 0.08);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    .info-box h3 {
+        color: var(--cosmic-purple-light);
+        font-family: 'Space Grotesk';
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    .info-box p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+    .info-box .highlight {
+        color: var(--gold-light);
+        font-weight: 600;
+    }
 
     /* SQUAD SUMMARY */
     .summary-bar {
@@ -217,15 +243,33 @@
         border: 1px solid rgba(139, 92, 246, 0.15);
         border-radius: 14px;
         margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
     }
     .willing-card .player-name {
         font-weight: 600;
         color: var(--text-primary);
+        min-width: 150px;
+    }
+    .willing-card .price-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .willing-card .price-label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
     }
     .willing-card .price {
         font-family: 'JetBrains Mono';
         color: var(--cosmic-purple-light);
         font-weight: 700;
+    }
+    .willing-card .actual-price {
+        font-family: 'JetBrains Mono';
+        color: var(--gold-light);
+        font-weight: 600;
     }
     .willing-card .status {
         font-size: 0.75rem;
@@ -247,6 +291,11 @@
         background: rgba(139, 92, 246, 0.15);
         color: var(--cosmic-purple-light);
         border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    .status-substitute {
+        background: rgba(0, 212, 255, 0.15);
+        color: var(--ice-blue-light);
+        border: 1px solid rgba(0, 212, 255, 0.2);
     }
 
     /* EMPTY STATE */
@@ -272,8 +321,9 @@
         .squad-container { padding: 10px; }
         .top-bar h1 { font-size: 1.3rem; }
         .stat-card { padding: 15px; }
-        .stat-card .value { font-size: 1.2rem; }
+        .stat-card .value { font-size: 1.1rem; }
         .squad-table th, .squad-table td { padding: 10px 12px; font-size: 0.85rem; }
+        .willing-card { flex-direction: column; align-items: flex-start; }
     }
 </style>
 
@@ -299,13 +349,33 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="label">🔒 Reserved</div>
+            <div class="label">🔒 Reserved (Willing)</div>
             <div class="value reserved">₹{{ "%.2f"|format(stats.reserved) }}Cr</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">📊 Committed</div>
+            <div class="value committed">₹{{ "%.2f"|format(stats.committed) }}Cr</div>
         </div>
         <div class="stat-card">
             <div class="label">✅ Available</div>
             <div class="value available">₹{{ "%.2f"|format(stats.available) }}Cr</div>
         </div>
+    </div>
+
+    <!-- INFO BOX: Willing Price Explanation -->
+    <div class="info-box">
+        <h3>🛡️ How Willing Price (Auto-Bid Substitute) Works</h3>
+        <p>
+            When you set a <span class="highlight">Willing Price</span> for a player, it acts as a 
+            <strong>substitute/auto-bid shield</strong>. If that player appears in a later session and another team bids, 
+            your bot automatically bids up to your willing price. If no one bids, you keep the player at the original price. 
+            The willing price amount is <strong>reserved</strong> from your purse until the player is fully resolved 
+            (won at final price or lost).
+            <br><br>
+            <span style="color: var(--gold-light);">Example:</span> Russell won at ₹6Cr, willing price ₹9Cr → 
+            ₹9Cr reserved. If night session bids reach ₹7Cr, auto-bid to ₹7Cr. If bids exceed ₹9Cr, you lose Russell 
+            and ₹9Cr is released back.
+        </p>
     </div>
 
     <!-- SQUAD SUMMARY -->
@@ -354,7 +424,7 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-batsman">Batsman</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -386,7 +456,7 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-bowler">Bowler</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -418,7 +488,7 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-all_rounder">All Rounder</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -450,7 +520,7 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-wicket_keeper">Wicket Keeper</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -462,19 +532,36 @@
     <!-- WILLING PRICES SECTION -->
     {% if willing_prices %}
     <div class="willing-section">
-        <h2>🔒 Willing Prices History</h2>
+        <h2>🔒 Willing Prices History (Auto-Bid Substitute)</h2>
         {% for wp in willing_prices %}
         <div class="willing-card">
             <div class="player-name">{{ wp.player_name }}</div>
-            <div class="price">₹{{ "%.2f"|format(wp.max_bid) }}Cr</div>
+            
+            <div class="price-info">
+                <div class="price-label">Willing Price (Max)</div>
+                <div class="price">₹{{ "%.2f"|format(wp.max_bid) }}Cr</div>
+            </div>
+            
             {% if wp.final_price %}
-                {% if wp.final_price <= wp.max_bid %}
-                <span class="status status-won">✅ WON @ ₹{{ "%.2f"|format(wp.final_price) }}Cr</span>
+                <div class="price-info">
+                    <div class="price-label">Final Price</div>
+                    <div class="actual-price">₹{{ "%.2f"|format(wp.final_price) }}Cr</div>
+                </div>
+                {% if wp.sold_team_id == team.id %}
+                    {% if wp.final_price <= wp.max_bid %}
+                    <span class="status status-won">✅ WON (Auto-Bid Protected)</span>
+                    {% else %}
+                    <span class="status status-lost">❌ LOST (Exceeded Limit)</span>
+                    {% endif %}
                 {% else %}
-                <span class="status status-lost">❌ LOST @ ₹{{ "%.2f"|format(wp.final_price) }}Cr</span>
+                    <span class="status status-lost">❌ LOST (To Another Team)</span>
                 {% endif %}
             {% else %}
-            <span class="status status-active">⏳ Active</span>
+                {% if wp.is_active %}
+                <span class="status status-substitute">🛡️ Substitute Active</span>
+                {% else %}
+                <span class="status status-active">⏳ Pending</span>
+                {% endif %}
             {% endif %}
         </div>
         {% endfor %}

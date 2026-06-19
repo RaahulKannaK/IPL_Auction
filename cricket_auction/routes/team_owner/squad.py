@@ -33,9 +33,9 @@ def view_squad():
         """, (user_team['id'],))
         squad = cursor.fetchall()
         
-        # Willing prices (hidden_max_bids) for this team
+        # Willing prices (hidden_max_bids) for this team - ALL history
         cursor.execute("""
-            SELECT h.*, p.player_name, ap.sold_price as final_price
+            SELECT h.*, p.player_name, ap.sold_price as final_price, ap.sold_team_id
             FROM hidden_max_bids h
             JOIN auction_players ap ON h.auction_player_id = ap.id
             JOIN players p ON ap.player_id = p.id
@@ -44,15 +44,15 @@ def view_squad():
         """, (user_team['id'],))
         willing_prices = cursor.fetchall()
         
-        # Active willing prices (where player NOT sold to this team)
+        # Active willing prices (player not yet sold OR sold to another team - still active protection)
         cursor.execute("""
-            SELECT h.*, p.player_name
+            SELECT h.*, p.player_name, ap.sold_price as final_price, ap.sold_team_id
             FROM hidden_max_bids h
             JOIN auction_players ap ON h.auction_player_id = ap.id
             JOIN players p ON ap.player_id = p.id
-            WHERE h.team_id = %s AND h.is_active = TRUE AND ap.sold_team_id != %s
+            WHERE h.team_id = %s AND h.is_active = TRUE
             ORDER BY h.max_bid DESC
-        """, (user_team['id'], user_team['id']))
+        """, (user_team['id'],))
         active_willing = cursor.fetchall()
         
         # Category breakdown
@@ -64,23 +64,42 @@ def view_squad():
             'overseas': [p for p in squad if p['overseas']]
         }
         
-        # Purse calculations
+        # FIXED PURSE CALCULATIONS
+        # Logic: 
+        # - spent = actual money spent on won players
+        # - reserved = sum of all active willing prices (max auto-bid limits)
+        # - committed = spent + reserved (total locked from purse)
+        # - available = purse_limit - committed
+        
         purse_limit = float(user_team['purse_limit'] or 100)
         spent = float(user_team['spent'] or 0)
-        reserved = float(user_team['reserved'] or 0)
-        available = purse_limit - spent - reserved
+        
+        # Calculate reserved from active willing prices (not from team.reserved column)
+        # Reserved = sum of max_bid for all active hidden bids
+        cursor.execute("""
+            SELECT COALESCE(SUM(max_bid), 0) as total_reserved
+            FROM hidden_max_bids
+            WHERE team_id = %s AND is_active = TRUE
+        """, (user_team['id'],))
+        reserved_result = cursor.fetchone()
+        reserved = float(reserved_result['total_reserved'] or 0) if reserved_result else 0
+        
+        committed = spent + reserved
+        available = purse_limit - committed
         
         # Stats
         total_players = len(squad)
         overseas_count = len(breakdown['overseas'])
-        overseas_limit = 8  # Can come from auction config if needed
+        overseas_limit = 8
         
         stats = {
             'purse_limit': purse_limit,
             'spent': spent,
             'reserved': reserved,
+            'committed': committed,
             'available': available,
             'spent_pct': (spent / purse_limit * 100) if purse_limit > 0 else 0,
+            'reserved_pct': (reserved / purse_limit * 100) if purse_limit > 0 else 0,
             'total_players': total_players,
             'overseas_count': overseas_count,
             'overseas_limit': overseas_limit,
