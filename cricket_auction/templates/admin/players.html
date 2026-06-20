@@ -42,12 +42,14 @@
         font-size: 0.9rem;
         transition: all 0.3s;
         cursor: pointer;
-        min-width: 180px;
+        min-width: 200px;
+        position: relative;
     }
     .session-tab:hover {
         border-color: rgba(124, 77, 255, 0.3);
         background: rgba(124, 77, 255, 0.05);
         color: var(--text-primary);
+        transform: translateY(-2px);
     }
     .session-tab.active {
         background: linear-gradient(135deg, rgba(124, 77, 255, 0.15), rgba(124, 77, 255, 0.08));
@@ -58,24 +60,45 @@
     .session-tab .tab-name {
         font-family: 'Space Grotesk';
         font-weight: 700;
+        font-size: 1rem;
     }
     .session-tab .tab-meta {
         font-size: 0.75rem;
         color: var(--text-dim);
         font-weight: 500;
+        margin-top: 4px;
     }
     .session-tab.active .tab-meta {
         color: var(--cosmic-purple-light);
     }
     .session-tab .tab-status {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         flex-shrink: 0;
     }
     .status-dot-active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
     .status-dot-completed { background: #64748b; }
     .status-dot-paused { background: #f59e0b; }
+    .status-dot-pending { background: #3b82f6; }
+
+    /* Team slot indicator in tab */
+    .team-slots {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+    }
+    .slot-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(100, 120, 200, 0.3);
+    }
+    .slot-dot.filled {
+        background: var(--cosmic-purple-light);
+        box-shadow: 0 0 4px var(--cosmic-purple-light);
+    }
 
     /* ===== SESSION INFO HEADER ===== */
     .session-info-header {
@@ -128,6 +151,11 @@
         background: rgba(100, 116, 139, 0.15);
         color: #64748b;
         border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+    .badge-pending {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.25);
     }
 
     /* Stats Grid */
@@ -293,7 +321,7 @@
     .status-available { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
     .status-sold { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
     .status-unsold { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
-    .status-in-auction { background: rgba(124, 77, 255, 0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); animation: pulse 2s infinite; }
+    .status-in_auction { background: rgba(124, 77, 255, 0.12); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); animation: pulse 2s infinite; }
 
     @keyframes pulse {
         0%, 100% { opacity: 1; }
@@ -338,21 +366,23 @@
 
     /* Action Buttons */
     .action-btn {
-        padding: 8px 16px;
-        border-radius: 10px;
+        padding: 10px 20px;
+        border-radius: 12px;
         border: none;
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         cursor: pointer;
         transition: all 0.3s;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
     .btn-enter {
         background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
         color: white;
+        font-size: 1rem;
+        padding: 12px 28px;
     }
     .btn-enter:hover {
         transform: translateY(-2px);
@@ -362,6 +392,10 @@
         background: rgba(245, 158, 11, 0.15);
         color: #f59e0b;
         border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .btn-assign:hover {
+        background: rgba(245, 158, 11, 0.25);
+        transform: translateY(-1px);
     }
 
     .back-link {
@@ -398,6 +432,52 @@
         color: var(--cosmic-purple-light);
         background: rgba(124, 77, 255, 0.08);
     }
+
+    /* Quick Actions Bar */
+    .quick-actions {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* Join Session Button in Tab */
+    .join-btn {
+        margin-left: auto;
+        padding: 6px 14px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .join-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
+    }
+
+    /* Team slot bar visualization */
+    .slot-bar {
+        display: flex;
+        gap: 3px;
+        margin-top: 6px;
+    }
+    .slot-segment {
+        height: 4px;
+        flex: 1;
+        border-radius: 2px;
+        background: rgba(100, 120, 200, 0.2);
+        transition: all 0.3s;
+    }
+    .slot-segment.filled {
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue));
+        box-shadow: 0 0 6px rgba(124, 77, 255, 0.3);
+    }
 </style>
 
 <div class="session-players-container">
@@ -412,19 +492,39 @@
     {% if all_sessions %}
     <div class="session-tabs-bar">
         {% for sess in all_sessions %}
-        <a href="/admin/sessions/players-by-session?session_id={{ sess.id }}" 
+        <a href="/admin/players?session_id={{ sess.id }}" 
            class="session-tab {% if selected_session_id == sess.id %}active{% endif %}">
-            <span class="tab-status status-dot-{{ sess.status }}"></span>
-            <div>
+            <span class="tab-status status-dot-{{ sess.status or 'pending' }}"></span>
+            <div style="flex: 1;">
                 <div class="tab-name">{{ sess.session_name }}</div>
                 <div class="tab-meta">
-                    {{ sess.team_count }}/{{ sess.total_teams }} teams | 
+                    {{ sess.team_count or 0 }}/{{ sess.total_teams or 0 }} teams | 
                     {{ sess.player_count or 0 }} players
-                    {% if sess.is_full %}| FULL{% endif %}
+                    {% if sess.is_full %}| <span style="color: #22c55e;">FULL</span>{% endif %}
+                </div>
+                <!-- Visual team slot bar -->
+                <div class="slot-bar">
+                    {% for i in range(sess.total_teams or 0) %}
+                    <div class="slot-segment {% if i < (sess.team_count or 0) %}filled{% endif %}"></div>
+                    {% endfor %}
                 </div>
             </div>
+            {% if selected_session_id != sess.id %}
+            <span class="join-btn" onclick="event.stopPropagation(); window.location.href='/admin/players?session_id={{ sess.id }}'">
+                Join Session →
+            </span>
+            {% else %}
+            <span style="color: var(--cosmic-purple-light); font-size: 0.8rem; font-weight: 600;">✓ Active</span>
+            {% endif %}
         </a>
         {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 30px; background: rgba(0,0,0,0.1); border-radius: 16px; margin-bottom: 20px;">
+        <div class="icon">📅</div>
+        <h3>No Sessions Found</h3>
+        <p>Create a session first to manage players</p>
+        <a href="/admin/sessions/create" class="action-btn btn-enter" style="margin-top: 15px;">+ Create Session</a>
     </div>
     {% endif %}
 
@@ -440,44 +540,46 @@
                         → 
                         {{ selected_session.end_time.strftime('%H:%M') if selected_session.end_time is not string else selected_session.end_time }}
                     {% endif %}
-                    | {{ selected_session.team_count }}/{{ selected_session.total_teams }} Teams
+                    | {{ selected_session.team_count or 0 }}/{{ selected_session.total_teams or 0 }} Teams Assigned
                 </div>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 {% if selected_session.status == 'active' %}
                 <span class="session-badge badge-active">● Active</span>
-                {% else %}
+                {% elif selected_session.status == 'completed' %}
                 <span class="session-badge badge-completed">✓ Completed</span>
+                {% else %}
+                <span class="session-badge badge-pending">○ Pending</span>
                 {% endif %}
                 
-                {% if selected_session.status == 'active' and not selected_session.stats %}
+                {% if selected_session.status != 'completed' %}
                 <a href="/admin/sessions/{{ selected_session.id }}/assign-players" class="action-btn btn-assign">🎯 Assign Players</a>
                 {% endif %}
-                <a href="/admin/sessions/{{ selected_session.id }}/enter" class="action-btn btn-enter">🔨 Enter Room</a>
+                <a href="/admin/sessions/{{ selected_session.id }}/enter" class="action-btn btn-enter">🔨 Enter Auction Room</a>
             </div>
         </div>
 
-        <!-- Stats -->
-        {% if selected_session.stats %}
+        <!-- Stats - Using session_stats from Python (not selected_session.stats) -->
+        {% if session_stats %}
         <div class="stats-grid">
             <div class="stat-box">
-                <div class="number" style="color: var(--cosmic-purple-light);">{{ selected_session.stats.total }}</div>
+                <div class="number" style="color: var(--cosmic-purple-light);">{{ session_stats.total }}</div>
                 <div class="label">Total Players</div>
             </div>
             <div class="stat-box">
-                <div class="number" style="color: #22c55e;">{{ selected_session.stats.sold }}</div>
+                <div class="number" style="color: #22c55e;">{{ session_stats.sold }}</div>
                 <div class="label">Sold</div>
             </div>
             <div class="stat-box">
-                <div class="number" style="color: #f59e0b;">{{ selected_session.stats.available }}</div>
+                <div class="number" style="color: #f59e0b;">{{ session_stats.available }}</div>
                 <div class="label">Available</div>
             </div>
             <div class="stat-box">
-                <div class="number" style="color: #ef4444;">{{ selected_session.stats.unsold }}</div>
+                <div class="number" style="color: #ef4444;">{{ session_stats.unsold }}</div>
                 <div class="label">Unsold</div>
             </div>
             <div class="stat-box">
-                <div class="number" style="color: var(--gold);">₹{{ "%.1f"|format(selected_session.stats.total_sold) }}Cr</div>
+                <div class="number" style="color: var(--gold);">₹{{ "%.1f"|format(session_stats.total_sold) }}Cr</div>
                 <div class="label">Total Sales</div>
             </div>
         </div>
@@ -485,7 +587,7 @@
     </div>
 
     <!-- ===== SMART CONDITION BANNER ===== -->
-    {% if selected_session.stats and selected_session.stats.total > 0 %}
+    {% if session_stats and session_stats.total > 0 %}
         {% if selected_session.is_full %}
         <div class="condition-banner full-coverage">
             <div class="cond-title">✅ Full Team Coverage ({{ selected_session.team_count }}/{{ selected_session.total_teams }})</div>
@@ -509,9 +611,9 @@
     <div class="players-section">
         <div class="section-header">
             <div class="section-title">📋 Session Players</div>
-            {% if selected_session.stats %}
+            {% if session_stats %}
             <div style="color: var(--text-dim); font-size: 0.9rem;">
-                Showing {{ session_players|length }} of {{ selected_session.stats.total }} players
+                Showing {{ session_players|length }} of {{ session_stats.total }} players
             </div>
             {% endif %}
         </div>
@@ -542,7 +644,7 @@
                     <tr data-status="{{ player.status }}">
                         <td>
                             <div class="player-name-cell">
-                                <div class="player-avatar-small">{{ player.player_name[:1].upper() }}</div>
+                                <div class="player-avatar-small">{{ player.player_name[:1].upper() if player.player_name else '?' }}</div>
                                 <div class="player-info">
                                     <div class="name">{{ player.player_name }}</div>
                                     <div class="meta">
@@ -553,7 +655,7 @@
                         </td>
                         <td>
                             <span class="cat-badge badge-{{ player.category }}">
-                                {{ player.category.replace('_', ' ').title() }}
+                                {{ player.category.replace('_', ' ').title() if player.category else 'Unknown' }}
                             </span>
                         </td>
                         <td class="price-cell base-price">₹{{ "%.2f"|format(player.base_price or 0.5) }}Cr</td>
@@ -597,11 +699,13 @@
     </div>
 
     {% else %}
+    {% if all_sessions %}
     <div class="empty-state">
         <div class="icon">📅</div>
-        <h3>No Session Selected</h3>
-        <p>Select a session from the tabs above to view players</p>
+        <h3>Select a Session</h3>
+        <p>Click on a session tab above to view and manage players</p>
     </div>
+    {% endif %}
     {% endif %}
 </div>
 

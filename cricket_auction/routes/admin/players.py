@@ -2,35 +2,115 @@ from flask import Blueprint, render_template, request, redirect, session, flash,
 from database.db import get_db, get_cached, clear_cache
 import csv
 from io import StringIO
+import json
 
 bp = Blueprint('admin_players', __name__, url_prefix='/admin/players')
 
 @bp.route('/')
 def list_players():
-    """List all players with auction status and team info"""
+    """List all players — now with session tabs at top"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
+    
+    auction_id = session.get('active_auction_id')
+    if not auction_id:
+        flash('Please enter an auction room first')
+        return redirect('/admin/')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Join with auction_players to get status and base_price, order by player_name
+        # Get all sessions for this auction (for the tabs)
         cursor.execute("""
-            SELECT p.*, ap.base_price, ap.status, ap.sold_price, t.team_name
+            SELECT s.*, 
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as player_count,
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'sold') as sold_count
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
+            ORDER BY s.created_at ASC
+        """, (auction_id,))
+        all_sessions = cursor.fetchall()
+        
+        # Parse team_ids for each session
+        for sess in all_sessions:
+            if sess.get('team_ids'):
+                try:
+                    sess['team_ids_list'] = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                except:
+                    sess['team_ids_list'] = []
+            else:
+                sess['team_ids_list'] = []
+            
+            cursor.execute("SELECT COUNT(*) as cnt FROM teams WHERE auction_id = %s", (auction_id,))
+            total_teams = cursor.fetchone()['cnt']
+            sess['total_teams'] = total_teams
+            sess['team_count'] = len(sess['team_ids_list'])
+            sess['is_full'] = len(sess['team_ids_list']) == total_teams
+        
+        # Get selected session from query param
+        selected_session_id = request.args.get('session_id', type=int)
+        
+        # If session selected, show session players
+        session_players = []
+        selected_session = None
+        session_stats = None
+        
+        if selected_session_id:
+            cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (selected_session_id,))
+            selected_session = cursor.fetchone()
+            
+            if selected_session:
+                cursor.execute("""
+                    SELECT sp.*, p.player_name, p.category, p.overseas, 
+                           t.team_name as sold_team_name
+                    FROM session_players sp
+                    JOIN players p ON sp.player_id = p.id
+                    LEFT JOIN teams t ON sp.sold_team_id = t.id
+                    WHERE sp.session_id = %s
+                    ORDER BY 
+                        CASE sp.status 
+                            WHEN 'available' THEN 1 
+                            WHEN 'in_auction' THEN 2 
+                            WHEN 'sold' THEN 3 
+                            WHEN 'unsold' THEN 4 
+                        END,
+                        p.player_name
+                """, (selected_session_id,))
+                session_players = cursor.fetchall()
+                
+                session_stats = {
+                    'total': len(session_players),
+                    'sold': sum(1 for p in session_players if p['status'] == 'sold'),
+                    'available': sum(1 for p in session_players if p['status'] == 'available'),
+                    'unsold': sum(1 for p in session_players if p['status'] == 'unsold'),
+                    'total_sold': sum(p['sold_price'] or 0 for p in session_players if p['status'] == 'sold')
+                }
+        
+        # Always get master pool players too (for reference)
+        cursor.execute("""
+            SELECT p.*, ap.base_price, ap.status as master_status, ap.sold_price, t.team_name
             FROM players p
-            LEFT JOIN auction_players ap ON p.id = ap.player_id
+            LEFT JOIN auction_players ap ON p.id = ap.player_id AND ap.auction_id = %s
             LEFT JOIN teams t ON ap.sold_team_id = t.id
             ORDER BY p.player_name
-        """)
-        players = cursor.fetchall()
+        """, (auction_id,))
+        master_players = cursor.fetchall()
         
     finally:
         cursor.close()
         db.close()
     
-    return render_template('admin/players.html', players=players)
+    return render_template('admin/players.html',
+        all_sessions=all_sessions,
+        selected_session_id=selected_session_id,
+        selected_session=selected_session,
+        session_players=session_players,
+        session_stats=session_stats,
+        players=master_players,  # backward compat
+        view_mode='session' if selected_session_id else 'master'
+    )
 
 @bp.route('/create', methods=['POST'])
 def create_player():
@@ -48,17 +128,15 @@ def create_player():
     cursor = db.cursor()
     
     try:
-        # Insert into players table (master player database)
         cursor.execute(
             "INSERT INTO players (player_name, category, overseas) VALUES (%s, %s, %s)",
             (player_name, category, overseas)
         )
         player_id = cursor.lastrowid
         
-        # Add to auction_players for default auction (auction_id = 1)
         cursor.execute(
-            "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (1, %s, %s, 'available')",
-            (player_id, base_price)
+            "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (%s, %s, %s, 'available')",
+            (auction_id, player_id, base_price)
         )
         
         db.commit()
@@ -108,8 +186,8 @@ def import_players():
                 player_id = cursor.lastrowid
                 
                 cursor.execute(
-                    "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (1, %s, %s, 'available')",
-                    (player_id, base_price)
+                    "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (%s, %s, %s, 'available')",
+                    (auction_id, player_id, base_price)
                 )
                 count += 1
         
@@ -138,17 +216,15 @@ def edit_player(id):
     cursor = db.cursor()
     
     try:
-        # Update master player table
         cursor.execute(
             "UPDATE players SET player_name=%s, category=%s, overseas=%s WHERE id=%s",
             (player_name, category, overseas, id)
         )
         
-        # Update base price in auction_players if provided
         if base_price:
             cursor.execute(
-                "UPDATE auction_players SET base_price=%s WHERE player_id=%s",
-                (float(base_price), id)
+                "UPDATE auction_players SET base_price=%s WHERE player_id=%s AND auction_id=%s",
+                (float(base_price), id, auction_id)
             )
         
         db.commit()
@@ -170,22 +246,18 @@ def delete_player(id):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if player is sold in any auction
         cursor.execute("SELECT status FROM auction_players WHERE player_id = %s AND status = 'sold'", (id,))
         sold = cursor.fetchone()
         
         if sold:
             return jsonify({'error': 'Cannot delete sold player'}), 400
         
-        # Check if player exists in any auction
         cursor.execute("SELECT id FROM auction_players WHERE player_id = %s", (id,))
         in_auction = cursor.fetchone()
         
         if in_auction:
-            # Remove from auction_players first (foreign key constraint)
             cursor.execute("DELETE FROM auction_players WHERE player_id = %s", (id,))
         
-        # Delete from master players table
         cursor.execute("DELETE FROM players WHERE id = %s", (id,))
         
         db.commit()
@@ -235,4 +307,3 @@ def export_players():
         mimetype='text/csv',
         headers={'Content-Disposition': 'attachment; filename=players.csv'}
     )
-
