@@ -13,7 +13,32 @@ def list_players():
         flash('Unauthorized')
         return redirect('/')
     
+    # ─── FIX: Try multiple ways to get auction_id ───
     auction_id = session.get('active_auction_id')
+    
+    # If not in session, try to get from the selected session's auction_id (when inside room)
+    if not auction_id:
+        selected_session_id = request.args.get('session_id', type=int)
+        if selected_session_id:
+            db = get_db()
+            cursor = db.cursor(dictionary=True)
+            try:
+                cursor.execute("SELECT auction_id FROM auction_sessions WHERE id = %s", (selected_session_id,))
+                result = cursor.fetchone()
+                if result:
+                    auction_id = result['auction_id']
+                    # Also save it to session for future requests
+                    session['active_auction_id'] = auction_id
+            finally:
+                cursor.close()
+                db.close()
+    
+    # Last resort: try session.get('auction_id') if your room uses that key
+    if not auction_id:
+        auction_id = session.get('auction_id')
+        if auction_id:
+            session['active_auction_id'] = auction_id
+    
     if not auction_id:
         flash('Please enter an auction room first')
         return redirect('/admin/')
@@ -108,7 +133,7 @@ def list_players():
         selected_session=selected_session,
         session_players=session_players,
         session_stats=session_stats,
-        players=master_players,  # backward compat
+        players=master_players,
         view_mode='session' if selected_session_id else 'master'
     )
 
@@ -118,6 +143,11 @@ def create_player():
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/admin/players')
+    
+    auction_id = session.get('active_auction_id') or session.get('auction_id')
+    if not auction_id:
+        flash('Please enter an auction room first')
+        return redirect('/admin/')
     
     player_name = request.form['player_name'].strip()
     category = request.form['category']
@@ -153,6 +183,11 @@ def import_players():
     """Bulk import players from CSV"""
     if session.get('role') not in ['owner', 'admin']:
         return jsonify({'error': 'Unauthorized'}), 403
+    
+    auction_id = session.get('active_auction_id') or session.get('auction_id')
+    if not auction_id:
+        flash('Please enter an auction room first')
+        return redirect('/admin/')
     
     if 'file' not in request.files:
         flash('No file uploaded')
@@ -207,6 +242,8 @@ def edit_player(id):
         flash('Unauthorized')
         return redirect('/admin/players')
     
+    auction_id = session.get('active_auction_id') or session.get('auction_id')
+    
     player_name = request.form['player_name'].strip()
     category = request.form['category']
     overseas = request.form.get('overseas') == 'on'
@@ -221,7 +258,7 @@ def edit_player(id):
             (player_name, category, overseas, id)
         )
         
-        if base_price:
+        if base_price and auction_id:
             cursor.execute(
                 "UPDATE auction_players SET base_price=%s WHERE player_id=%s AND auction_id=%s",
                 (float(base_price), id, auction_id)
