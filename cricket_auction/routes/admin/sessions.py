@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, session, flash, jsonify,Response
+from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, Response
 from database.db import get_db, get_cached, clear_cache
 import json
 import csv
@@ -263,11 +263,14 @@ def assign_players(session_id):
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
-    # Check if this is a CSV upload
+    # === CHECK FOR FILE UPLOAD FIRST (before any JSON parsing) ===
     if 'file' in request.files:
-        return import_players_to_session(session_id)
+        file = request.files['file']
+        if file and file.filename and file.filename.strip():
+            return import_players_to_session(session_id)
     
-    data = request.get_json() or request.form
+    # Then handle JSON/Form data for other sources
+    data = request.get_json(silent=True) or request.form
     source_type = data.get('source_type')  # 'previous', 'fresh', 'same_set', 'csv'
     previous_session_id = data.get('previous_session_id')
     player_ids = data.getlist('player_ids') if hasattr(data, 'getlist') else data.get('player_ids', [])
@@ -640,8 +643,10 @@ def get_session_status(session_id):
         'player_stats': player_stats
     })
 
+
 @bp.route('/download-template')
 def download_template():
+    """Download CSV template for player import"""
     csv_content = """player_name,category,overseas,base_price
 Andre Russell,all_rounder,true,2.0
 Virat Kohli,batsman,false,2.0
