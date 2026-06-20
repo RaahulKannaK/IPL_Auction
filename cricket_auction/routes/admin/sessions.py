@@ -569,6 +569,107 @@ def close_session(session_id):
     flash(f'Session closed! {sold} sold, {unsold} unsold.')
     return redirect('/admin/sessions')
 
+@bp.route('/players-by-session')
+def players_by_session():
+    """View players organized by session - with session tabs at top"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        flash('Unauthorized')
+        return redirect('/')
+    
+    auction_id = session.get('active_auction_id')
+    if not auction_id:
+        flash('Please enter an auction room first')
+        return redirect('/admin/')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Get all sessions for this auction
+        cursor.execute("""
+            SELECT s.*, 
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as player_count,
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'sold') as sold_count,
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'available') as available_count,
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'unsold') as unsold_count
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
+            ORDER BY s.created_at ASC
+        """, (auction_id,))
+        all_sessions = cursor.fetchall()
+        
+        # Get currently selected session from query param, or default to first
+        selected_session_id = request.args.get('session_id', type=int)
+        if not selected_session_id and all_sessions:
+            selected_session_id = all_sessions[0]['id']
+        
+        # Get players for selected session
+        session_players = []
+        selected_session = None
+        if selected_session_id:
+            # Get session details
+            cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (selected_session_id,))
+            selected_session = cursor.fetchone()
+            
+            if selected_session:
+                # Get session players with full details
+                cursor.execute("""
+                    SELECT sp.*, p.player_name, p.category, p.overseas, 
+                           t.team_name as sold_team_name
+                    FROM session_players sp
+                    JOIN players p ON sp.player_id = p.id
+                    LEFT JOIN teams t ON sp.sold_team_id = t.id
+                    WHERE sp.session_id = %s
+                    ORDER BY 
+                        CASE sp.status 
+                            WHEN 'available' THEN 1 
+                            WHEN 'in_auction' THEN 2 
+                            WHEN 'sold' THEN 3 
+                            WHEN 'unsold' THEN 4 
+                        END,
+                        p.player_name
+                """, (selected_session_id,))
+                session_players = cursor.fetchall()
+                
+                # Calculate stats
+                stats = {
+                    'total': len(session_players),
+                    'sold': sum(1 for p in session_players if p['status'] == 'sold'),
+                    'available': sum(1 for p in session_players if p['status'] == 'available'),
+                    'in_auction': sum(1 for p in session_players if p['status'] == 'in_auction'),
+                    'unsold': sum(1 for p in session_players if p['status'] == 'unsold'),
+                    'total_base': sum(p['base_price'] or 0 for p in session_players),
+                    'total_sold': sum(p['sold_price'] or 0 for p in session_players if p['status'] == 'sold')
+                }
+                selected_session['stats'] = stats
+        
+        # Parse team_ids for each session
+        for sess in all_sessions:
+            if sess.get('team_ids'):
+                try:
+                    sess['team_ids_list'] = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                except:
+                    sess['team_ids_list'] = []
+            else:
+                sess['team_ids_list'] = []
+            
+            # Get team count
+            cursor.execute("SELECT COUNT(*) as cnt FROM teams WHERE auction_id = %s", (auction_id,))
+            total_teams = cursor.fetchone()['cnt']
+            sess['total_teams'] = total_teams
+            sess['team_count'] = len(sess['team_ids_list'])
+            sess['is_full'] = len(sess['team_ids_list']) == total_teams
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return render_template('admin/players_by_session.html',
+        all_sessions=all_sessions,
+        selected_session=selected_session,
+        session_players=session_players,
+        selected_session_id=selected_session_id
+    )
 
 @bp.route('/<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
 def remove_team_from_session(session_id, team_id):
