@@ -125,6 +125,18 @@ def create_session():
     start_time = custom_start if custom_start else slot['start']
     end_time = custom_end if custom_end else slot['end']
     
+    # FIX: Convert to proper DATETIME format YYYY-MM-DD HH:MM:SS
+    today = date.today().isoformat()  # '2026-06-22'
+    
+    # Ensure HH:MM format has seconds
+    if len(start_time.split(':')) == 2:
+        start_time += ':00'
+    if len(end_time.split(':')) == 2:
+        end_time += ':00'
+    
+    start_datetime = f"{today} {start_time}"  # '2026-06-22 17:26:00'
+    end_datetime = f"{today} {end_time}"
+    
     db = get_db()
     cursor = db.cursor()
     
@@ -135,8 +147,8 @@ def create_session():
         """, (
             auction_id, 
             session_name, 
-            start_time, 
-            end_time, 
+            start_datetime,   # <-- FIX: full datetime string
+            end_datetime,     # <-- FIX: full datetime string
             json.dumps([int(t) for t in team_ids])
         ))
         db.commit()
