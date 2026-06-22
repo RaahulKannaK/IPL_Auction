@@ -575,7 +575,7 @@
             </div>
             {% endif %}
             
-            <form method="POST" action="/admin/auction/sessions" id="createSessionForm">
+            <form method="POST" action="/admin/sessions/create" id="createSessionForm"></form>
                 <input type="hidden" name="auction_id" value="{{ auction.id if auction else (request.args.get('auction') or session.get('active_auction_id') or session.get('auction_id') or 1) }}">
                 <input type="hidden" name="slot_type" value="custom">
                 
@@ -709,9 +709,9 @@
                     <div class="session-actions">
                         {% if sess.status == 'active' %}
                         <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
-                        <a href="/admin/auction/session/{{ sess.id }}/enter" class="btn-small btn-enter">🔨 Enter Auction</a>
+                        <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">🔨 Enter Auction</a>
                         {% else %}
-                        <a href="/admin/auction/session/{{ sess.id }}/enter" class="btn-small btn-enter">📊 View</a>
+                        <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">📊 View</a>
                         {% endif %}
                     </div>
                 </div>
@@ -761,7 +761,7 @@ function updateTeamCount() {
 function removeTeam(sessionId, teamId) {
     if (!confirm('Remove this team from session? They will be available for other sessions.')) return;
     
-    fetch('/admin/auction/session/' + sessionId + '/remove-team/' + teamId, {
+    fetch('/admin/sessions/' + sessionId + '/remove-team/' + teamId, {  // <-- FIX: /admin/sessions/ not /admin/auction/session/
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
     })
@@ -778,7 +778,9 @@ function removeTeam(sessionId, teamId) {
 function closeSession(sessionId) {
     if (!confirm('Close this session? Teams will be available for next session.')) return;
     
-    fetch('/admin/auction/session/' + sessionId + '/close', {method: 'POST'})
+    fetch('/admin/sessions/' + sessionId + '/close', {  // <-- FIX: /admin/sessions/ not /admin/auction/session/
+        method: 'POST'
+    })
     .then(r => r.json())
     .then(data => {
         if (data.success) location.reload();
