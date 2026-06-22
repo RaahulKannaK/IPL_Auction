@@ -826,9 +826,9 @@ Trent Boult,bowler,true,1.5
 
 
 # === NEW: Delete player from session (not master DB) ===
-@bp.route('/<int:session_id>/players/<int:player_id>', methods=['DELETE'])
-def delete_session_player(session_id, player_id):
-    """Remove a player from a session (soft delete - only if not sold)"""
+@bp.route('/<int:session_id>/players/<int:sp_id>', methods=['DELETE'])
+def delete_session_player(session_id, sp_id):
+    """Remove a player from a session by session_players.id (junction table PK)"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -836,11 +836,11 @@ def delete_session_player(session_id, player_id):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if player is sold in this session
+        # Check if player exists in this session (match by session_players.id)
         cursor.execute("""
-            SELECT status FROM session_players 
-            WHERE session_id = %s AND player_id = %s
-        """, (session_id, player_id))
+            SELECT status, player_id FROM session_players 
+            WHERE id = %s AND session_id = %s
+        """, (sp_id, session_id))
         result = cursor.fetchone()
         
         if not result:
@@ -849,11 +849,11 @@ def delete_session_player(session_id, player_id):
         if result['status'] == 'sold':
             return jsonify({'error': 'Cannot delete a sold player'}), 400
         
-        # Delete from session_players only (keep in master players DB)
+        # Delete from session_players by junction table PK
         cursor.execute("""
             DELETE FROM session_players 
-            WHERE session_id = %s AND player_id = %s
-        """, (session_id, player_id))
+            WHERE id = %s AND session_id = %s
+        """, (sp_id, session_id))
         
         db.commit()
         
@@ -862,7 +862,6 @@ def delete_session_player(session_id, player_id):
         db.close()
     
     return jsonify({'success': True, 'message': 'Player removed from session'})
-
 
 # === NEW: Add single player to session manually ===
 @bp.route('/<int:session_id>/players', methods=['POST'])
