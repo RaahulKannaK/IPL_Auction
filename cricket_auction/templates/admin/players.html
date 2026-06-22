@@ -932,8 +932,10 @@
             <button class="mode-tab" onclick="switchMode('manual')" id="tab-manual">✏️ Add Manually</button>
         </div>
 
+                <!-- ===== EXCEL/CSV MODE ===== -->
         <!-- ===== EXCEL/CSV MODE ===== -->
         <div id="excelMode" class="excel-mode">
+            <!-- Upload Area (initial state) -->
             <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFile').click()">
                 <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
                 <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
@@ -948,8 +950,8 @@
                 📥 Download CSV Template
             </a>
 
-            <!-- CSV Preview & Confirm -->
-            <div id="csvPreview" class="csv-preview">
+            <!-- CSV Preview Section (hidden by default) -->
+            <div id="csvPreviewSection" style="display: none; margin-top: 20px;">
                 <div class="preview-header">
                     <h3>📋 Preview Players from CSV</h3>
                     <span id="fileNameBadge" class="file-name-badge">📄 filename.csv</span>
@@ -971,7 +973,7 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- NEW: Confirm and Cancel buttons -->
+                <!-- Confirm and Cancel buttons -->
                 <div class="file-action-row">
                     <button onclick="confirmCSVUpload()" class="confirm-upload-btn">
                         ✓ Confirm & Upload to DB
@@ -1266,7 +1268,27 @@ function showCSVPreview(filename, data) {
         tbody.appendChild(tr);
     });
     
-    document.getElementById('csvPreview').classList.add('active');
+    // Use style.display instead of classList for reliability
+    document.getElementById('csvPreviewSection').style.display = 'block';
+}
+
+function clearCSV() {
+    csvData = [];
+    document.getElementById('csvFile').value = '';
+    
+    // Hide preview section
+    document.getElementById('csvPreviewSection').style.display = 'none';
+    
+    const uploadArea = document.getElementById('csvUploadArea');
+    uploadArea.classList.remove('has-file');
+    uploadArea.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+        <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
+        <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
+            📁 Choose File
+        </button>
+    `;
 }
 
 function removeCSVRow(index) {
