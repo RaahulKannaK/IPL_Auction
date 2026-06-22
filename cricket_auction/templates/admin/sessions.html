@@ -784,7 +784,9 @@ function closeSession(sessionId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) location.reload();
-    });
+        else alert(data.error || 'Failed to close session');
+    })
+    .catch(err => alert('Error: ' + err.message));
 }
 
 // Initialize on page load
