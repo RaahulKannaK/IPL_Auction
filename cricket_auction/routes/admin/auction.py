@@ -27,57 +27,6 @@ def get_min_bid_increment(current_bid):
 
 # ==================== SESSION ENTRY (Redirects to auction room) ====================
 
-@bp.route('/auction/session/<int:session_id>/enter')
-def enter_session(session_id):
-    """Enter a specific session — sets session in Flask session and redirects to auction room"""
-    if not session.get('user_id'):
-        return redirect('/')
-    
-    if session.get('role') not in ['admin', 'auctioneer', 'team_owner']:
-        flash('Unauthorized')
-        return redirect('/')
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
-        auction_session = cursor.fetchone()
-        
-        if not auction_session:
-            flash('Session not found')
-            return redirect('/admin/')
-        
-        # Set active session in Flask session
-        session['active_session_id'] = session_id
-        session['active_auction_id'] = auction_session['auction_id']
-        
-        # Verify user's team is in this session (for team_owners)
-        if session.get('role') == 'team_owner':
-            cursor.execute("SELECT * FROM teams WHERE owner_id = %s AND auction_id = %s", 
-                         (session['user_id'], auction_session['auction_id']))
-            user_team = cursor.fetchone()
-            if user_team:
-                session_team_ids = []
-                if auction_session.get('team_ids'):
-                    try:
-                        session_team_ids = json.loads(auction_session['team_ids']) if isinstance(auction_session['team_ids'], str) else auction_session['team_ids']
-                    except:
-                        pass
-                if user_team['id'] not in session_team_ids:
-                    flash('Your team is not part of this session')
-                    return redirect('/admin/')
-        
-        # Update session start time if not set
-        if not auction_session['start_time']:
-            cursor.execute("UPDATE auction_sessions SET start_time = NOW() WHERE id = %s", (session_id,))
-            db.commit()
-        
-    finally:
-        cursor.close()
-        db.close()
-    
-    return redirect('/admin/auction')
 
 
 # ==================== MAIN AUCTION ROOM (SESSION-SCOPED) ====================
