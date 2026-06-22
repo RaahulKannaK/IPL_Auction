@@ -183,6 +183,7 @@ def assign_players_page(session_id):
                 current_team_ids = []
         
         current_sess['team_count'] = len(current_team_ids)
+        current_sess['total_teams'] = total_teams
         current_sess['is_full'] = len(current_team_ids) == total_teams
         
         # Get all previous COMPLETED sessions in this auction
