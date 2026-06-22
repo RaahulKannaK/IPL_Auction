@@ -1294,8 +1294,8 @@
                     {% for player in players %}
                     <div class="player-card" 
                          data-category="{{ player.category }}" 
-                         data-id="{{ player.id }}" 
-                         data-auction-player-id="{{ player.auction_player_id }}" 
+                         data-id="{{ player.player_id }}" 
+                         data-session-player-id="{{ player.session_player_id }}" 
                          data-name="{{ player.player_name }}" 
                          data-base="{{ player.base_price or 2.00 }}"
                          data-overseas="{{ 'true' if player.overseas else 'false' }}"
@@ -1354,7 +1354,7 @@ let currentSessionName = '';
 let isMemberSession = {{ 'true' if is_member_session else 'false' }};
 let pollInterval = null;
 let lastPlayerId = null;
-let currentAuctionPlayerId = null;
+let currentSessionPlayerId = null;  // FIXED: Now uses session_player_id like admin
 let bidHistory = [];
 let hasSkippedCurrentPlayer = false;
 let currentBasePrice = 2.0;
@@ -1405,6 +1405,7 @@ function enterSession(sessionId, sessionName) {
         if (nameLower.includes('morning')) infoIcon.textContent = '🌅';
         else if (nameLower.includes('evening') || nameLower.includes('night')) infoIcon.textContent = '🌙';
         else if (nameLower.includes('weekend')) infoIcon.textContent = '🏖️';
+        else if (nameLower.includes('afternoon')) infoIcon.textContent = '�';
         else if (nameLower.includes('afternoon')) infoIcon.textContent = '☀️';
         else infoIcon.textContent = '📅';
     }
@@ -1441,6 +1442,7 @@ function viewSession(sessionId, sessionName) {
     
     initAuctionRoom();
 }
+
 function joinSession(sessionId, sessionName) {
     fetch('/team-owner/auction/join-session/' + sessionId, {
         method: 'POST',
@@ -1487,9 +1489,9 @@ function initAuctionRoom() {
             }
             
             if (data.total_teams !== undefined) totalTeams = data.total_teams;
-            if (data.auction_player_id) {
-                currentAuctionPlayerId = data.auction_player_id;
-                lastPlayerId = data.auction_player_id;
+            if (data.session_player_id) {
+                currentSessionPlayerId = data.session_player_id;
+                lastPlayerId = data.session_player_id;
                 hasSkippedCurrentPlayer = false;
                 resetSkipUI();
                 currentBasePrice = parseFloat(data.base_price) || 2.0;
@@ -1512,7 +1514,7 @@ function leaveRoom() {
     currentSessionId = null;
     currentSessionName = '';
     lastPlayerId = null; 
-    currentAuctionPlayerId = null;
+    currentSessionPlayerId = null;
     bidHistory = []; 
     hasSkippedCurrentPlayer = false;
     currentBasePrice = 2.0; 
@@ -1535,7 +1537,13 @@ function leaveRoom() {
     document.getElementById('auctionRoom').style.display = 'none';
     document.getElementById('sessionSelector').classList.remove('hidden');
     
-    refreshSessionList();
+    // FIXED: Call backend to clear active session, then reload to get fresh session data
+    fetch('/team-owner/auction/leave-session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(() => window.location.reload())
+    .catch(() => window.location.reload());
 }
 
 function refreshSessionList() {
@@ -1596,13 +1604,13 @@ function startFastPolling() {
                     }
                 }
                 
-                const playerId = data.auction_player_id;
+                const playerId = data.session_player_id;
                 const serverHasBids = data.has_bids || false;
                 
                 // New player - reset everything
                 if (playerId && playerId !== lastPlayerId) {
                     lastPlayerId = playerId; 
-                    currentAuctionPlayerId = playerId;
+                    currentSessionPlayerId = playerId;
                     hasSkippedCurrentPlayer = false; 
                     resetSkipUI();
                     clearBidHistory();
@@ -1845,7 +1853,7 @@ function placeBid(amount) {
         showStatus('bidStatus', '❌ Audience mode — bidding disabled', '#ef4444');
         return;
     }
-    if (!currentAuctionId || !currentAuctionPlayerId) {
+    if (!currentAuctionId || !currentSessionPlayerId) {
         showStatus('bidStatus', '❌ No player in auction', '#ef4444');
         return;
     }
@@ -1868,7 +1876,7 @@ function placeInitialBid() {
         showStatus('bidStatus', '❌ Audience mode — bidding disabled', '#ef4444');
         return;
     }
-    if (!currentAuctionId || !currentAuctionPlayerId) {
+    if (!currentAuctionId || !currentSessionPlayerId) {
         showStatus('bidStatus', '❌ No player in auction', '#ef4444');
         return;
     }
@@ -1884,7 +1892,7 @@ function executeBid(amount) {
         showStatus('bidStatus', '❌ Audience mode', '#ef4444');
         return;
     }
-    if (!currentAuctionId || !currentAuctionPlayerId) {
+    if (!currentAuctionId || !currentSessionPlayerId) {
         showStatus('bidStatus', '❌ Join auction first', '#ef4444');
         return;
     }
@@ -1906,8 +1914,9 @@ function executeBid(amount) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             auction_id: currentAuctionId,
-            auction_player_id: currentAuctionPlayerId,
-            amount: amount
+            session_player_id: currentSessionPlayerId,
+            amount: amount,
+            session_id: currentSessionId
         })
     })
     .then(r => r.json())
@@ -1957,6 +1966,33 @@ function executeBid(amount) {
     });
 }
 
+function checkAutoBid(currentBid) {
+    if (!currentSessionPlayerId || !currentSessionId) return;
+    
+    let body = {
+        auction_id: currentAuctionId,
+        session_player_id: currentSessionPlayerId,
+        current_bid: currentBid,
+        session_id: currentSessionId
+    };
+    
+    fetch('/admin/auction/auto_bid', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.auto_bid) {
+            document.getElementById('currentBid').textContent = '₹' + data.amount.toFixed(2) + 'Cr';
+            document.getElementById('currentBidder').textContent = data.team + ' (Auto)';
+            addHistory(data.team, data.amount, true);
+            showStatus('bidStatus', `🤖 Auto: ${data.team} → ₹${data.amount.toFixed(2)}Cr`, 'var(--cosmic-purple-light)');
+            setTimeout(() => checkAutoBid(data.amount), 1500);
+        }
+    });
+}
+
 // ==================== SKIP (MEMBER ONLY) ====================
 function toggleSkip() {
     if (!isMemberSession) {
@@ -1993,7 +2029,7 @@ function skipPlayer() {
         showStatus('bidStatus', '❌ Audience mode — skip disabled', '#ef4444');
         return;
     }
-    if (!currentAuctionId || !currentAuctionPlayerId) {
+    if (!currentAuctionId || !currentSessionPlayerId) {
         showStatus('bidStatus', '❌ No player selected', '#ef4444');
         return;
     }
@@ -2016,9 +2052,10 @@ function skipPlayer() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             auction_id: currentAuctionId,
-            auction_player_id: currentAuctionPlayerId,
+            session_player_id: currentSessionPlayerId,
             reason: reason,
-            notes: notes
+            notes: notes,
+            session_id: currentSessionId
         })
     })
     .then(r => r.json())
@@ -2163,7 +2200,11 @@ function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     if (btn) btn.classList.add('spinning');
     
-    fetch('/team-owner/auction/players?auction_id=' + (currentAuctionId || ''))
+    // FIXED: Pass session_id to get session-specific players
+    let endpoint = '/team-owner/auction/players?auction_id=' + (currentAuctionId || '');
+    if (currentSessionId) endpoint += '&session_id=' + currentSessionId;
+    
+    fetch(endpoint)
     .then(r => r.json())
     .then(data => {
         if (data.players) {
@@ -2233,6 +2274,11 @@ document.addEventListener('keydown', (e) => {
     if (!isMemberSession) return; // Block shortcuts in viewer mode
     if (e.key === 'Enter' && document.activeElement.id === 'customBidAmount') placeCustomBid();
     if (e.key === 'Enter' && document.activeElement.id === 'wpWillingPrice') submitWillingPrice();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    stopPolling();
 });
 </script>
 
