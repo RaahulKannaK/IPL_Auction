@@ -1408,17 +1408,13 @@ function deletePlayer(playerId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            const row = document.querySelector('tr[data-player-id="' + playerId + '"]');
-            if (row) row.remove();
-            const remaining = document.querySelectorAll('.players-table tbody tr');
-            if (remaining.length === 0) location.reload();
+            location.reload();  // Simplest: reload to refresh stats
         } else {
             alert(data.error || 'Failed to delete player');
         }
     })
     .catch(err => alert('Error: ' + err.message));
 }
-
 // Init
 document.addEventListener('DOMContentLoaded', function() {
     updateRemoveButtons();

@@ -301,11 +301,15 @@ def delete_player(id):
     cursor = db.cursor(dictionary=True)
     
     try:
+        # Check if sold anywhere
         cursor.execute("SELECT status FROM auction_players WHERE player_id = %s AND status = 'sold'", (id,))
         sold = cursor.fetchone()
         
         if sold:
             return jsonify({'error': 'Cannot delete sold player'}), 400
+        
+        # ===== FIX: Also delete from session_players =====
+        cursor.execute("DELETE FROM session_players WHERE player_id = %s", (id,))
         
         cursor.execute("SELECT id FROM auction_players WHERE player_id = %s", (id,))
         in_auction = cursor.fetchone()
@@ -322,7 +326,6 @@ def delete_player(id):
         db.close()
     
     return jsonify({'success': True})
-
 
 @bp.route('/export')
 def export_players():
