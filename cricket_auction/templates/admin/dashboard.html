@@ -227,7 +227,7 @@
         </h2>
         <div class="auction-list">
             {% for auction in active_auctions %}
-            <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'"></div>
+            <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'">
                 <div class="info">
                     <div class="name">{{ auction.league_name }}</div>
                     <div class="meta">ID: {{ auction.id }} | Teams: {{ auction.team_count }} | Sessions: {{ auction.session_count }}</div>
@@ -311,7 +311,7 @@
         <div class="auction-list">
             {% if recent_auctions %}
                 {% for auction in recent_auctions %}
-                <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'"></div>
+                <div class="auction-item" onclick="window.location.href='/admin/sessions?auction={{ auction.id }}'">
                     <div class="info">
                         <div class="name">{{ auction.league_name }}</div>
                         <div class="meta">ID: {{ auction.id }} | Teams: {{ auction.team_count }} | Created: {{ auction.created_at.strftime('%Y-%m-%d') if auction.created_at else 'N/A' }}</div>
@@ -357,7 +357,7 @@ function createAuction(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success && data.auction_id) {
-            window.location.href = '/admin/auction/sessions?auction=' + data.auction_id;
+            window.location.href = '/admin/sessions?auction=' + data.auction_id;
         } else {
             alert(data.error || 'Failed to create auction');
         }
@@ -374,7 +374,7 @@ function joinById() {
         alert('Please enter an auction ID');
         return;
     }
-    window.location.href = '/admin/auction/sessions?auction=' + id;
+    window.location.href = '/admin/sessions?auction=' + id;
 }
 
 window.onclick = function(e) {
