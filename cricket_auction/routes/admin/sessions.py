@@ -259,7 +259,7 @@ def assign_players_page(session_id):
 
 @bp.route('/<int:session_id>/assign-players', methods=['POST'])
 def assign_players(session_id):
-    """Assign players to session - from previous session, CSV upload, or fresh selection"""
+    """Assign players to session - from previous session, CSV upload, fresh selection, or manual entry"""
     if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -276,6 +276,9 @@ def assign_players(session_id):
     player_ids = data.getlist('player_ids') if hasattr(data, 'getlist') else data.get('player_ids', [])
     if isinstance(player_ids, str):
         player_ids = [player_ids]
+    
+    # === NEW: Handle manual player entry array ===
+    players_data = data.get('players', [])
     
     auction_id = session.get('active_auction_id')
     db = get_db()
@@ -325,8 +328,48 @@ def assign_players(session_id):
             count = len(unsold_players)
             message = f'Carried forward {count} unsold players from previous session'
             
+        elif source_type == 'fresh' and players_data:
+            # === NEW: Manual entry - array of player objects ===
+            for p in players_data:
+                player_name = p.get('player_name', '').strip()
+                category = p.get('category', 'batsman')
+                overseas = p.get('overseas', False)
+                base_price = float(p.get('base_price', 0.5))
+                
+                if not player_name:
+                    continue
+                
+                # Check if player exists in master pool
+                cursor.execute("SELECT id FROM players WHERE player_name = %s", (player_name,))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    player_id = existing['id']
+                else:
+                    # Create new player in master pool
+                    cursor.execute(
+                        "INSERT INTO players (player_name, category, overseas) VALUES (%s, %s, %s)",
+                        (player_name, category, overseas)
+                    )
+                    player_id = cursor.lastrowid
+                    
+                    # Add to auction_players
+                    cursor.execute(
+                        "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (%s, %s, %s, 'available')",
+                        (auction_id, player_id, base_price)
+                    )
+                
+                # Add to session_players
+                cursor.execute("""
+                    INSERT INTO session_players (session_id, player_id, base_price, status)
+                    VALUES (%s, %s, %s, 'available')
+                """, (session_id, player_id, base_price))
+            
+            count = len(players_data)
+            message = f'Added {count} players to session via manual entry'
+            
         else:
-            # Fresh selection - user selected specific players
+            # Fresh selection - user selected specific players from master pool
             if not player_ids:
                 return jsonify({'error': 'No players selected'}), 400
             
@@ -476,6 +519,9 @@ def enter_session_room(session_id):
         if not sess:
             flash('Session not found')
             return redirect('/admin/sessions')
+        
+        # Store session_id in flask session for auction room to use
+        session['active_session_id'] = session_id
         
         # Get session team IDs
         team_ids = []
@@ -660,6 +706,14 @@ def players_by_session():
             sess['team_count'] = len(sess['team_ids_list'])
             sess['is_full'] = len(sess['team_ids_list']) == total_teams
         
+        # === NEW: Find previous session for same_set option ===
+        previous_session_id = None
+        if all_sessions and selected_session_id:
+            for i, sess in enumerate(all_sessions):
+                if sess['id'] == selected_session_id and i > 0:
+                    previous_session_id = all_sessions[i-1]['id']
+                    break
+        
     finally:
         cursor.close()
         db.close()
@@ -668,7 +722,8 @@ def players_by_session():
         all_sessions=all_sessions,
         selected_session=selected_session,
         session_players=session_players,
-        selected_session_id=selected_session_id
+        selected_session_id=selected_session_id,
+        previous_session_id=previous_session_id
     )
 
 @bp.route('/<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
