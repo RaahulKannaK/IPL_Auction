@@ -636,7 +636,6 @@ def close_session(session_id):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Get summary before closing
         cursor.execute("""
             SELECT status, COUNT(*) as cnt 
             FROM session_players 
@@ -659,6 +658,11 @@ def close_session(session_id):
     sold = summary.get('sold', 0)
     unsold = summary.get('available', 0) + summary.get('unsold', 0)
     
+    # FIX: Check if request wants JSON (AJAX) or HTML (form submit)
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'message': f'Session closed! {sold} sold, {unsold} unsold.'})
+    
+    # Fallback for regular form posts
     flash(f'Session closed! {sold} sold, {unsold} unsold.')
     return redirect('/admin/sessions')
 
