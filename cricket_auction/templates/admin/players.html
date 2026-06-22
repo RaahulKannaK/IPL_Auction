@@ -914,7 +914,6 @@
     {% endif %}
 
     <!-- ===== ASSIGN PLAYERS PANEL ===== -->
-
     <div id="assignPanel" class="assign-panel" style="display: none;">
         <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px; text-align: center;">🎯 Assign Players to Session</h2>
         
@@ -1028,7 +1027,6 @@
     </div>
 
     <!-- ===== PLAYERS TABLE ===== -->
-    
     <div class="players-section" id="playersTableSection" style="display: block;">
         <div class="section-header">
             <div class="section-title">📋 Session Players</div>
@@ -1135,6 +1133,20 @@
     {% endif %}
 </div>
 
+<!-- Embed existing players for append logic -->
+<script>
+window.existingPlayers = [
+    {% for player in session_players %}
+    {
+        player_name: {{ player.player_name|tojson }},
+        category: {{ (player.category or 'batsman')|tojson }},
+        overseas: {{ 'true' if player.overseas else 'false' }},
+        base_price: {{ player.base_price or 0.5 }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+</script>
+
 <script>
 // ===== GLOBAL STATE =====
 let csvData = [];
@@ -1153,6 +1165,7 @@ function filterTable(status) {
     });
 }
 
+// ===== ASSIGN PANEL TOGGLE =====
 function toggleAssignPanel() {
     const panel = document.getElementById('assignPanel');
     const table = document.getElementById('playersTableSection');
@@ -1305,12 +1318,16 @@ function confirmCSVUpload() {
         alert('No players to upload. Please select a CSV file.');
         return;
     }
-    if (!confirm('Upload ' + csvData.length + ' players to the session?')) return;
+    
+    // MERGE existing + new players
+    const allPlayers = (window.existingPlayers || []).concat(csvData);
+    
+    if (!confirm('Upload ' + csvData.length + ' new players? (Total will be ' + allPlayers.length + ')')) return;
     
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({source_type: 'fresh', players: csvData})
+        body: JSON.stringify({source_type: 'fresh', players: allPlayers})
     })
     .then(r => r.json())
     .then(data => {
@@ -1352,22 +1369,26 @@ function updateRemoveButtons() {
 
 function submitManualPlayers() {
     const rows = document.querySelectorAll('#manualPlayersList .player-input-row');
-    const players = [];
+    const newPlayers = [];
     rows.forEach(row => {
         const name = row.querySelector('[name="player_name"]').value.trim();
         const category = row.querySelector('[name="category"]').value;
         const overseas = row.querySelector('[name="overseas"]').value === 'true';
         const basePrice = parseFloat(row.querySelector('[name="base_price"]').value) || 0.5;
-        if (name) players.push({player_name: name, category: category, overseas: overseas, base_price: basePrice});
+        if (name) newPlayers.push({player_name: name, category: category, overseas: overseas, base_price: basePrice});
     });
-    if (players.length === 0) {
+    if (newPlayers.length === 0) {
         alert('Please enter at least one player');
         return;
     }
+    
+    // MERGE existing + new players
+    const allPlayers = (window.existingPlayers || []).concat(newPlayers);
+    
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({source_type: 'fresh', players: players})
+        body: JSON.stringify({source_type: 'fresh', players: allPlayers})
     })
     .then(r => r.json())
     .then(data => {
