@@ -526,6 +526,48 @@
         font-size: 0.85rem; margin-bottom: 10px;
     }
 
+    /* ===== VIEWER MODE BADGE ===== */
+    .viewer-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 20px; border-radius: 30px;
+        font-weight: 700; font-size: 0.85rem; letter-spacing: 2px;
+        text-transform: uppercase;
+        background: rgba(100, 116, 139, 0.15); color: #94a3b8;
+        border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+
+    /* ===== AUDIENCE ONLY PANEL ===== */
+    .audience-panel {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(124, 77, 255, 0.04));
+        border: 1px dashed rgba(59, 130, 246, 0.3);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+    }
+    .audience-panel .icon { font-size: 3rem; margin-bottom: 15px; }
+    .audience-panel h3 {
+        font-family: 'Space Grotesk';
+        color: #60a5fa;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    .audience-panel p {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    .audience-panel .session-tag {
+        display: inline-block;
+        padding: 6px 16px;
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-top: 15px;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
     /* ===== SESSION SELECTOR OVERLAY ===== */
     .session-overlay {
         position: fixed;
@@ -760,6 +802,14 @@
         border: 1px solid rgba(100, 116, 139, 0.25);
         cursor: not-allowed;
     }
+    .btn-view {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    .btn-view:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.3);
+    }
 
     .empty-sessions {
         text-align: center;
@@ -816,6 +866,29 @@
         border: 1px dashed rgba(100, 120, 200, 0.15);
     }
     .session-help-text strong { color: var(--text-secondary); }
+
+    /* ===== SECTION HEADERS ===== */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 12px 20px;
+        border-radius: 14px;
+        font-family: 'Space Grotesk';
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .section-header.my-sessions {
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+    }
+    .section-header.other-sessions {
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+    }
 </style>
 
 <!-- ==================== SESSION SELECTOR OVERLAY ==================== -->
@@ -823,7 +896,7 @@
     <div class="session-panel">
         <div class="session-panel-header">
             <h2>📅 Select Auction Session</h2>
-            <p>Choose a session to enter the auction room. Each session has limited team slots.</p>
+            <p>Choose a session to enter. Your sessions = full bidding. Other sessions = audience only.</p>
         </div>
 
         <div class="team-info-bar">
@@ -840,9 +913,16 @@
         </div>
 
         {% if auction_sessions %}
-        <div class="session-grid">
-            {% for sess in auction_sessions %}
-            <div class="session-card {% if sess.is_member %}my-session{% endif %}" data-session-id="{{ sess.id }}">
+        
+        <!-- ===== MY SESSIONS ===== -->
+        {% set my_sessions = auction_sessions | selectattr('is_member', 'equalto', true) | list %}
+        {% if my_sessions %}
+        <div class="section-header my-sessions">
+            👑 YOUR SESSIONS (Full Bidding Access)
+        </div>
+        <div class="session-grid" style="margin-bottom: 30px;">
+            {% for sess in my_sessions %}
+            <div class="session-card my-session" data-session-id="{{ sess.id }}">
                 <div class="header">
                     <div class="name">
                         <span class="icon">{{ sess.session_icon }}</span>
@@ -886,7 +966,6 @@
                     </div>
                 </div>
 
-                <!-- Slot progress bar -->
                 <div class="slot-bar">
                     <div class="fill" style="width: {{ (sess.slots_filled / sess.total_teams * 100) if sess.total_teams and sess.total_teams > 0 else 0 }}%"></div>
                 </div>
@@ -906,15 +985,9 @@
                 {% endif %}
 
                 {% if sess.status in ['active', 'paused'] %}
-                    {% if sess.is_member %}
-                    <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}')">
-                        🚀 Enter Auction Room
-                    </button>
-                    {% else %}
-                    <button class="btn-session-action btn-join" onclick="joinSession({{ sess.id }}, '{{ sess.session_name }}')">
-                        {{ sess.join_button_text }}
-                    </button>
-                    {% endif %}
+                <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}')">
+                    🚀 Enter Auction Room
+                </button>
                 {% else %}
                 <button class="btn-session-action btn-closed" disabled>
                     🔒 {{ (sess.status or 'closed').upper() }}
@@ -923,11 +996,101 @@
             </div>
             {% endfor %}
         </div>
-        
-        <div class="session-help-text">
-            <strong>💡 Tip:</strong> Click <strong>"Join [Session Name]"</strong> to reserve your team's slot. Once joined,
-                        you can enter the auction room anytime. Sessions may have limited slots!
+        {% endif %}
+
+        <!-- ===== OTHER SESSIONS ===== -->
+        {% set other_sessions = auction_sessions | selectattr('is_member', 'equalto', false) | list %}
+        {% if other_sessions %}
+        <div class="section-header other-sessions">
+            👁️ OTHER SESSIONS (Audience Only)
         </div>
+        <div class="session-grid">
+            {% for sess in other_sessions %}
+            <div class="session-card" data-session-id="{{ sess.id }}">
+                <div class="header">
+                    <div class="name">
+                        <span class="icon">{{ sess.session_icon }}</span>
+                        <span>{{ sess.session_name }}</span>
+                    </div>
+                    <span class="status-badge" style="
+                        {% if sess.status == 'active' %}
+                        background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25);
+                        {% elif sess.status == 'paused' %}
+                        background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25);
+                        {% else %}
+                        background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25);
+                        {% endif %}
+                    ">
+                        {% if sess.status == 'active' %}●{% elif sess.status == 'paused' %}⏸{% else %}🔒{% endif %} 
+                        {{ (sess.status or 'closed').upper() }}
+                    </span>
+                </div>
+                
+                <div class="time-label">
+                    {{ sess.time_label }}
+                    {% if sess.start_time and sess.end_time %}
+                    <span style="color: var(--text-dim); font-size: 0.75rem;">
+                        | {{ sess.start_time }} → {{ sess.end_time }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="stats-row">
+                    <div class="stat-box teams-filled">
+                        <div class="value">{{ sess.slots_filled }}</div>
+                        <div class="label">Teams In</div>
+                    </div>
+                    <div class="stat-box slots-open">
+                        <div class="value">{{ sess.slots_left }}</div>
+                        <div class="label">Slots Open</div>
+                    </div>
+                    <div class="stat-box total-teams">
+                        <div class="value">{{ sess.total_teams }}</div>
+                        <div class="label">Total Slots</div>
+                    </div>
+                </div>
+
+                <div class="slot-bar">
+                    <div class="fill" style="width: {{ (sess.slots_filled / sess.total_teams * 100) if sess.total_teams and sess.total_teams > 0 else 0 }}%"></div>
+                </div>
+
+                {% if sess.team_ids_list %}
+                <div class="teams-preview">
+                    {% for tid in sess.team_ids_list %}
+                    <span class="team-tag">
+                        {{ all_teams[tid] if all_teams and tid in all_teams else 'Team ' + tid|string }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="teams-preview">
+                    <span class="empty-teams">No teams joined yet.</span>
+                </div>
+                {% endif %}
+
+                {% if sess.status in ['active', 'paused'] and sess.slots_left > 0 %}
+                <button class="btn-session-action btn-join" onclick="joinSession({{ sess.id }}, '{{ sess.session_name }}')">
+                    {{ sess.join_button_text }}
+                </button>
+                {% elif sess.status in ['active', 'paused'] %}
+                <button class="btn-session-action btn-view" onclick="viewSession({{ sess.id }}, '{{ sess.session_name }}')">
+                    👁️ Watch as Audience
+                </button>
+                {% else %}
+                <button class="btn-session-action btn-closed" disabled>
+                    🔒 {{ (sess.status or 'closed').upper() }}
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="session-help-text">
+            <strong>💡 Tip:</strong> <strong style="color: #22c55e;">Your Sessions</strong> = full bidding, skip, and participate. 
+            <strong style="color: #60a5fa;">Other Sessions</strong> = watch only (audience). You can join other sessions anytime if slots are open!
+        </div>
+        
         {% else %}
         <div class="empty-sessions">
             <div class="icon">📅</div>
@@ -978,18 +1141,25 @@
             <a href="/logout" class="logout-btn">🚪 Logout</a>
         </div>
 
-        <!-- TEAM INFO BAR -->
-        {% if team %}
-        <div class="team-bar">
-            <div>
-                <div class="name">{{ team.team_name }}</div>
-                <div class="purse">
-                    💰 Available: ₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0) - (team.reserved or 0)) }}Cr | 
-                    Spent: ₹{{ "%.2f"|format(team.spent or 0) }}Cr
+        <!-- VIEWER MODE BADGE (shown only for non-member sessions) -->
+        <div id="viewerModeBadge" style="display: none; text-align: center; margin-bottom: 10px;">
+            <span class="viewer-badge">👁️ AUDIENCE MODE — You can only watch, not bid</span>
+        </div>
+
+        <!-- TEAM INFO BAR (hidden in viewer mode) -->
+        <div id="teamInfoBar" style="{% if not is_member_session %}display: none;{% endif %}">
+            {% if team %}
+            <div class="team-bar">
+                <div>
+                    <div class="name">{{ team.team_name }}</div>
+                    <div class="purse">
+                        💰 Available: ₹{{ "%.2f"|format((team.purse_limit or 100) - (team.spent or 0) - (team.reserved or 0)) }}Cr | 
+                        Spent: ₹{{ "%.2f"|format(team.spent or 0) }}Cr
+                    </div>
                 </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
         <!-- CURRENT PLAYER -->
         <div id="playerSection">
@@ -1030,8 +1200,8 @@
             <span class="count" id="skipCount">0 / {{ total_teams }}</span>
         </div>
 
-        <!-- BID CENTER -->
-        <div class="glass-panel bid-center" id="bidCenter">
+        <!-- BID CENTER (hidden in viewer mode) -->
+        <div class="glass-panel bid-center" id="bidCenter" style="{% if not is_member_session %}display: none;{% endif %}">
             <div class="section-title">💰 Quick Bid</div>
             
             <div id="initialBidSection" style="display: none;">
@@ -1077,6 +1247,20 @@
             </div>
 
             <div class="status-text" id="bidStatus"></div>
+        </div>
+
+        <!-- AUDIENCE PANEL (shown only in viewer mode) -->
+        <div id="audiencePanel" class="audience-panel" style="{% if is_member_session %}display: none;{% endif %}">
+            <div class="icon">👁️</div>
+            <h3>Audience Mode</h3>
+            <p>
+                You are watching this session as an audience member. 
+                Your team <strong>{{ team.team_name if team else 'N/A' }}</strong> is not part of this session.
+            </p>
+            <p style="margin-top: 10px;">
+                You can see live bids, player info, and history — but you cannot bid or skip.
+            </p>
+            <div class="session-tag" id="audienceSessionTag">Session: --</div>
         </div>
 
         <!-- BID HISTORY -->
@@ -1153,7 +1337,7 @@
     </div>
 </div>
 
-<!-- SESSION INFO BAR (shows current session name in auction room) -->
+<!-- SESSION INFO BAR -->
 <div id="sessionInfoBar" style="display: none; text-align: center; margin-bottom: 10px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(124, 77, 255, 0.1); border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px; color: var(--cosmic-purple-light); font-size: 0.85rem; font-weight: 600;">
         <span id="sessionInfoIcon">📅</span>
@@ -1167,6 +1351,7 @@
 let currentAuctionId = {{ auction_id }};
 let currentSessionId = {{ active_session_id if active_session_id else 'null' }};
 let currentSessionName = '';
+let isMemberSession = {{ 'true' if is_member_session else 'false' }};
 let pollInterval = null;
 let lastPlayerId = null;
 let currentAuctionPlayerId = null;
@@ -1183,7 +1368,7 @@ let pendingWillingPricePlayer = null;
 let previousHasBids = false;
 let currentLeagueName = '';
 let hasActiveSession = {{ 'true' if has_active_session else 'false' }};
-let pendingBidAmount = null; // Track pending bid to prevent reversion
+let pendingBidAmount = null;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1198,8 +1383,16 @@ document.addEventListener('DOMContentLoaded', function() {
 function enterSession(sessionId, sessionName) {
     currentSessionId = sessionId;
     currentSessionName = sessionName || 'Session ' + sessionId;
+    isMemberSession = true;
+    
     document.getElementById('sessionSelector').classList.add('hidden');
     document.getElementById('auctionRoom').style.display = 'block';
+    
+    // Show member UI, hide viewer UI
+    document.getElementById('viewerModeBadge').style.display = 'none';
+    document.getElementById('teamInfoBar').style.display = 'block';
+    document.getElementById('bidCenter').style.display = 'block';
+    document.getElementById('audiencePanel').style.display = 'none';
     
     const infoBar = document.getElementById('sessionInfoBar');
     const infoIcon = document.getElementById('sessionInfoIcon');
@@ -1219,6 +1412,35 @@ function enterSession(sessionId, sessionName) {
     initAuctionRoom();
 }
 
+function viewSession(sessionId, sessionName) {
+    currentSessionId = sessionId;
+    currentSessionName = sessionName || 'Session ' + sessionId;
+    isMemberSession = false;
+    
+    document.getElementById('sessionSelector').classList.add('hidden');
+    document.getElementById('auctionRoom').style.display = 'block';
+    
+    // Show viewer UI, hide member UI
+    document.getElementById('viewerModeBadge').style.display = 'block';
+    document.getElementById('teamInfoBar').style.display = 'none';
+    document.getElementById('bidCenter').style.display = 'none';
+    document.getElementById('audiencePanel').style.display = 'block';
+    
+    const audienceTag = document.getElementById('audienceSessionTag');
+    if (audienceTag) audienceTag.textContent = 'Session: ' + currentSessionName;
+    
+    const infoBar = document.getElementById('sessionInfoBar');
+    const infoIcon = document.getElementById('sessionInfoIcon');
+    const infoName = document.getElementById('sessionInfoName');
+    
+    if (infoBar && infoName) {
+        infoBar.style.display = 'block';
+        infoName.textContent = currentSessionName + ' (Audience)';
+        infoIcon.textContent = '👁️';
+    }
+    
+    initAuctionRoom();
+}
 function joinSession(sessionId, sessionName) {
     fetch('/team-owner/auction/join-session/' + sessionId, {
         method: 'POST',
@@ -1230,17 +1452,8 @@ function joinSession(sessionId, sessionName) {
     })
     .then(data => {
         if (data.success) {
-            const card = document.querySelector('.session-card[data-session-id="' + sessionId + '"]');
-            if (card) {
-                card.classList.add('my-session');
-                const btn = card.querySelector('.btn-session-action');
-                if (btn) {
-                    btn.className = 'btn-session-action btn-enter';
-                    btn.innerHTML = '🚀 Enter Auction Room';
-                    btn.onclick = function() { enterSession(sessionId, sessionName); };
-                }
-            }
-            enterSession(sessionId, sessionName);
+            // Refresh page to re-render with new session membership
+            window.location.reload();
         } else {
             alert(data.error || 'Failed to join session');
         }
@@ -1284,7 +1497,7 @@ function initAuctionRoom() {
                 hasBids = data.has_bids || false;
                 previousHasBids = hasBids;
                 currentBidderId = data.current_bidder_id || null;
-                pendingBidAmount = null; // Clear any pending bid on init
+                pendingBidAmount = null;
                 updatePlayerDisplay(data.current_player, data.current_bid, data.current_bidder, data.player_category, data.base_price);
                 updateBidControls(data.current_bid, data.base_price, data.has_bids, data.current_bidder_id);
             }
@@ -1311,6 +1524,7 @@ function leaveRoom() {
     pendingBidAmount = null;
     currentLeagueName = '';
     hasActiveSession = false;
+    isMemberSession = false;
     
     stopPolling();
     closeWillingPopup();
@@ -1375,7 +1589,8 @@ function startFastPolling() {
                 
                 if (data.total_teams !== undefined) totalTeams = data.total_teams;
                 
-                if (data.sold_to_team_id === myTeamId && data.sold_player_name && !data.willing_price_set) {
+                // Only show willing price popup for members
+                if (isMemberSession && data.sold_to_team_id === myTeamId && data.sold_player_name && !data.willing_price_set) {
                     if (pendingWillingPricePlayer !== data.sold_auction_player_id) {
                         showWillingPopup(data.sold_player_name, data.sold_price, data.sold_auction_player_id);
                     }
@@ -1395,10 +1610,10 @@ function startFastPolling() {
                     currentBidAmount = parseFloat(data.current_bid) || 0;
                     hasBids = serverHasBids;
                     currentBidderId = data.current_bidder_id || null;
-                    pendingBidAmount = null; // Clear pending on new player
+                    pendingBidAmount = null;
                 }
                 
-                // Player reset (all bids cleared) - happens when player is skipped by all
+                // Player reset (all bids cleared)
                 if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
                     hasSkippedCurrentPlayer = false;
                     resetSkipUI();
@@ -1410,40 +1625,34 @@ function startFastPolling() {
                     pendingBidAmount = null;
                 }
                 
-                // IMPORTANT: Only update from server if we don't have a pending bid
-                // or if the server data reflects a different/higher bid than our pending
+                // Handle pending bid state
                 const serverBid = parseFloat(data.current_bid) || 0;
                 const serverBidder = data.current_bidder_id || null;
                 
-                // If we have a pending bid, only accept server update if:
-                // 1. Server bid is higher than our pending (someone outbid us)
-                // 2. Server bidder is different and bid matches our pending (server confirmed our bid)
-                // 3. New player
                 if (pendingBidAmount !== null) {
-                    // Our bid is pending - check if server has caught up
                     if (serverBidder === myTeamId && Math.abs(serverBid - pendingBidAmount) < 0.001) {
-                        // Server confirmed our bid! Clear pending
                         pendingBidAmount = null;
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
                     } else if (serverBid > pendingBidAmount || (serverBidder !== myTeamId && serverBidder !== null)) {
-                        // Someone outbid us or different state - accept server
                         pendingBidAmount = null;
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
                     }
-                    // Otherwise keep our pending state, don't overwrite
                 } else {
-                    // No pending bid - accept server state normally
                     currentBidAmount = serverBid;
                     currentBidderId = serverBidder;
                     hasBids = serverHasBids;
                 }
                 
                 updatePlayerDisplay(data.current_player, currentBidAmount, data.current_bidder, data.player_category, data.base_price);
-                updateBidControls(currentBidAmount, data.base_price, hasBids, currentBidderId);
+                
+                // Only update bid controls if member
+                if (isMemberSession) {
+                    updateBidControls(currentBidAmount, data.base_price, hasBids, currentBidderId);
+                }
                 
                 previousHasBids = serverHasBids;
                 
@@ -1531,8 +1740,11 @@ function updatePlayerDisplay(name, bid, bidder, category, basePrice) {
     }
 }
 
-// ==================== BID CONTROLS ====================
+// ==================== BID CONTROLS (MEMBER ONLY) ====================
 function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId) {
+    // Guard: only members can see bid controls
+    if (!isMemberSession) return;
+    
     const cb = parseFloat(currentBid) || 0;
     const bp = parseFloat(basePrice) || 2.0;
     currentBasePrice = bp;
@@ -1569,14 +1781,12 @@ function updateBidControls(currentBid, basePrice, serverHasBids, serverBidderId)
     }
 }
 
-// FIXED: Bid chips show INCREMENTS from current bid, not absolute amounts
 function updateBidChips(currentBid) {
     const chips = document.getElementById('bidChips');
     const customRow = document.getElementById('customBidRow');
     if (!chips) return;
     if (customRow) customRow.style.display = 'none';
     
-    // Fixed increments: +10L, +25L, +50L, +1Cr, +2Cr, +5Cr
     const increments = [0.10, 0.25, 0.50, 1.00, 2.00, 5.00];
     const labels = ['+10L', '+25L', '+50L', '+1Cr', '+2Cr', '+5Cr'];
     
@@ -1589,7 +1799,6 @@ function updateBidChips(currentBid) {
         btn.onclick = () => placeBid(newBid);
     });
     
-    // Last chip is always Custom
     const customBtn = chipButtons[5];
     if (customBtn) {
         customBtn.innerHTML = '<span class="amount">✏️</span><span style="font-size:0.75rem;">Custom</span>';
@@ -1607,10 +1816,8 @@ function showCustomBid() {
     }
 }
 
-// FIXED: Validate custom bid - only allow .00, .25, .50, .75 decimals
 function isValidBidDecimal(amount) {
     const decimal = Math.round((amount % 1) * 100) / 100;
-    // Allow .00, .25, .50, .75
     const allowed = [0.00, 0.25, 0.50, 0.75];
     return allowed.some(a => Math.abs(decimal - a) < 0.001);
 }
@@ -1632,8 +1839,12 @@ function placeCustomBid() {
     placeBid(amount);
 }
 
-// FIXED: Unified bid function - handles both initial and active bidding
+// Guard: block bidding in viewer mode
 function placeBid(amount) {
+    if (!isMemberSession) {
+        showStatus('bidStatus', '❌ Audience mode — bidding disabled', '#ef4444');
+        return;
+    }
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ No player in auction', '#ef4444');
         return;
@@ -1643,7 +1854,6 @@ function placeBid(amount) {
         return;
     }
     
-    // Must be higher than current bid
     const minRequired = hasBids ? currentBidAmount + 0.01 : currentBasePrice;
     if (amount < minRequired) {
         showStatus('bidStatus', `❌ Must be at least ₹${minRequired.toFixed(2)}Cr`, '#ef4444');
@@ -1654,6 +1864,10 @@ function placeBid(amount) {
 }
 
 function placeInitialBid() {
+    if (!isMemberSession) {
+        showStatus('bidStatus', '❌ Audience mode — bidding disabled', '#ef4444');
+        return;
+    }
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ No player in auction', '#ef4444');
         return;
@@ -1665,8 +1879,11 @@ function placeInitialBid() {
     executeBid(currentBasePrice);
 }
 
-// ==================== EXECUTE BID ====================
 function executeBid(amount) {
+    if (!isMemberSession) {
+        showStatus('bidStatus', '❌ Audience mode', '#ef4444');
+        return;
+    }
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ Join auction first', '#ef4444');
         return;
@@ -1676,16 +1893,12 @@ function executeBid(amount) {
         return;
     }
     
-    // Prevent double-clicking by checking if we already have a pending bid
     if (pendingBidAmount !== null) {
         showStatus('bidStatus', '⏳ Bid in progress...', '#f59e0b');
         return;
     }
     
-    // Set pending state - DON'T update UI optimistically
     pendingBidAmount = amount;
-    
-    // Show loading state
     showStatus('bidStatus', '⏳ Placing bid...', '#f59e0b');
     
     fetch('/team-owner/auction/bid', {
@@ -1699,11 +1912,10 @@ function executeBid(amount) {
     })
     .then(r => r.json())
     .then(data => {
-        pendingBidAmount = null; // Clear pending
+        pendingBidAmount = null;
         
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
-            // Refresh from server to get correct state
             fetch('/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + (currentSessionId || ''))
             .then(r => r.json())
             .then(serverData => {
@@ -1711,10 +1923,11 @@ function executeBid(amount) {
                 currentBidderId = serverData.current_bidder_id || null;
                 hasBids = serverData.has_bids || false;
                 updatePlayerDisplay(serverData.current_player, serverData.current_bid, serverData.current_bidder, serverData.player_category, serverData.base_price);
-                updateBidControls(serverData.current_bid, serverData.base_price, serverData.has_bids, serverData.current_bidder_id);
+                if (isMemberSession) {
+                    updateBidControls(serverData.current_bid, serverData.base_price, serverData.has_bids, serverData.current_bidder_id);
+                }
             });
         } else {
-            // Server confirmed - update with server response
             currentBidAmount = parseFloat(data.current_bid) || amount;
             currentBidderId = myTeamId;
             hasBids = true;
@@ -1728,7 +1941,9 @@ function executeBid(amount) {
                 currentBasePrice
             );
             addHistory(myTeamName, currentBidAmount, false);
-            updateBidControls(currentBidAmount, currentBasePrice, true, myTeamId);
+            if (isMemberSession) {
+                updateBidControls(currentBidAmount, currentBasePrice, true, myTeamId);
+            }
             
             showStatus('bidStatus', `✅ ₹${currentBidAmount.toFixed(2)}Cr`, '#22c55e');
             
@@ -1736,14 +1951,18 @@ function executeBid(amount) {
         }
     })
     .catch(err => {
-        pendingBidAmount = null; // Clear pending on error
+        pendingBidAmount = null;
         console.error('Bid error:', err);
         showStatus('bidStatus', '❌ Network error', '#ef4444');
     });
 }
 
-// ==================== SKIP ====================
+// ==================== SKIP (MEMBER ONLY) ====================
 function toggleSkip() {
+    if (!isMemberSession) {
+        showStatus('bidStatus', '❌ Audience mode — skip disabled', '#ef4444');
+        return;
+    }
     const inline = document.getElementById('skipInline');
     if (inline) inline.classList.toggle('show');
 }
@@ -1770,6 +1989,10 @@ function updateSkipStatus(skipCount, total) {
 }
 
 function skipPlayer() {
+    if (!isMemberSession) {
+        showStatus('bidStatus', '❌ Audience mode — skip disabled', '#ef4444');
+        return;
+    }
     if (!currentAuctionId || !currentAuctionPlayerId) {
         showStatus('bidStatus', '❌ No player selected', '#ef4444');
         return;
@@ -1825,8 +2048,9 @@ function skipPlayer() {
     });
 }
 
-// ==================== WILLING PRICE ====================
+// ==================== WILLING PRICE (MEMBER ONLY) ====================
 function showWillingPopup(playerName, purchasePrice, auctionPlayerId) {
+    if (!isMemberSession) return; // Guard
     if (pendingWillingPricePlayer === auctionPlayerId) return;
     pendingWillingPricePlayer = auctionPlayerId;
     
@@ -1853,6 +2077,11 @@ function closeWillingPopup() {
 }
 
 function submitWillingPrice() {
+    if (!isMemberSession) {
+        closeWillingPopup();
+        return;
+    }
+    
     const input = document.getElementById('wpWillingPrice');
     const wpStatus = document.getElementById('wpStatus');
     
@@ -1917,9 +2146,6 @@ function skipWillingPrice() {
     closeWillingPopup();
     showStatus('bidStatus', '⏭️ Set later in My Squad', '#f59e0b');
 }
-
-// ==================== TIMER REMOVED ====================
-// Countdown timer functionality removed as requested
 
 // ==================== PLAYERS ====================
 function togglePlayers() {
@@ -2004,6 +2230,7 @@ function showStatus(id, msg, color) {
 
 // ==================== KEYBOARD SHORTCUTS ====================
 document.addEventListener('keydown', (e) => {
+    if (!isMemberSession) return; // Block shortcuts in viewer mode
     if (e.key === 'Enter' && document.activeElement.id === 'customBidAmount') placeCustomBid();
     if (e.key === 'Enter' && document.activeElement.id === 'wpWillingPrice') submitWillingPrice();
 });
