@@ -291,33 +291,34 @@ def edit_player(id):
     return redirect('/admin/players')
 
 
-@bp.route('/delete/<int:id>', methods=['POST'])
-def delete_player(id):
-    """Delete player if not sold in any auction"""
-    if session.get('role') not in ['owner', 'admin']:
+@bp.route('/<int:session_id>/players/<int:sp_id>', methods=['DELETE'])
+def delete_session_player(session_id, sp_id):
+    """Remove a player from a session by session_players.id (junction table PK)"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if sold anywhere
-        cursor.execute("SELECT status FROM auction_players WHERE player_id = %s AND status = 'sold'", (id,))
-        sold = cursor.fetchone()
+        # Check if player exists in this session (match by session_players.id)
+        cursor.execute("""
+            SELECT status, player_id FROM session_players 
+            WHERE id = %s AND session_id = %s
+        """, (sp_id, session_id))
+        result = cursor.fetchone()
         
-        if sold:
-            return jsonify({'error': 'Cannot delete sold player'}), 400
+        if not result:
+            return jsonify({'error': 'Player not found in session'}), 404
         
-        # ===== FIX: Also delete from session_players =====
-        cursor.execute("DELETE FROM session_players WHERE player_id = %s", (id,))
+        if result['status'] == 'sold':
+            return jsonify({'error': 'Cannot delete a sold player'}), 400
         
-        cursor.execute("SELECT id FROM auction_players WHERE player_id = %s", (id,))
-        in_auction = cursor.fetchone()
-        
-        if in_auction:
-            cursor.execute("DELETE FROM auction_players WHERE player_id = %s", (id,))
-        
-        cursor.execute("DELETE FROM players WHERE id = %s", (id,))
+        # Delete from session_players by junction table PK
+        cursor.execute("""
+            DELETE FROM session_players 
+            WHERE id = %s AND session_id = %s
+        """, (sp_id, session_id))
         
         db.commit()
         
@@ -325,7 +326,7 @@ def delete_player(id):
         cursor.close()
         db.close()
     
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'message': 'Player removed from session'})
 
 @bp.route('/export')
 def export_players():
