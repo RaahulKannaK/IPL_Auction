@@ -16,7 +16,13 @@ def list_players():
     # ─── FIX: Try multiple ways to get auction_id ───
     auction_id = session.get('active_auction_id')
     
-    # If not in session, try to get from the selected session's auction_id (when inside room)
+    # FIX 1: Check ?auction=X from URL (your sessions page uses this)
+    if not auction_id:
+        auction_id = request.args.get('auction', type=int)
+        if auction_id:
+            session['active_auction_id'] = auction_id
+    
+    # FIX 2: Check ?session_id=X and look up its auction_id
     if not auction_id:
         selected_session_id = request.args.get('session_id', type=int)
         if selected_session_id:
@@ -27,13 +33,12 @@ def list_players():
                 result = cursor.fetchone()
                 if result:
                     auction_id = result['auction_id']
-                    # Also save it to session for future requests
                     session['active_auction_id'] = auction_id
             finally:
                 cursor.close()
                 db.close()
     
-    # Last resort: try session.get('auction_id') if your room uses that key
+    # FIX 3: Check if session stores it as 'auction_id'
     if not auction_id:
         auction_id = session.get('auction_id')
         if auction_id:
