@@ -128,6 +128,14 @@ def list_players():
         """, (auction_id,))
         master_players = cursor.fetchall()
         
+        # === NEW: Get previous session for same_set carry over option ===
+        previous_session_id = None
+        if all_sessions and selected_session_id:
+            for i, sess in enumerate(all_sessions):
+                if sess['id'] == selected_session_id and i > 0:
+                    previous_session_id = all_sessions[i-1]['id']
+                    break
+        
     finally:
         cursor.close()
         db.close()
@@ -139,8 +147,10 @@ def list_players():
         session_players=session_players,
         session_stats=session_stats,
         players=master_players,
+        previous_session_id=previous_session_id,
         view_mode='session' if selected_session_id else 'master'
     )
+
 
 @bp.route('/create', methods=['POST'])
 def create_player():
@@ -182,6 +192,7 @@ def create_player():
     
     flash('Player added to master database!')
     return redirect('/admin/players')
+
 
 @bp.route('/import', methods=['POST'])
 def import_players():
@@ -240,6 +251,7 @@ def import_players():
     flash(f'{count} players imported!')
     return redirect('/admin/players')
 
+
 @bp.route('/edit/<int:id>', methods=['POST'])
 def edit_player(id):
     """Edit player details"""
@@ -278,6 +290,7 @@ def edit_player(id):
     flash('Player updated!')
     return redirect('/admin/players')
 
+
 @bp.route('/delete/<int:id>', methods=['POST'])
 def delete_player(id):
     """Delete player if not sold in any auction"""
@@ -309,6 +322,7 @@ def delete_player(id):
         db.close()
     
     return jsonify({'success': True})
+
 
 @bp.route('/export')
 def export_players():

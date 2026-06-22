@@ -823,3 +823,128 @@ Trent Boult,bowler,true,1.5
             'Content-Type': 'text/csv; charset=utf-8'
         }
     )
+
+
+# === NEW: Delete player from session (not master DB) ===
+@bp.route('/<int:session_id>/players/<int:player_id>', methods=['DELETE'])
+def delete_session_player(session_id, player_id):
+    """Remove a player from a session (soft delete - only if not sold)"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Check if player is sold in this session
+        cursor.execute("""
+            SELECT status FROM session_players 
+            WHERE session_id = %s AND player_id = %s
+        """, (session_id, player_id))
+        result = cursor.fetchone()
+        
+        if not result:
+            return jsonify({'error': 'Player not found in session'}), 404
+        
+        if result['status'] == 'sold':
+            return jsonify({'error': 'Cannot delete a sold player'}), 400
+        
+        # Delete from session_players only (keep in master players DB)
+        cursor.execute("""
+            DELETE FROM session_players 
+            WHERE session_id = %s AND player_id = %s
+        """, (session_id, player_id))
+        
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'message': 'Player removed from session'})
+
+
+# === NEW: Add single player to session manually ===
+@bp.route('/<int:session_id>/players', methods=['POST'])
+def add_session_player(session_id):
+    """Add a single player to session manually (creates in master DB if not exists)"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json(silent=True) or request.form
+    
+    player_name = data.get('player_name', '').strip()
+    category = data.get('category', 'batsman')
+    overseas = data.get('overseas', False)
+    base_price = float(data.get('base_price', 0.5))
+    
+    if not player_name:
+        return jsonify({'error': 'Player name is required'}), 400
+    
+    auction_id = session.get('active_auction_id')
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Check if player exists in master pool
+        cursor.execute("SELECT id FROM players WHERE player_name = %s", (player_name,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            player_id = existing['id']
+        else:
+            # Create new player in master pool
+            cursor.execute(
+                "INSERT INTO players (player_name, category, overseas) VALUES (%s, %s, %s)",
+                (player_name, category, overseas)
+            )
+            player_id = cursor.lastrowid
+            
+            # Add to auction_players
+            cursor.execute(
+                "INSERT INTO auction_players (auction_id, player_id, base_price, status) VALUES (%s, %s, %s, 'available')",
+                (auction_id, player_id, base_price)
+            )
+        
+        # Check if already in session
+        cursor.execute("""
+            SELECT id FROM session_players 
+            WHERE session_id = %s AND player_id = %s
+        """, (session_id, player_id))
+        if cursor.fetchone():
+            return jsonify({'error': 'Player already in this session'}), 400
+        
+        # Add to session_players
+        cursor.execute("""
+            INSERT INTO session_players (session_id, player_id, base_price, status)
+            VALUES (%s, %s, %s, 'available')
+        """, (session_id, player_id, base_price))
+        
+        db.commit()
+        
+        # Get the newly added player details
+        cursor.execute("""
+            SELECT sp.*, p.player_name, p.category, p.overseas
+            FROM session_players sp
+            JOIN players p ON sp.player_id = p.id
+            WHERE sp.session_id = %s AND sp.player_id = %s
+        """, (session_id, player_id))
+        new_player = cursor.fetchone()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({
+        'success': True, 
+        'message': f'Player {player_name} added to session',
+        'player': {
+            'id': new_player['id'],
+            'player_id': new_player['player_id'],
+            'player_name': new_player['player_name'],
+            'category': new_player['category'],
+            'overseas': new_player['overseas'],
+            'base_price': float(new_player['base_price']),
+            'status': new_player['status']
+        }
+    })

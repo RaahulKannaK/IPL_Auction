@@ -82,7 +82,6 @@
     .status-dot-paused { background: #f59e0b; }
     .status-dot-pending { background: #3b82f6; }
 
-    /* Team slot bar visualization */
     .slot-bar {
         display: flex;
         gap: 3px;
@@ -114,9 +113,7 @@
     .session-info-header::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: 0; left: 0; right: 0;
         height: 2px;
         background: linear-gradient(90deg, transparent, var(--cosmic-purple), var(--ice-blue), transparent);
     }
@@ -158,7 +155,6 @@
         border: 1px solid rgba(59, 130, 246, 0.25);
     }
 
-    /* Stats Grid */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -186,7 +182,7 @@
         letter-spacing: 1px;
     }
 
-    /* ===== SMART CONDITION BANNER ===== */
+    /* ===== CONDITION BANNER ===== */
     .condition-banner {
         margin-bottom: 25px;
         padding: 20px 25px;
@@ -269,8 +265,7 @@
         gap: 12px;
     }
     .player-avatar-small {
-        width: 36px;
-        height: 36px;
+        width: 36px; height: 36px;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
         color: white;
@@ -352,7 +347,6 @@
         font-size: 0.85rem;
     }
 
-    /* Empty State */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -364,7 +358,6 @@
         opacity: 0.3;
     }
 
-    /* Action Buttons */
     .action-btn {
         padding: 10px 20px;
         border-radius: 12px;
@@ -433,7 +426,6 @@
         background: rgba(124, 77, 255, 0.08);
     }
 
-    /* Join Session Button in Tab */
     .join-btn {
         margin-left: auto;
         padding: 6px 14px;
@@ -453,7 +445,7 @@
         box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
     }
 
-    /* ===== ASSIGN PLAYERS PANEL - NEW DESIGN ===== */
+    /* ===== ASSIGN PLAYERS PANEL ===== */
     .assign-panel {
         background: var(--bg-panel);
         backdrop-filter: blur(24px);
@@ -463,64 +455,78 @@
         margin-bottom: 25px;
     }
 
-    .assign-options {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+    /* Mode Toggle Tabs */
+    .mode-tabs {
+        display: flex;
+        gap: 0;
         margin-bottom: 25px;
-    }
-    @media (max-width: 768px) { .assign-options { grid-template-columns: 1fr; } }
-
-    .assign-option-card {
-        padding: 25px;
-        border-radius: 16px;
-        border: 2px solid rgba(100, 120, 200, 0.1);
         background: rgba(0, 0, 0, 0.2);
+        border-radius: 14px;
+        padding: 4px;
+    }
+    .mode-tab {
+        flex: 1;
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-dim);
+        font-weight: 700;
+        font-size: 0.95rem;
         cursor: pointer;
         transition: all 0.3s;
-        text-align: center;
+        font-family: 'Space Grotesk', sans-serif;
     }
-    .assign-option-card:hover {
-        border-color: rgba(124, 77, 255, 0.3);
-        background: rgba(124, 77, 255, 0.05);
-    }
-    .assign-option-card.selected {
-        border-color: var(--cosmic-purple);
-        background: rgba(124, 77, 255, 0.1);
-    }
-    .assign-option-card .icon {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-    }
-    .assign-option-card .title {
-        font-family: 'Space Grotesk';
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-    }
-    .assign-option-card .desc {
-        font-size: 0.85rem;
-        color: var(--text-dim);
-        line-height: 1.5;
+    .mode-tab.active {
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+        box-shadow: 0 4px 15px rgba(124, 77, 255, 0.2);
     }
 
-    /* Import Section */
-    .import-section {
+    /* Same Set Option */
+    .same-set-banner {
+        background: rgba(59, 130, 246, 0.08);
+        border: 1px dashed rgba(59, 130, 246, 0.3);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .same-set-banner:hover {
+        background: rgba(59, 130, 246, 0.15);
+        border-style: solid;
+    }
+    .same-set-banner .icon { font-size: 2rem; margin-bottom: 10px; }
+    .same-set-banner .title {
+        font-weight: 700;
+        color: #60a5fa;
+        margin-bottom: 5px;
+    }
+    .same-set-banner .desc { color: var(--text-dim); font-size: 0.85rem; }
+
+    /* CSV Upload Area */
+    .csv-upload-area {
         border: 2px dashed rgba(124, 77, 255, 0.3);
         border-radius: 16px;
         padding: 40px;
         text-align: center;
         background: rgba(124, 77, 255, 0.03);
         margin-bottom: 20px;
+        transition: all 0.3s;
+        cursor: pointer;
     }
-    .import-section:hover {
+    .csv-upload-area:hover {
         border-color: var(--cosmic-purple);
         background: rgba(124, 77, 255, 0.06);
     }
-    .file-input {
-        display: none;
+    .csv-upload-area.has-file {
+        border-style: solid;
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.05);
     }
+    .file-input { display: none; }
     .upload-btn {
         display: inline-flex;
         align-items: center;
@@ -540,13 +546,77 @@
         box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3);
     }
 
-    /* Manual Input Section */
-    .manual-input-section {
+    /* CSV Preview Table */
+    .csv-preview {
+        margin-top: 20px;
         display: none;
     }
-    .manual-input-section.active {
-        display: block;
+    .csv-preview.active { display: block; }
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
     }
+    .preview-header h3 {
+        color: var(--text-primary);
+        font-family: 'Space Grotesk';
+    }
+    .file-name-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    .preview-table th {
+        text-align: left;
+        padding: 12px 14px;
+        color: var(--cosmic-purple-light);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 2px solid rgba(124, 77, 255, 0.3);
+    }
+    .preview-table td {
+        padding: 12px 14px;
+        color: var(--text-primary);
+        border-bottom: 1px solid rgba(100, 120, 200, 0.06);
+    }
+    .preview-table tr:hover td {
+        background: rgba(124, 77, 255, 0.03);
+    }
+    .preview-table .remove-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+    .remove-btn:hover {
+        background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* Manual Entry */
+    .manual-entry {
+        display: none;
+    }
+    .manual-entry.active { display: block; }
 
     .player-input-row {
         display: grid;
@@ -582,10 +652,9 @@
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s;
+        margin-bottom: 15px;
     }
-    .add-row-btn:hover {
-        background: rgba(34, 197, 94, 0.25);
-    }
+    .add-row-btn:hover { background: rgba(34, 197, 94, 0.25); }
 
     .remove-row-btn {
         padding: 8px 12px;
@@ -615,7 +684,6 @@
         box-shadow: 0 15px 35px rgba(34, 197, 94, 0.3);
     }
 
-    /* Template download link */
     .template-link {
         display: inline-flex;
         align-items: center;
@@ -627,8 +695,47 @@
         margin-top: 15px;
         transition: all 0.3s;
     }
-    .template-link:hover {
-        color: var(--ice-blue);
+    .template-link:hover { color: var(--ice-blue); }
+
+    .cancel-btn {
+        padding: 12px 24px;
+        border-radius: 12px;
+        background: rgba(100, 116, 139, 0.15);
+        color: #64748b;
+        border: 1px solid rgba(100, 116, 139, 0.25);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .cancel-btn:hover {
+        background: rgba(100, 116, 139, 0.25);
+    }
+
+    /* Staging Area - Players ready to be saved */
+    .staging-area {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .staging-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .staging-header h3 {
+        color: var(--text-primary);
+        font-family: 'Space Grotesk';
+    }
+    .staging-count {
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: rgba(124, 77, 255, 0.15);
+        color: var(--cosmic-purple-light);
+        font-weight: 700;
+        font-size: 0.85rem;
     }
 </style>
 
@@ -654,7 +761,6 @@
                     {{ sess.player_count or 0 }} players
                     {% if sess.is_full %}| <span style="color: #22c55e;">FULL</span>{% endif %}
                 </div>
-                <!-- Visual team slot bar -->
                 <div class="slot-bar">
                     {% for i in range(sess.total_teams or 0) %}
                     <div class="slot-segment {% if i < (sess.team_count or 0) %}filled{% endif %}"></div>
@@ -704,17 +810,13 @@
                 <span class="session-badge badge-pending">○ Pending</span>
                 {% endif %}
                 
-                <!-- Assign Players Button -->
                 {% if selected_session.status != 'completed' %}
                 <button onclick="toggleAssignPanel()" class="action-btn btn-assign">🎯 Assign Players</button>
                 {% endif %}
-                
-                <!-- FIX: Enter Auction Room goes to actual auction room with session context -->
                 <a href="/admin/auction?session_id={{ selected_session.id }}" class="action-btn btn-enter">🔨 Enter Auction Room</a>
             </div>
         </div>
 
-        <!-- Stats -->
         {% if session_stats %}
         <div class="stats-grid">
             <div class="stat-box">
@@ -741,9 +843,8 @@
         {% endif %}
     </div>
 
-    <!-- ===== SMART CONDITION BANNER (Two Conditions) ===== -->
+    <!-- ===== SMART CONDITION BANNER ===== -->
     {% if selected_session.is_full is defined %}
-        <!-- CONDITION 1: Full Coverage (10/10 teams) -->
         {% if selected_session.is_full %}
         <div class="condition-banner full-coverage">
             <div class="cond-title">✅ Full Team Coverage ({{ selected_session.team_count }}/{{ selected_session.total_teams }})</div>
@@ -753,13 +854,11 @@
             </div>
         </div>
         {% else %}
-        <!-- CONDITION 2: Partial Coverage (e.g., 7/10 teams) -->
         <div class="condition-banner partial-coverage">
             <div class="cond-title">⚠️ Partial Team Coverage ({{ selected_session.team_count }}/{{ selected_session.total_teams }})</div>
             <div class="cond-text">
                 Only {{ selected_session.team_count }} of {{ selected_session.total_teams }} teams in this session. 
                 <strong>The same player set CAN be carried over</strong> to the next session for the remaining {{ selected_session.total_teams - selected_session.team_count }} teams.
-                <br><small>Next session will automatically inherit the same player set from this session.</small>
             </div>
         </div>
         {% endif %}
@@ -767,50 +866,74 @@
 
     <!-- ===== ASSIGN PLAYERS PANEL ===== -->
     <div id="assignPanel" class="assign-panel" style="display: {% if not session_players %}block{% else %}none{% endif %};">
-        <h2 style="font-family: 'Space Grotesk'; margin-bottom: 25px; text-align: center;">🎯 Assign Players to Session</h2>
+        <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px; text-align: center;">🎯 Assign Players to Session</h2>
         
-        <!-- Option Selection -->
-        <div class="assign-options">
-            <div class="assign-option-card selected" onclick="selectAssignOption('fresh')" id="opt-fresh">
-                <div class="icon">🆕</div>
-                <div class="title">Fresh Player Set</div>
-                <div class="desc">Create a completely new set of players for this session via Excel/CSV import or manual entry</div>
-            </div>
-            
-            <!-- Same Player Set option (only for partial coverage) -->
-            {% if previous_session_id and not selected_session.is_full %}
-            <div class="assign-option-card" onclick="selectAssignOption('same_set')" id="opt-same_set">
-                <div class="icon">🔄</div>
-                <div class="title">Same Player Set</div>
-                <div class="desc">Use the exact same player set from the previous session for continuity</div>
-            </div>
-            {% endif %}
+        <!-- Same Player Set Option (for partial coverage) -->
+        {% if previous_session_id and not selected_session.is_full %}
+        <div class="same-set-banner" onclick="carryOverSameSet()">
+            <div class="icon">🔄</div>
+            <div class="title">Use Same Player Set from Previous Session</div>
+            <div class="desc">Click to inherit the exact same player set from the previous session</div>
+        </div>
+        {% endif %}
+
+        <!-- Mode Toggle: Excel vs Manual -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('excel')" id="tab-excel">📊 Excel / CSV Import</button>
+            <button class="mode-tab" onclick="switchMode('manual')" id="tab-manual">✏️ Add Manually</button>
         </div>
 
-        <!-- Excel/CSV Import -->
-        <div id="importSection" class="import-section">
-            <div style="font-size: 3rem; margin-bottom: 15px;">📊</div>
-            <h3 style="color: var(--text-primary); margin-bottom: 10px;">Import from Excel/CSV</h3>
-            <p style="color: var(--text-dim); margin-bottom: 20px;">Upload a CSV file with player details</p>
-            
-            <form id="csvUploadForm" enctype="multipart/form-data">
-                <input type="file" id="csvFile" name="file" accept=".csv" class="file-input" onchange="handleFileUpload(this)">
-                <label for="csvFile" class="upload-btn">📁 Choose CSV File</label>
-            </form>
-            
+        <!-- ===== EXCEL/CSV MODE ===== -->
+        <div id="excelMode" class="excel-mode">
+            <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFile').click()">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+                <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
+                <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
+                <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">
+                <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
+                    📁 Choose File
+                </button>
+            </div>
+
             <a href="/admin/sessions/download-template" class="template-link" target="_blank">
                 📥 Download CSV Template
             </a>
+
+            <!-- CSV Preview & Confirm -->
+            <div id="csvPreview" class="csv-preview">
+                <div class="preview-header">
+                    <h3>📋 Preview Players from CSV</h3>
+                    <span id="fileNameBadge" class="file-name-badge">📄 filename.csv</span>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="preview-table" id="previewTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Player Name</th>
+                                <th>Category</th>
+                                <th>Overseas</th>
+                                <th>Base Price</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="confirmCSVUpload()" class="submit-btn" style="flex: 1; margin-top: 0;">
+                        ✓ Confirm & Save All to Session
+                    </button>
+                    <button onclick="clearCSV()" class="cancel-btn">Clear</button>
+                </div>
+            </div>
         </div>
 
-        <!-- OR Divider -->
-        <div style="text-align: center; margin: 25px 0; color: var(--text-dim); font-weight: 600;">
-            — OR —
-        </div>
-
-        <!-- Manual Entry -->
-        <div id="manualSection" class="manual-input-section active">
-            <h3 style="color: var(--text-primary); margin-bottom: 15px; text-align: center;">✏️ Manual Entry</h3>
+        <!-- ===== MANUAL MODE ===== -->
+        <div id="manualMode" class="manual-entry">
+            <h3 style="color: var(--text-primary); margin-bottom: 15px;">✏️ Add Players Manually</h3>
             
             <div id="manualPlayersList">
                 <div class="player-input-row" data-row="0">
@@ -835,6 +958,11 @@
             <button type="button" class="submit-btn" onclick="submitManualPlayers()">
                 ✓ Save Players to Session
             </button>
+        </div>
+
+        <!-- Cancel button -->
+        <div style="text-align: center; margin-top: 15px;">
+            <button onclick="toggleAssignPanel()" class="cancel-btn">Cancel</button>
         </div>
     </div>
 
@@ -868,11 +996,12 @@
                         <th>Status</th>
                         <th>Sold Price</th>
                         <th>Team</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for player in session_players %}
-                    <tr data-status="{{ player.status }}">
+                    <tr data-status="{{ player.status }}" data-player-id="{{ player.id }}">
                         <td>
                             <div class="player-name-cell">
                                 <div class="player-avatar-small">{{ player.player_name[:1].upper() if player.player_name else '?' }}</div>
@@ -912,6 +1041,13 @@
                             <span style="color: var(--text-dim);">-</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if player.status == 'available' %}
+                            <button onclick="deletePlayer({{ player.id }})" class="remove-btn" style="padding: 6px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); cursor: pointer; font-weight: 700; font-size: 0.8rem;">🗑 Delete</button>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.8rem;">Locked</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -938,6 +1074,10 @@
 </div>
 
 <script>
+// ===== GLOBAL STATE =====
+let csvData = []; // Stores parsed CSV rows
+let currentMode = 'excel';
+
 // ===== TABLE FILTERING =====
 function filterTable(status) {
     document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -972,27 +1112,165 @@ function toggleAssignPanel() {
     }
 }
 
-// ===== ASSIGN OPTION SELECTION =====
-let selectedAssignOption = 'fresh';
-
-function selectAssignOption(option) {
-    selectedAssignOption = option;
-    document.querySelectorAll('.assign-option-card').forEach(opt => opt.classList.remove('selected'));
-    document.getElementById('opt-' + option).classList.add('selected');
+// ===== MODE SWITCHING =====
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + mode).classList.add('active');
     
-    // If same_set selected, auto-submit to carry over
-    if (option === 'same_set') {
-        if (confirm('This will copy the exact same player set from the previous session. Continue?')) {
-            carryOverSameSet();
-        }
+    if (mode === 'excel') {
+        document.getElementById('excelMode').style.display = 'block';
+        document.getElementById('manualMode').classList.remove('active');
+    } else {
+        document.getElementById('excelMode').style.display = 'none';
+        document.getElementById('manualMode').classList.add('active');
     }
 }
 
-// ===== CARRY OVER SAME PLAYER SET =====
+// ===== SAME SET CARRY OVER =====
 function carryOverSameSet() {
+    if (!confirm('This will copy the exact same player set from the previous session. Continue?')) return;
+    
+    fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            source_type: 'same_set',
+            previous_session_id: {{ previous_session_id or 'null' }}
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to carry over player set');
+        }
+    });
+}
+
+// ===== CSV HANDLING =====
+function handleCSVSelect(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const text = e.target.result;
+        csvData = parseCSV(text);
+        
+        // Show preview
+        showCSVPreview(file.name, csvData);
+    };
+    
+    reader.readAsText(file);
+}
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const rows = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        if (cols.length >= 3 && cols[0]) {
+            rows.push({
+                player_name: cols[0],
+                category: cols[1] || 'batsman',
+                overseas: (cols[2] || 'false').toLowerCase() === 'true',
+                base_price: parseFloat(cols[3]) || 0.5
+            });
+        }
+    }
+    return rows;
+}
+
+function showCSVPreview(filename, data) {
+    const uploadArea = document.getElementById('csvUploadArea');
+    uploadArea.classList.add('has-file');
+    uploadArea.innerHTML = `
+        <div style="font-size: 2.5rem; margin-bottom: 10px;">✅</div>
+        <h3 style="color: #22c55e; margin-bottom: 5px;">File Selected</h3>
+        <p style="color: var(--text-dim);">${filename} — ${data.length} players found</p>
+        <button type="button" class="upload-btn" style="margin-top: 15px;" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
+            🔄 Change File
+        </button>
+    `;
+    
+    document.getElementById('fileNameBadge').textContent = '📄 ' + filename;
+    
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+    
+    data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.dataset.index = index;
+        tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${row.player_name}</td>
+            <td><span class="cat-badge badge-${row.category}">${row.category.replace('_', ' ').title()}</span></td>
+            <td>${row.overseas ? '🌍 Yes' : '❌ No'}</td>
+            <td>₹${row.base_price.toFixed(2)}Cr</td>
+            <td><button type="button" class="remove-btn" onclick="removeCSVRow(${index})">🗑 Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    document.getElementById('csvPreview').classList.add('active');
+}
+
+function removeCSVRow(index) {
+    csvData.splice(index, 1);
+    
+    // Re-render
+    const tbody = document.getElementById('previewTableBody');
+    tbody.innerHTML = '';
+    csvData.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.dataset.index = i;
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${row.player_name}</td>
+            <td><span class="cat-badge badge-${row.category}">${row.category.replace('_', ' ').title()}</span></td>
+            <td>${row.overseas ? '🌍 Yes' : '❌ No'}</td>
+            <td>₹${row.base_price.toFixed(2)}Cr</td>
+            <td><button type="button" class="remove-btn" onclick="removeCSVRow(${i})">🗑 Remove</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    if (csvData.length === 0) {
+        clearCSV();
+    }
+}
+
+function clearCSV() {
+    csvData = [];
+    document.getElementById('csvFile').value = '';
+    document.getElementById('csvPreview').classList.remove('active');
+    
+    const uploadArea = document.getElementById('csvUploadArea');
+    uploadArea.classList.remove('has-file');
+    uploadArea.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
+        <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
+        <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
+        <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
+            📁 Choose File
+        </button>
+    `;
+}
+
+function confirmCSVUpload() {
+    if (csvData.length === 0) {
+        alert('No players to upload. Please select a CSV file.');
+        return;
+    }
+    
     const payload = {
-        source_type: 'same_set',
-        previous_session_id: {{ previous_session_id or 'null' }}
+        source_type: 'fresh',
+        players: csvData
     };
     
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
@@ -1005,33 +1283,11 @@ function carryOverSameSet() {
         if (data.success) {
             location.reload();
         } else {
-            alert(data.error || 'Failed to carry over player set');
-        }
-    });
-}
-
-// ===== CSV FILE UPLOAD =====
-function handleFileUpload(input) {
-    if (!input.files || !input.files[0]) return;
-    
-    const formData = new FormData();
-    formData.append('file', input.files[0]);
-    
-    fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
-        method: 'POST',
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message || 'Players imported successfully!');
-            location.reload();
-        } else {
-            alert(data.error || 'Import failed');
+            alert(data.error || 'Failed to upload players');
         }
     })
     .catch(err => {
-        alert('Upload error: ' + err.message);
+        alert('Error: ' + err.message);
     });
 }
 
@@ -1059,29 +1315,24 @@ function addPlayerRow() {
         <button type="button" class="remove-row-btn" onclick="removePlayerRow(this)">✕</button>
     `;
     container.appendChild(newRow);
-    
-    // Show remove buttons if more than 1 row
     updateRemoveButtons();
 }
 
 function removePlayerRow(btn) {
-    const row = btn.closest('.player-input-row');
-    row.remove();
+    btn.closest('.player-input-row').remove();
     updateRemoveButtons();
 }
 
 function updateRemoveButtons() {
-    const rows = document.querySelectorAll('.player-input-row');
+    const rows = document.querySelectorAll('#manualPlayersList .player-input-row');
     rows.forEach((row, index) => {
         const btn = row.querySelector('.remove-row-btn');
-        if (btn) {
-            btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
-        }
+        if (btn) btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
     });
 }
 
 function submitManualPlayers() {
-    const rows = document.querySelectorAll('.player-input-row');
+    const rows = document.querySelectorAll('#manualPlayersList .player-input-row');
     const players = [];
     
     rows.forEach(row => {
@@ -1105,7 +1356,6 @@ function submitManualPlayers() {
         return;
     }
     
-    // Send as fresh selection
     const payload = {
         source_type: 'fresh',
         players: players
@@ -1128,5 +1378,39 @@ function submitManualPlayers() {
         alert('Error: ' + err.message);
     });
 }
+
+// ===== DELETE PLAYER FROM SESSION =====
+function deletePlayer(playerId) {
+    if (!confirm('Are you sure you want to remove this player from the session?')) return;
+    
+    fetch('/admin/players/delete/' + playerId, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Remove row from table
+            const row = document.querySelector(`tr[data-player-id="${playerId}"]`);
+            if (row) row.remove();
+            
+            // If no more rows, show empty state
+            const remaining = document.querySelectorAll('.players-table tbody tr');
+            if (remaining.length === 0) {
+                location.reload();
+            }
+        } else {
+            alert(data.error || 'Failed to delete player');
+        }
+    })
+    .catch(err => {
+        alert('Error: ' + err.message);
+    });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateRemoveButtons();
+});
 </script>
 {% endblock %}
