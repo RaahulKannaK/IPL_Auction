@@ -490,6 +490,15 @@
         .session-stats { grid-template-columns: 1fr; }
         .time-grid { grid-template-columns: 1fr; }
     }
+    .btn-delete {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .btn-delete:hover {
+        background: rgba(239, 68, 68, 0.3);
+        transform: translateY(-1px);
+    }
 </style>
 
 <div class="sessions-container">
@@ -515,7 +524,6 @@
         </div>
         <div style="display: flex; gap: 10px;">
             <a href="/admin/teams?auction={{ auction.id if auction else (request.args.get('auction') or session.get('active_auction_id') or session.get('auction_id') or '') }}" class="nav-btn">👥 Teams</a>
-            <!-- FIX: Players button now has nav-btn class and passes auction param -->
             <a href="/admin/players?auction={{ auction.id if auction else (request.args.get('auction') or session.get('active_auction_id') or session.get('auction_id') or '') }}" class="nav-btn">🏏 Players</a>
         </div>
     </div>
@@ -566,7 +574,6 @@
             
             <h2>➕ Create New Session</h2>
             
-            <!-- No Session Warning Banner -->
             {% if not sessions %}
             <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px; color: #fcd34d; text-align: center;">
                 <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
@@ -575,7 +582,8 @@
             </div>
             {% endif %}
             
-            <form method="POST" action="/admin/auction/sessions" id="createSessionForm">
+            <!-- FIX: Form tag was self-closing, now properly wraps content -->
+            <form method="POST" action="/admin/sessions/create" id="createSessionForm">
                 <input type="hidden" name="auction_id" value="{{ auction.id if auction else (request.args.get('auction') or session.get('active_auction_id') or session.get('auction_id') or 1) }}">
                 <input type="hidden" name="slot_type" value="custom">
                 
@@ -584,7 +592,6 @@
                     <input type="text" name="session_name" placeholder="e.g., Saturday Morning" required>
                 </div>
 
-                <!-- Custom Time Inputs -->
                 <label style="display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Set Session Timing</label>
                 <div class="time-grid">
                     <div class="time-input-wrapper">
@@ -599,7 +606,6 @@
                     </div>
                 </div>
 
-                <!-- Team Selection -->
                 <div class="input-group">
                     <label>Select Teams ({{ teams|length }} available)</label>
                     <div class="team-selector" id="teamSelector">
@@ -625,7 +631,6 @@
                     </div>
                 </div>
 
-                <!-- Dynamic Count -->
                 <div class="count-display">
                     <span class="label">Team Selection</span>
                     <span class="value">
@@ -644,7 +649,7 @@
         <div>
             <h2>📋 Sessions</h2>
             
-                        {% if sessions %}
+            {% if sessions %}
                 {% for sess in sessions %}
                 <div class="session-card">
                     <div class="session-header">
@@ -706,13 +711,15 @@
                         {% endfor %}
                     </div>
 
+                    <!-- FIX: Added Delete button for all sessions, Close only for active -->
                     <div class="session-actions">
                         {% if sess.status == 'active' %}
-                        <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Close</button>
-                        <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">🔨 Enter Auction</a>
-                        {% else %}
-                        <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">📊 View</a>
+                        <button class="btn-small btn-close" onclick="closeSession({{ sess.id }})">🔒 Complete</button>
                         {% endif %}
+                        <button class="btn-small btn-delete" onclick="deleteSession({{ sess.id }})">🗑 Delete</button>
+                        <a href="/admin/sessions/{{ sess.id }}/enter" class="btn-small btn-enter">
+                            {% if sess.status == 'active' %}🔨 Enter Auction{% else %}📊 View{% endif %}
+                        </a>
                     </div>
                 </div>
                 {% endfor %}
@@ -776,12 +783,16 @@ function removeTeam(sessionId, teamId) {
 }
 
 function closeSession(sessionId) {
-    if (!confirm('Close this session? Teams will be available for next session.')) return;
+    if (!confirm('Complete this session? Teams will be available for next session.')) return;
     
-    fetch('/admin/sessions/' + sessionId + '/close', {  // <-- FIX: /admin/sessions/ not /admin/auction/session/
-        method: 'POST'
+    fetch('/admin/sessions/' + sessionId + '/close', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error('Server error: ' + r.status);
+        return r.json();
+    })
     .then(data => {
         if (data.success) location.reload();
         else alert(data.error || 'Failed to close session');
@@ -789,6 +800,26 @@ function closeSession(sessionId) {
     .catch(err => alert('Error: ' + err.message));
 }
 
+function deleteSession(sessionId) {
+    if (!confirm('⚠️ PERMANENTLY delete this session? All players and bids in this session will be lost!')) return;
+    
+    fetch('/admin/sessions/' + sessionId + '/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('Server error: ' + r.status);
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to delete session');
+        }
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateTeamCount();

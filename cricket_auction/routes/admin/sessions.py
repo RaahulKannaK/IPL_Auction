@@ -994,3 +994,36 @@ def add_session_player(session_id):
             'status': new_player['status']
         }
     })
+
+@bp.route('/<int:session_id>/delete', methods=['POST'])
+def delete_session(session_id):
+    """Permanently delete a session and all its data"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Verify session exists
+        cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
+        sess = cursor.fetchone()
+        if not sess:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Delete all session players first (foreign key constraint)
+        cursor.execute("DELETE FROM session_players WHERE session_id = %s", (session_id,))
+        
+        # Delete all bids for this session
+        cursor.execute("DELETE FROM bids WHERE session_id = %s", (session_id,))
+        
+        # Delete the session itself
+        cursor.execute("DELETE FROM auction_sessions WHERE id = %s", (session_id,))
+        
+        db.commit()
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'message': 'Session deleted permanently'})
