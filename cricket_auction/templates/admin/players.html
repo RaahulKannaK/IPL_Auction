@@ -82,22 +82,22 @@
     .status-dot-paused { background: #f59e0b; }
     .status-dot-pending { background: #3b82f6; }
 
-    /* Team slot indicator in tab */
-    .team-slots {
+    /* Team slot bar visualization */
+    .slot-bar {
         display: flex;
-        align-items: center;
-        gap: 4px;
+        gap: 3px;
         margin-top: 6px;
     }
-    .slot-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: rgba(100, 120, 200, 0.3);
+    .slot-segment {
+        height: 4px;
+        flex: 1;
+        border-radius: 2px;
+        background: rgba(100, 120, 200, 0.2);
+        transition: all 0.3s;
     }
-    .slot-dot.filled {
-        background: var(--cosmic-purple-light);
-        box-shadow: 0 0 4px var(--cosmic-purple-light);
+    .slot-segment.filled {
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue));
+        box-shadow: 0 0 6px rgba(124, 77, 255, 0.3);
     }
 
     /* ===== SESSION INFO HEADER ===== */
@@ -433,14 +433,6 @@
         background: rgba(124, 77, 255, 0.08);
     }
 
-    /* Quick Actions Bar */
-    .quick-actions {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }
-
     /* Join Session Button in Tab */
     .join-btn {
         margin-left: auto;
@@ -461,22 +453,81 @@
         box-shadow: 0 4px 12px rgba(124, 77, 255, 0.3);
     }
 
-    /* Team slot bar visualization */
-    .slot-bar {
-        display: flex;
-        gap: 3px;
-        margin-top: 6px;
+    /* ===== ASSIGN PLAYERS PANEL ===== */
+    .assign-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
     }
-    .slot-segment {
-        height: 4px;
-        flex: 1;
-        border-radius: 2px;
-        background: rgba(100, 120, 200, 0.2);
+    .assign-options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 768px) { .assign-options { grid-template-columns: 1fr; } }
+    
+    .assign-option {
+        padding: 20px;
+        border-radius: 16px;
+        border: 2px solid rgba(100, 120, 200, 0.1);
+        background: rgba(0, 0, 0, 0.2);
+        cursor: pointer;
         transition: all 0.3s;
+        text-align: center;
     }
-    .slot-segment.filled {
-        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue));
-        box-shadow: 0 0 6px rgba(124, 77, 255, 0.3);
+    .assign-option:hover {
+        border-color: rgba(124, 77, 255, 0.3);
+        background: rgba(124, 77, 255, 0.05);
+    }
+    .assign-option.selected {
+        border-color: var(--cosmic-purple);
+        background: rgba(124, 77, 255, 0.1);
+    }
+    .assign-option .icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    .assign-option .title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 5px;
+    }
+    .assign-option .desc {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+    }
+
+    .player-pool {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 14px;
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.15);
+    }
+    .player-pool-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 6px;
+    }
+    .player-pool-row:hover {
+        background: rgba(124, 77, 255, 0.05);
+    }
+    .player-pool-row.selected {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .player-pool-row input[type="checkbox"] {
+        accent-color: #22c55e;
     }
 </style>
 
@@ -552,14 +603,17 @@
                 <span class="session-badge badge-pending">○ Pending</span>
                 {% endif %}
                 
+                <!-- FIX: Assign Players button toggles assignment panel -->
                 {% if selected_session.status != 'completed' %}
-                <a href="/admin/sessions/{{ selected_session.id }}/assign-players" class="action-btn btn-assign">🎯 Assign Players</a>
+                <button onclick="toggleAssignPanel()" class="action-btn btn-assign">🎯 Assign Players</button>
                 {% endif %}
-                <a href="/admin/sessions/{{ selected_session.id }}/enter" class="action-btn btn-enter">🔨 Enter Auction Room</a>
+                
+                <!-- FIX: Enter Auction Room goes to /admin/auction (your existing auction page) -->
+                <a href="/admin/auction" class="action-btn btn-enter">🔨 Enter Auction Room</a>
             </div>
         </div>
 
-        <!-- Stats - Using session_stats from Python (not selected_session.stats) -->
+        <!-- Stats -->
         {% if session_stats %}
         <div class="stats-grid">
             <div class="stat-box">
@@ -586,29 +640,91 @@
         {% endif %}
     </div>
 
-    <!-- ===== SMART CONDITION BANNER ===== -->
+    <!-- ===== SMART CONDITION BANNER (Two Conditions) ===== -->
     {% if session_stats and session_stats.total > 0 %}
+        <!-- CONDITION 1: Full Coverage (10/10 teams) -->
         {% if selected_session.is_full %}
         <div class="condition-banner full-coverage">
             <div class="cond-title">✅ Full Team Coverage ({{ selected_session.team_count }}/{{ selected_session.total_teams }})</div>
             <div class="cond-text">
-                All teams are in this session. <strong>Same player set will NOT carry over</strong> to the next session automatically. 
-                Next session must have its own fresh player set assigned.
+                <strong>All teams are in this session.</strong> The same player set will <strong>NOT carry over</strong> to the next session automatically. 
+                Next session must have its own <strong>fresh player set</strong> assigned.
             </div>
         </div>
         {% else %}
+        <!-- CONDITION 2: Partial Coverage (e.g., 7/10 teams) -->
         <div class="condition-banner partial-coverage">
             <div class="cond-title">⚠️ Partial Team Coverage ({{ selected_session.team_count }}/{{ selected_session.total_teams }})</div>
             <div class="cond-text">
                 Only {{ selected_session.team_count }} of {{ selected_session.total_teams }} teams in this session. 
-                <strong>Same player set CAN be carried over</strong> to the next session for the remaining {{ selected_session.total_teams - selected_session.team_count }} teams.
+                <strong>The same player set CAN be carried over</strong> to the next session for the remaining {{ selected_session.total_teams - selected_session.team_count }} teams.
+                <br><small>Next session will automatically inherit unsold players from this session.</small>
             </div>
         </div>
         {% endif %}
     {% endif %}
 
+    <!-- ===== ASSIGN PLAYERS PANEL (Hidden by default, shown when no players or button clicked) ===== -->
+    <div id="assignPanel" class="assign-panel" style="display: {% if not session_players %}block{% else %}none{% endif %};">
+        <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px;">🎯 Assign Players to Session</h2>
+        
+        <!-- Option 1: Fresh Player Set -->
+        <div class="assign-options">
+            <div class="assign-option selected" onclick="selectAssignOption('fresh')" id="opt-fresh">
+                <div class="icon">🆕</div>
+                <div class="title">Fresh Player Set</div>
+                <div class="desc">Start with a completely new set of players for this session</div>
+            </div>
+            
+            <!-- Option 2: Carry Over (only shown for partial coverage) -->
+            {% if not selected_session.is_full %}
+            <div class="assign-option" onclick="selectAssignOption('carryover')" id="opt-carryover">
+                <div class="icon">🔄</div>
+                <div class="title">Carry Over Unsold</div>
+                <div class="desc">Inherit unsold players from previous session for remaining teams</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Player Selection Pool -->
+        <div class="player-pool" id="playerPool">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="color: var(--text-dim); font-size: 0.9rem;">Select players to assign</span>
+                <button onclick="selectAllPlayers()" class="action-btn btn-assign" style="padding: 6px 14px; font-size: 0.8rem;">Select All</button>
+            </div>
+            
+            {% if master_players %}
+                {% for player in master_players %}
+                <div class="player-pool-row" data-player-id="{{ player.id }}" onclick="togglePlayerSelect(this)">
+                    <input type="checkbox" name="player_ids" value="{{ player.id }}" style="display: none;">
+                    <div class="player-avatar-small" style="width: 32px; height: 32px; font-size: 0.8rem;">{{ player.player_name[:1].upper() if player.player_name else '?' }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ player.player_name }}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">{{ player.category }} | Base: ₹{{ "%.2f"|format(player.base_price or 0.5) }}Cr</div>
+                    </div>
+                    {% if player.overseas %}<span class="overseas-icon">🌍</span>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="padding: 30px;">
+                    <p>No players in master pool</p>
+                    <p style="font-size: 0.8rem;">Add players in the main Players section first</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button onclick="submitPlayerAssignment()" class="action-btn btn-enter" style="flex: 1; justify-content: center;">
+                ✓ Confirm Assignment
+            </button>
+            <button onclick="toggleAssignPanel()" class="action-btn" style="background: rgba(100,116,139,0.15); color: #64748b; border: 1px solid rgba(100,116,139,0.25);">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <!-- ===== PLAYERS TABLE ===== -->
-    <div class="players-section">
+    <div class="players-section" id="playersTableSection" style="display: {% if session_players %}block{% else %}none{% endif %};">
         <div class="section-header">
             <div class="section-title">📋 Session Players</div>
             {% if session_stats %}
@@ -690,10 +806,7 @@
         <div class="empty-state">
             <div class="icon">🏏</div>
             <h3>No Players Assigned</h3>
-            <p>Assign players to this session to start bidding</p>
-            <a href="/admin/sessions/{{ selected_session.id }}/assign-players" class="action-btn btn-assign" style="margin-top: 15px;">
-                🎯 Assign Players Now
-            </a>
+            <p>Click "Assign Players" to add players to this session</p>
         </div>
         {% endif %}
     </div>
@@ -710,8 +823,8 @@
 </div>
 
 <script>
+// ===== TABLE FILTERING =====
 function filterTable(status) {
-    // Update active chip
     document.querySelectorAll('.filter-chip').forEach(chip => {
         chip.classList.remove('active');
         if (chip.textContent.toLowerCase().includes(status) || (status === 'all' && chip.textContent === 'All')) {
@@ -719,13 +832,96 @@ function filterTable(status) {
         }
     });
     
-    // Filter rows
     document.querySelectorAll('.players-table tbody tr').forEach(row => {
         if (status === 'all' || row.dataset.status === status) {
             row.style.display = '';
         } else {
             row.style.display = 'none';
         }
+    });
+}
+
+// ===== ASSIGN PANEL TOGGLE =====
+function toggleAssignPanel() {
+    const panel = document.getElementById('assignPanel');
+    const table = document.getElementById('playersTableSection');
+    
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        if (table) table.style.display = 'none';
+    } else {
+        panel.style.display = 'none';
+        if (table && {{ 'true' if session_players else 'false' }}) {
+            table.style.display = 'block';
+        }
+    }
+}
+
+// ===== ASSIGN OPTION SELECTION =====
+let selectedAssignOption = 'fresh';
+
+function selectAssignOption(option) {
+    selectedAssignOption = option;
+    document.querySelectorAll('.assign-option').forEach(opt => opt.classList.remove('selected'));
+    document.getElementById('opt-' + option).classList.add('selected');
+}
+
+// ===== PLAYER SELECTION =====
+function togglePlayerSelect(row) {
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    checkbox.checked = !checkbox.checked;
+    if (checkbox.checked) {
+        row.classList.add('selected');
+    } else {
+        row.classList.remove('selected');
+    }
+}
+
+function selectAllPlayers() {
+    const allSelected = document.querySelectorAll('.player-pool-row.selected').length === document.querySelectorAll('.player-pool-row').length;
+    document.querySelectorAll('.player-pool-row').forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        cb.checked = !allSelected;
+        if (!allSelected) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+    });
+}
+
+// ===== SUBMIT ASSIGNMENT =====
+function submitPlayerAssignment() {
+    const selectedPlayers = [];
+    document.querySelectorAll('.player-pool-row.selected input[name="player_ids"]').forEach(cb => {
+        selectedPlayers.push(cb.value);
+    });
+    
+    if (selectedPlayers.length === 0) {
+        alert('Please select at least one player');
+        return;
+    }
+    
+    const payload = {
+        source_type: selectedAssignOption,
+        player_ids: selectedPlayers
+    };
+    
+    fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to assign players');
+        }
+    })
+    .catch(err => {
+        alert('Error: ' + err.message);
     });
 }
 </script>

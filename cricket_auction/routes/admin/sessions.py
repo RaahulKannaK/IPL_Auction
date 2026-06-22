@@ -524,7 +524,7 @@ def enter_session_room(session_id):
         cursor.close()
         db.close()
     
-    return render_template('admin/sessions.html',
+    return render_template('admin/auction.html',
         session=sess,
         teams=teams,
         players=players,
