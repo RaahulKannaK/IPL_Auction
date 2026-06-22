@@ -934,18 +934,7 @@
 
         <!-- ===== EXCEL/CSV MODE ===== -->
         <div id="excelMode" class="excel-mode">
-            <!-- Upload Area (initial state) -->
-            <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFile').click()">
-                <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
-                <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
-                <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
-                <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">
-                <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
-                    📁 Choose File
-                </button>
-            </div>
-
-            <!-- File Info Bar (shown after upload) -->
+            <!-- File Info Bar (shown after upload, hidden initially) -->
             <div id="fileInfoBar" style="display: none; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px;">
                     <span style="font-size: 1.5rem;">📄</span>
@@ -957,12 +946,27 @@
                 </div>
             </div>
 
+            <!-- Upload Area (always visible for adding more) -->
+            <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFile').click()">
+                <div style="font-size: 2rem; margin-bottom: 10px;">📁</div>
+                <h3 style="color: var(--text-primary); margin-bottom: 8px;">Add More Players from CSV</h3>
+                <p style="color: var(--text-dim); margin-bottom: 15px; font-size: 0.9rem;">Click to select another CSV file to append players</p>
+                <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">
+                <button type="button" class="upload-btn" style="padding: 10px 24px; font-size: 0.9rem;" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
+                    📁 Choose File
+                </button>
+            </div>
+
             <a href="/admin/sessions/download-template" class="template-link" target="_blank">
                 📥 Download CSV Template
             </a>
 
-            <!-- CSV Preview Table (shown after upload) -->
+            <!-- CSV Preview Table (shows all accumulated players) -->
             <div id="csvPreviewSection" style="display: none; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: var(--text-primary); font-family: 'Space Grotesk'; font-size: 1.1rem;">📋 All Players Ready to Upload</h3>
+                    <span id="totalPlayerCount" style="padding: 6px 14px; border-radius: 20px; background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); font-weight: 700; font-size: 0.85rem;">0 players</span>
+                </div>
                 <div style="overflow-x: auto;">
                     <table class="preview-table" id="previewTable">
                         <thead>
@@ -982,10 +986,11 @@
                 </div>
                 <!-- Confirm button -->
                 <button onclick="confirmCSVUpload()" class="submit-btn" style="margin-top: 15px;">
-                    ✓ Confirm & Upload to DB
+                    ✓ Confirm & Upload All to DB
                 </button>
             </div>
         </div>
+
         <!-- ===== MANUAL MODE ===== -->
         <div id="manualMode" class="manual-entry">
             <h3 style="color: var(--text-primary); margin-bottom: 15px;">✏️ Add Players Manually</h3>
@@ -1199,8 +1204,10 @@ function handleCSVSelect(input) {
     const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-        csvData = parseCSV(e.target.result);
-        showCSVPreview(file.name, csvData);
+        const newData = parseCSV(e.target.result);
+        // Append to existing data instead of replacing
+        csvData = csvData.concat(newData);
+        showCSVPreview(file.name, newData, csvData.length);
     };
     reader.readAsText(file);
 }
@@ -1229,43 +1236,14 @@ function toTitleCase(str) {
     });
 }
 
-function showCSVPreview(filename, data) {
-    // Hide upload area
-    document.getElementById('csvUploadArea').style.display = 'none';
-    
+function showCSVPreview(filename, newData, totalCount) {
     // Show file info bar
     var fileInfoBar = document.getElementById('fileInfoBar');
     fileInfoBar.style.display = 'block';
     document.getElementById('fileInfoName').textContent = filename;
-    document.getElementById('fileInfoCount').textContent = data.length + ' players found';
+    document.getElementById('fileInfoCount').textContent = newData.length + ' players added (Total: ' + totalCount + ')';
     
-    // Build preview table
-    var html = '';
-    for (var i = 0; i < data.length; i++) {
-        var row = data[i];
-        var catDisplay = toTitleCase(row.category.replace(/_/g, ' '));
-        html += '<tr data-index="' + i + '">' +
-            '<td>' + (i + 1) + '</td>' +
-            '<td>' + row.player_name + '</td>' +
-            '<td><span class="cat-badge badge-' + row.category + '">' + catDisplay + '</span></td>' +
-            '<td>' + (row.overseas ? '🌍 Yes' : '❌ No') + '</td>' +
-            '<td>₹' + row.base_price.toFixed(2) + 'Cr</td>' +
-            '<td><button type="button" class="remove-btn" onclick="removeCSVRow(' + i + ')">🗑 Remove</button></td>' +
-            '</tr>';
-    }
-    document.getElementById('previewTableBody').innerHTML = html;
-    
-    // Show preview section
-    document.getElementById('csvPreviewSection').style.display = 'block';
-}
-
-function removeCSVRow(index) {
-    csvData.splice(index, 1);
-    if (csvData.length === 0) {
-        clearCSV();
-        return;
-    }
-    // Re-render
+    // Build preview table with ALL accumulated players
     var html = '';
     for (var i = 0; i < csvData.length; i++) {
         var row = csvData[i];
@@ -1280,7 +1258,37 @@ function removeCSVRow(index) {
             '</tr>';
     }
     document.getElementById('previewTableBody').innerHTML = html;
-    document.getElementById('fileInfoCount').textContent = csvData.length + ' players found';
+    
+    // Update total count badge
+    document.getElementById('totalPlayerCount').textContent = csvData.length + ' players';
+    
+    // Show preview section
+    document.getElementById('csvPreviewSection').style.display = 'block';
+}
+
+function removeCSVRow(index) {
+    csvData.splice(index, 1);
+    if (csvData.length === 0) {
+        clearCSV();
+        return;
+    }
+    // Re-render all
+    var html = '';
+    for (var i = 0; i < csvData.length; i++) {
+        var row = csvData[i];
+        var catDisplay = toTitleCase(row.category.replace(/_/g, ' '));
+        html += '<tr data-index="' + i + '">' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + row.player_name + '</td>' +
+            '<td><span class="cat-badge badge-' + row.category + '">' + catDisplay + '</span></td>' +
+            '<td>' + (row.overseas ? '🌍 Yes' : '❌ No') + '</td>' +
+            '<td>₹' + row.base_price.toFixed(2) + 'Cr</td>' +
+            '<td><button type="button" class="remove-btn" onclick="removeCSVRow(' + i + ')">🗑 Remove</button></td>' +
+            '</tr>';
+    }
+    document.getElementById('previewTableBody').innerHTML = html;
+    document.getElementById('totalPlayerCount').textContent = csvData.length + ' players';
+    document.getElementById('fileInfoCount').textContent = 'Total: ' + csvData.length + ' players';
 }
 
 function clearCSV() {
@@ -1291,9 +1299,6 @@ function clearCSV() {
     // Hide file info and preview
     document.getElementById('fileInfoBar').style.display = 'none';
     document.getElementById('csvPreviewSection').style.display = 'none';
-    
-    // Show upload area again
-    document.getElementById('csvUploadArea').style.display = 'block';
 }
 
 function confirmCSVUpload() {
