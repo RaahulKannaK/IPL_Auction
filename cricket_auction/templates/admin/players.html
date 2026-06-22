@@ -1132,7 +1132,6 @@
 let csvData = [];
 let currentMode = 'excel';
 
-// ===== TABLE FILTERING =====
 function filterTable(status) {
     document.querySelectorAll('.filter-chip').forEach(chip => {
         chip.classList.remove('active');
@@ -1140,21 +1139,14 @@ function filterTable(status) {
             chip.classList.add('active');
         }
     });
-    
     document.querySelectorAll('.players-table tbody tr').forEach(row => {
-        if (status === 'all' || row.dataset.status === status) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
     });
 }
 
-// ===== ASSIGN PANEL TOGGLE =====
 function toggleAssignPanel() {
     const panel = document.getElementById('assignPanel');
     const table = document.getElementById('playersTableSection');
-    
     if (panel.style.display === 'none') {
         panel.style.display = 'block';
         if (table) table.style.display = 'none';
@@ -1166,12 +1158,10 @@ function toggleAssignPanel() {
     }
 }
 
-// ===== MODE SWITCHING =====
 function switchMode(mode) {
     currentMode = mode;
     document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + mode).classList.add('active');
-    
     if (mode === 'excel') {
         document.getElementById('excelMode').style.display = 'block';
         document.getElementById('manualMode').classList.remove('active');
@@ -1181,10 +1171,8 @@ function switchMode(mode) {
     }
 }
 
-// ===== SAME SET CARRY OVER =====
 function carryOverSameSet() {
     if (!confirm('This will copy the exact same player set from the previous session. Continue?')) return;
-    
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1195,34 +1183,26 @@ function carryOverSameSet() {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Failed to carry over player set');
-        }
+        if (data.success) location.reload();
+        else alert(data.error || 'Failed to carry over player set');
     });
 }
 
-// ===== CSV HANDLING =====
+// ===== CSV =====
 function handleCSVSelect(input) {
     if (!input.files || !input.files[0]) return;
-    
     const file = input.files[0];
     const reader = new FileReader();
-    
     reader.onload = function(e) {
-        const text = e.target.result;
-        csvData = parseCSV(text);
+        csvData = parseCSV(e.target.result);
         showCSVPreview(file.name, csvData);
     };
-    
     reader.readAsText(file);
 }
 
 function parseCSV(text) {
     const lines = text.trim().split('\n');
     const rows = [];
-    
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split(',').map(c => c.trim());
         if (cols.length >= 3 && cols[0]) {
@@ -1238,80 +1218,79 @@ function parseCSV(text) {
 }
 
 function showCSVPreview(filename, data) {
+    // Update upload area
     const uploadArea = document.getElementById('csvUploadArea');
     uploadArea.classList.add('has-file');
-    uploadArea.innerHTML = `
-        <div style="font-size: 2.5rem; margin-bottom: 10px;">✅</div>
-        <h3 style="color: #22c55e; margin-bottom: 5px;">File Selected</h3>
-        <p style="color: var(--text-dim);">${filename} — ${data.length} players found</p>
-    `;
+    uploadArea.innerHTML = '<div style="font-size:2.5rem;margin-bottom:10px;">✅</div>' +
+        '<h3 style="color:#22c55e;margin-bottom:5px;">File Selected</h3>' +
+        '<p style="color:var(--text-dim);">' + filename + ' — ' + data.length + ' players found</p>';
     
+    // Update file badge
     document.getElementById('fileNameBadge').textContent = '📄 ' + filename;
     
-    const tbody = document.getElementById('previewTableBody');
-    tbody.innerHTML = '';
-    
-    data.forEach((row, index) => {
-        const tr = document.createElement('tr');
-        tr.dataset.index = index;
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${row.player_name}</td>
-            <td><span class="cat-badge badge-${row.category}">${row.category.replace('_', ' ').title()}</span></td>
-            <td>${row.overseas ? '🌍 Yes' : '❌ No'}</td>
-            <td>₹${row.base_price.toFixed(2)}Cr</td>
-            <td><button type="button" class="remove-btn" onclick="removeCSVRow(${index})">🗑 Remove</button></td>
-        `;
-        tbody.appendChild(tr);
+    // Build preview table
+    let html = '';
+    data.forEach((row, i) => {
+        html += '<tr data-index="' + i + '">' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + row.player_name + '</td>' +
+            '<td><span class="cat-badge badge-' + row.category + '">' + row.category.replace('_', ' ').title() + '</span></td>' +
+            '<td>' + (row.overseas ? '🌍 Yes' : '❌ No') + '</td>' +
+            '<td>₹' + row.base_price.toFixed(2) + 'Cr</td>' +
+            '<td><button type="button" class="remove-btn" onclick="removeCSVRow(' + i + ')">🗑 Remove</button></td>' +
+            '</tr>';
     });
+    document.getElementById('previewTableBody').innerHTML = html;
     
-    // Show preview section using style.display (reliable)
-    document.getElementById('csvPreviewSection').style.display = 'block';
+    // SHOW PREVIEW SECTION - this is the critical line
+    var previewSection = document.getElementById('csvPreviewSection');
+    if (previewSection) {
+        previewSection.style.display = 'block';
+        console.log('Preview section shown');
+    } else {
+        console.error('csvPreviewSection not found!');
+        alert('Error: Preview section not found in HTML');
+    }
 }
 
 function removeCSVRow(index) {
     csvData.splice(index, 1);
-    
-    const tbody = document.getElementById('previewTableBody');
-    tbody.innerHTML = '';
-    csvData.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        tr.dataset.index = i;
-        tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${row.player_name}</td>
-            <td><span class="cat-badge badge-${row.category}">${row.category.replace('_', ' ').title()}</span></td>
-            <td>${row.overseas ? '🌍 Yes' : '❌ No'}</td>
-            <td>₹${row.base_price.toFixed(2)}Cr</td>
-            <td><button type="button" class="remove-btn" onclick="removeCSVRow(${i})">🗑 Remove</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-    
     if (csvData.length === 0) {
         clearCSV();
+        return;
     }
+    // Re-render
+    let html = '';
+    csvData.forEach((row, i) => {
+        html += '<tr data-index="' + i + '">' +
+            '<td>' + (i + 1) + '</td>' +
+            '<td>' + row.player_name + '</td>' +
+            '<td><span class="cat-badge badge-' + row.category + '">' + row.category.replace('_', ' ').title() + '</span></td>' +
+            '<td>' + (row.overseas ? '🌍 Yes' : '❌ No') + '</td>' +
+            '<td>₹' + row.base_price.toFixed(2) + 'Cr</td>' +
+            '<td><button type="button" class="remove-btn" onclick="removeCSVRow(' + i + ')">🗑 Remove</button></td>' +
+            '</tr>';
+    });
+    document.getElementById('previewTableBody').innerHTML = html;
 }
 
 function clearCSV() {
     csvData = [];
-    document.getElementById('csvFile').value = '';
+    var fileInput = document.getElementById('csvFile');
+    if (fileInput) fileInput.value = '';
     
-    // Hide preview section
-    document.getElementById('csvPreviewSection').style.display = 'none';
+    var previewSection = document.getElementById('csvPreviewSection');
+    if (previewSection) previewSection.style.display = 'none';
     
-    // Reset upload area
-    const uploadArea = document.getElementById('csvUploadArea');
-    uploadArea.classList.remove('has-file');
-    uploadArea.innerHTML = `
-        <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
-        <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
-        <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
-        <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">
-        <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
-            📁 Choose File
-        </button>
-    `;
+    var uploadArea = document.getElementById('csvUploadArea');
+    if (uploadArea) {
+        uploadArea.classList.remove('has-file');
+        uploadArea.innerHTML = '<div style="font-size:3rem;margin-bottom:15px;">📁</div>' +
+            '<h3 style="color:var(--text-primary);margin-bottom:10px;">Upload CSV File</h3>' +
+            '<p style="color:var(--text-dim);margin-bottom:20px;">Click to select or drag & drop your CSV file</p>' +
+            '<input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">' +
+            '<button type="button" class="upload-btn" onclick="event.stopPropagation();document.getElementById(\'csvFile\').click()">📁 Choose File</button>';
+    }
 }
 
 function confirmCSVUpload() {
@@ -1319,33 +1298,22 @@ function confirmCSVUpload() {
         alert('No players to upload. Please select a CSV file.');
         return;
     }
-    
-    if (!confirm(`Upload ${csvData.length} players to the session?`)) return;
-    
-    const payload = {
-        source_type: 'fresh',
-        players: csvData
-    };
+    if (!confirm('Upload ' + csvData.length + ' players to the session?')) return;
     
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
+        body: JSON.stringify({source_type: 'fresh', players: csvData})
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Failed to upload players');
-        }
+        if (data.success) location.reload();
+        else alert(data.error || 'Failed to upload players');
     })
-    .catch(err => {
-        alert('Error: ' + err.message);
-    });
+    .catch(err => alert('Error: ' + err.message));
 }
 
-// ===== MANUAL PLAYER ENTRY =====
+// ===== MANUAL ENTRY =====
 let playerRowCount = 1;
 
 function addPlayerRow() {
@@ -1353,21 +1321,11 @@ function addPlayerRow() {
     const newRow = document.createElement('div');
     newRow.className = 'player-input-row';
     newRow.dataset.row = playerRowCount++;
-    newRow.innerHTML = `
-        <input type="text" name="player_name" placeholder="Player Name" required>
-        <select name="category">
-            <option value="batsman">Batsman</option>
-            <option value="bowler">Bowler</option>
-            <option value="all_rounder">All Rounder</option>
-            <option value="wicket_keeper">Wicket Keeper</option>
-        </select>
-        <select name="overseas">
-            <option value="false">Domestic</option>
-            <option value="true">Overseas</option>
-        </select>
-        <input type="number" name="base_price" placeholder="Base Price (Cr)" step="0.1" value="0.5" min="0.1">
-        <button type="button" class="remove-row-btn" onclick="removePlayerRow(this)">✕</button>
-    `;
+    newRow.innerHTML = '<input type="text" name="player_name" placeholder="Player Name" required>' +
+        '<select name="category"><option value="batsman">Batsman</option><option value="bowler">Bowler</option><option value="all_rounder">All Rounder</option><option value="wicket_keeper">Wicket Keeper</option></select>' +
+        '<select name="overseas"><option value="false">Domestic</option><option value="true">Overseas</option></select>' +
+        '<input type="number" name="base_price" placeholder="Base Price (Cr)" step="0.1" value="0.5" min="0.1">' +
+        '<button type="button" class="remove-row-btn" onclick="removePlayerRow(this)">✕</button>';
     container.appendChild(newRow);
     updateRemoveButtons();
 }
@@ -1388,55 +1346,33 @@ function updateRemoveButtons() {
 function submitManualPlayers() {
     const rows = document.querySelectorAll('#manualPlayersList .player-input-row');
     const players = [];
-    
     rows.forEach(row => {
         const name = row.querySelector('[name="player_name"]').value.trim();
         const category = row.querySelector('[name="category"]').value;
         const overseas = row.querySelector('[name="overseas"]').value === 'true';
         const basePrice = parseFloat(row.querySelector('[name="base_price"]').value) || 0.5;
-        
-        if (name) {
-            players.push({
-                player_name: name,
-                category: category,
-                overseas: overseas,
-                base_price: basePrice
-            });
-        }
+        if (name) players.push({player_name: name, category: category, overseas: overseas, base_price: basePrice});
     });
-    
     if (players.length === 0) {
         alert('Please enter at least one player');
         return;
     }
-    
-    const payload = {
-        source_type: 'fresh',
-        players: players
-    };
-    
     fetch('/admin/sessions/{{ selected_session.id }}/assign-players', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
+        body: JSON.stringify({source_type: 'fresh', players: players})
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || 'Failed to save players');
-        }
+        if (data.success) location.reload();
+        else alert(data.error || 'Failed to save players');
     })
-    .catch(err => {
-        alert('Error: ' + err.message);
-    });
+    .catch(err => alert('Error: ' + err.message));
 }
 
-// ===== DELETE PLAYER FROM SESSION =====
+// ===== DELETE =====
 function deletePlayer(playerId) {
     if (!confirm('Are you sure you want to remove this player from the session?')) return;
-    
     fetch('/admin/players/delete/' + playerId, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
@@ -1444,23 +1380,18 @@ function deletePlayer(playerId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            const row = document.querySelector(`tr[data-player-id="${playerId}"]`);
+            const row = document.querySelector('tr[data-player-id="' + playerId + '"]');
             if (row) row.remove();
-            
             const remaining = document.querySelectorAll('.players-table tbody tr');
-            if (remaining.length === 0) {
-                location.reload();
-            }
+            if (remaining.length === 0) location.reload();
         } else {
             alert(data.error || 'Failed to delete player');
         }
     })
-    .catch(err => {
-        alert('Error: ' + err.message);
-    });
+    .catch(err => alert('Error: ' + err.message));
 }
 
-// Initialize
+// Init
 document.addEventListener('DOMContentLoaded', function() {
     updateRemoveButtons();
 });
