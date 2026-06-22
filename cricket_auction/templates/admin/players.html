@@ -914,7 +914,8 @@
     {% endif %}
 
     <!-- ===== ASSIGN PLAYERS PANEL ===== -->
-    <div id="assignPanel" class="assign-panel" style="display: {% if not session_players %}block{% else %}none{% endif %};">
+
+    <div id="assignPanel" class="assign-panel" style="display: none;">
         <h2 style="font-family: 'Space Grotesk'; margin-bottom: 20px; text-align: center;">🎯 Assign Players to Session</h2>
         
         <!-- Same Player Set Option (for partial coverage) -->
@@ -1027,7 +1028,8 @@
     </div>
 
     <!-- ===== PLAYERS TABLE ===== -->
-    <div class="players-section" id="playersTableSection" style="display: {% if session_players %}block{% else %}none{% endif %};">
+    
+    <div class="players-section" id="playersTableSection" style="display: block;">
         <div class="section-header">
             <div class="section-title">📋 Session Players</div>
             {% if session_stats %}
@@ -1151,18 +1153,15 @@ function filterTable(status) {
     });
 }
 
-// ===== ASSIGN PANEL TOGGLE =====
 function toggleAssignPanel() {
     const panel = document.getElementById('assignPanel');
     const table = document.getElementById('playersTableSection');
-    if (panel.style.display === 'none') {
+    if (panel.style.display === 'none' || panel.style.display === '') {
         panel.style.display = 'block';
         if (table) table.style.display = 'none';
     } else {
         panel.style.display = 'none';
-        if (table && {{ 'true' if session_players else 'false' }}) {
-            table.style.display = 'block';
-        }
+        if (table) table.style.display = 'block';
     }
 }
 
