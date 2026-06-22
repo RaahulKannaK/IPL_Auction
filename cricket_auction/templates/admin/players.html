@@ -1399,16 +1399,19 @@ function submitManualPlayers() {
 }
 
 // ===== DELETE =====
+// ===== DELETE PLAYER FROM SESSION =====
 function deletePlayer(playerId) {
     if (!confirm('Are you sure you want to remove this player from the session?')) return;
-    fetch('/admin/players/delete/' + playerId, {
-        method: 'POST',
+    
+    // Use the session-specific DELETE endpoint
+    fetch('/admin/sessions/{{ selected_session.id }}/players/' + playerId, {
+        method: 'DELETE',
         headers: {'Content-Type': 'application/json'}
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            location.reload();  // Simplest: reload to refresh stats
+            location.reload();
         } else {
             alert(data.error || 'Failed to delete player');
         }
