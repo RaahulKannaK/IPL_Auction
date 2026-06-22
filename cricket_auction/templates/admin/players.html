@@ -1129,7 +1129,7 @@
 
 <script>
 // ===== GLOBAL STATE =====
-let csvData = []; // Stores parsed CSV rows
+let csvData = [];
 let currentMode = 'excel';
 
 // ===== TABLE FILTERING =====
@@ -1213,8 +1213,6 @@ function handleCSVSelect(input) {
     reader.onload = function(e) {
         const text = e.target.result;
         csvData = parseCSV(text);
-        
-        // Show preview
         showCSVPreview(file.name, csvData);
     };
     
@@ -1223,7 +1221,6 @@ function handleCSVSelect(input) {
 
 function parseCSV(text) {
     const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     const rows = [];
     
     for (let i = 1; i < lines.length; i++) {
@@ -1268,33 +1265,13 @@ function showCSVPreview(filename, data) {
         tbody.appendChild(tr);
     });
     
-    // Use style.display instead of classList for reliability
+    // Show preview section using style.display (reliable)
     document.getElementById('csvPreviewSection').style.display = 'block';
-}
-
-function clearCSV() {
-    csvData = [];
-    document.getElementById('csvFile').value = '';
-    
-    // Hide preview section
-    document.getElementById('csvPreviewSection').style.display = 'none';
-    
-    const uploadArea = document.getElementById('csvUploadArea');
-    uploadArea.classList.remove('has-file');
-    uploadArea.innerHTML = `
-        <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
-        <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
-        <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
-        <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
-            📁 Choose File
-        </button>
-    `;
 }
 
 function removeCSVRow(index) {
     csvData.splice(index, 1);
     
-    // Re-render
     const tbody = document.getElementById('previewTableBody');
     tbody.innerHTML = '';
     csvData.forEach((row, i) => {
@@ -1319,14 +1296,18 @@ function removeCSVRow(index) {
 function clearCSV() {
     csvData = [];
     document.getElementById('csvFile').value = '';
-    document.getElementById('csvPreview').classList.remove('active');
     
+    // Hide preview section
+    document.getElementById('csvPreviewSection').style.display = 'none';
+    
+    // Reset upload area
     const uploadArea = document.getElementById('csvUploadArea');
     uploadArea.classList.remove('has-file');
     uploadArea.innerHTML = `
         <div style="font-size: 3rem; margin-bottom: 15px;">📁</div>
         <h3 style="color: var(--text-primary); margin-bottom: 10px;">Upload CSV File</h3>
         <p style="color: var(--text-dim); margin-bottom: 20px;">Click to select or drag & drop your CSV file</p>
+        <input type="file" id="csvFile" class="file-input" accept=".csv" onchange="handleCSVSelect(this)">
         <button type="button" class="upload-btn" onclick="event.stopPropagation(); document.getElementById('csvFile').click()">
             📁 Choose File
         </button>
@@ -1398,7 +1379,7 @@ function removePlayerRow(btn) {
 
 function updateRemoveButtons() {
     const rows = document.querySelectorAll('#manualPlayersList .player-input-row');
-    rows.forEach((row, index) => {
+    rows.forEach((row) => {
         const btn = row.querySelector('.remove-row-btn');
         if (btn) btn.style.display = rows.length > 1 ? 'inline-block' : 'none';
     });
@@ -1463,11 +1444,9 @@ function deletePlayer(playerId) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Remove row from table
             const row = document.querySelector(`tr[data-player-id="${playerId}"]`);
             if (row) row.remove();
             
-            // If no more rows, show empty state
             const remaining = document.querySelectorAll('.players-table tbody tr');
             if (remaining.length === 0) {
                 location.reload();
