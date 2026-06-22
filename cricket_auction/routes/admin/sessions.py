@@ -224,12 +224,9 @@ def assign_players_page(session_id):
             session_players = cursor.fetchall()
         
         # === SMART LOGIC ===
-        # If this session has ALL teams (10/10) and there's a previous session with same set
-        # Auto-suggest continuing with same player set
         auto_continue = False
         if current_sess['is_full'] and previous_sessions:
-            # Check if previous session also had full teams
-            prev = previous_sessions[0]  # Most recent
+            prev = previous_sessions[0]
             prev_team_ids = []
             if prev.get('team_ids'):
                 try:
@@ -237,25 +234,74 @@ def assign_players_page(session_id):
                 except:
                     prev_team_ids = []
             
-            # If previous was also full (10/10), auto-continue with same set
             if len(prev_team_ids) == total_teams:
                 auto_continue = True
                 current_sess['auto_previous_id'] = prev['id']
+        
+        # === FIX: Get all sessions for tabs ===
+        cursor.execute("""
+            SELECT s.*, 
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as player_count,
+                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id AND sp.status = 'sold') as sold_count
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
+            ORDER BY s.created_at ASC
+        """, (auction_id,))
+        all_sessions = cursor.fetchall()
+        
+        # Parse team_ids for each session
+        for sess in all_sessions:
+            if sess.get('team_ids'):
+                try:
+                    sess['team_ids_list'] = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                except:
+                    sess['team_ids_list'] = []
+            else:
+                sess['team_ids_list'] = []
+            
+            cursor.execute("SELECT COUNT(*) as cnt FROM teams WHERE auction_id = %s", (auction_id,))
+            total_teams_check = cursor.fetchone()['cnt']
+            sess['total_teams'] = total_teams_check
+            sess['team_count'] = len(sess['team_ids_list'])
+            sess['is_full'] = len(sess['team_ids_list']) == total_teams_check
+        
+        # === FIX: Calculate session_stats ===
+        session_stats = {
+            'total': len(session_players),
+            'sold': sum(1 for p in session_players if p['status'] == 'sold'),
+            'available': sum(1 for p in session_players if p['status'] == 'available'),
+            'unsold': sum(1 for p in session_players if p['status'] == 'unsold'),
+            'total_sold': sum(p['sold_price'] or 0 for p in session_players if p['status'] == 'sold')
+        }
+        
+        # === FIX: Find previous_session_id ===
+        previous_session_id = None
+        if all_sessions:
+            for i, sess in enumerate(all_sessions):
+                if sess['id'] == session_id and i > 0:
+                    previous_session_id = all_sessions[i-1]['id']
+                    break
         
     finally:
         cursor.close()
         db.close()
     
+    # === FIX: Pass all required template variables ===
     return render_template('admin/players.html',
+        all_sessions=all_sessions,
+        selected_session_id=session_id,
+        selected_session=current_sess,
+        session_players=session_players,
+        session_stats=session_stats,
+        previous_session_id=previous_session_id,
+        # Backward compatibility
         session=current_sess,
         previous_sessions=previous_sessions,
         all_players=all_players,
         has_players=has_players,
-        session_players=session_players,
         total_teams=total_teams,
         auto_continue=auto_continue
     )
-
 
 @bp.route('/<int:session_id>/assign-players', methods=['POST'])
 def assign_players(session_id):
