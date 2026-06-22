@@ -246,7 +246,7 @@ def assign_players_page(session_id):
         cursor.close()
         db.close()
     
-    return render_template('admin/assign_players.html',
+    return render_template('admin/players.html',
         session=current_sess,
         previous_sessions=previous_sessions,
         all_players=all_players,
@@ -524,7 +524,7 @@ def enter_session_room(session_id):
         cursor.close()
         db.close()
     
-    return render_template('admin/session_room.html',
+    return render_template('admin/sessions.html',
         session=sess,
         teams=teams,
         players=players,
@@ -664,7 +664,7 @@ def players_by_session():
         cursor.close()
         db.close()
     
-    return render_template('admin/players_by_session.html',
+    return render_template('admin/players.html',
         all_sessions=all_sessions,
         selected_session=selected_session,
         session_players=session_players,
