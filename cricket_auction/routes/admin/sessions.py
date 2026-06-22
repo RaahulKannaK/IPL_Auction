@@ -564,8 +564,8 @@ def get_session_players(session_id):
 
 @bp.route('/<int:session_id>/enter')
 def enter_session_room(session_id):
-    """Enter auction room for a specific session - shows ONLY session players"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    """Enter auction room for a specific session — just set session and redirect to auction room"""
+    if session.get('role') not in ['owner', 'admin', 'auctioneer', 'team_owner']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -580,64 +580,16 @@ def enter_session_room(session_id):
             flash('Session not found')
             return redirect('/admin/sessions')
         
-        # Store session_id in flask session for auction room to use
+        # Store session_id in flask session
         session['active_session_id'] = session_id
-        
-        # Get session team IDs
-        team_ids = []
-        if sess['team_ids']:
-            try:
-                team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
-            except:
-                team_ids = []
-        
-        # Get participating teams
-        teams = []
-        if team_ids:
-            format_ids = ','.join(['%s'] * len(team_ids))
-            cursor.execute(f"""
-                SELECT t.*, 
-                       (t.purse_limit - COALESCE(t.spent, 0) - COALESCE(t.reserved, 0)) as available_purse
-                FROM teams t
-                WHERE t.id IN ({format_ids})
-            """, tuple(team_ids))
-            teams = cursor.fetchall()
-        
-        # Get session players (NOT global players - session-local status)
-        cursor.execute("""
-            SELECT sp.*, p.player_name, p.category, p.overseas
-            FROM session_players sp
-            JOIN players p ON sp.player_id = p.id
-            WHERE sp.session_id = %s
-            ORDER BY sp.base_price DESC
-        """, (session_id,))
-        players = cursor.fetchall()
-        
-        # Get session-specific bid history
-        cursor.execute("""
-            SELECT b.*, p.player_name, t.team_name
-            FROM bids b
-            JOIN session_players sp ON b.auction_player_id = sp.id
-            JOIN players p ON sp.player_id = p.id
-            JOIN teams t ON b.team_id = t.id
-            WHERE b.session_id = %s
-            ORDER BY b.created_at DESC
-            LIMIT 50
-        """, (session_id,))
-        session_bids = cursor.fetchall()
+        session['active_auction_id'] = sess['auction_id']
         
     finally:
         cursor.close()
         db.close()
     
-    return render_template('admin/auction.html',
-        session=sess,
-        teams=teams,
-        players=players,
-        session_bids=session_bids,
-        auction={'id': sess['auction_id']}
-    )
-
+    # Redirect to auction room — let auction_room() handle everything
+    return redirect('/admin/auction')
 
 @bp.route('/<int:session_id>/close', methods=['POST'])
 def close_session(session_id):
