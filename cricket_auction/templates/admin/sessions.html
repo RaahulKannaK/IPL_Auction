@@ -575,7 +575,7 @@
             </div>
             {% endif %}
             
-            <form method="POST" action="/admin/sessions/create" id="createSessionForm"></form>
+            <form method="POST" action="/admin/auction/sessions" id="createSessionForm">
                 <input type="hidden" name="auction_id" value="{{ auction.id if auction else (request.args.get('auction') or session.get('active_auction_id') or session.get('auction_id') or 1) }}">
                 <input type="hidden" name="slot_type" value="custom">
                 
