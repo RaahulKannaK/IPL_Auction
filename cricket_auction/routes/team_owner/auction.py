@@ -566,15 +566,17 @@ def skip_player():
         'message': f'Skipped ({skip_count}/{total_teams} teams)'
     })
 
+# ============================================================
+# FIXED: Set active session when team owner clicks Enter/Watch
+# ============================================================
 @bp.route('/set-session', methods=['POST'])
-def set_active_session():
+def set_session():
     """Team owner selects a session - persist it in Flask session"""
     if session.get('role') != 'team_owner':
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
     session_id = data.get('session_id')
-    is_member = data.get('is_member', False)
     
     if not session_id:
         return jsonify({'error': 'No session ID'}), 400
@@ -585,7 +587,8 @@ def set_active_session():
     try:
         # Verify session exists and belongs to user's auction
         cursor.execute("""
-            SELECT s.* FROM auction_sessions s
+            SELECT s.*, t.auction_id 
+            FROM auction_sessions s
             JOIN teams t ON s.auction_id = t.auction_id
             WHERE s.id = %s AND t.owner_id = %s
         """, (session_id, session['user_id']))
@@ -594,10 +597,10 @@ def set_active_session():
         if not sess:
             return jsonify({'error': 'Session not found or not your auction'}), 404
         
-        # Store in Flask session
+        # Store in Flask session - CRITICAL: set modified = True
         session['active_session_id'] = int(session_id)
         session['active_auction_id'] = sess['auction_id']
-        session.modified = True  # CRITICAL: Force Flask to save session
+        session.modified = True
         
         # Check membership
         team_ids = parse_team_ids(sess['team_ids'])
@@ -611,6 +614,6 @@ def set_active_session():
     return jsonify({
         'success': True,
         'session_id': session_id,
-        'session_name': sess['session_name'],
+        'session_name': sess.get('session_name', f'Session {session_id}'),
         'is_member': is_member
     })
