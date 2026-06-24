@@ -388,52 +388,6 @@ def get_sessions():
     })
 
 
-@bp.route('/join-session/<int:session_id>', methods=['POST'])
-def join_session(session_id):
-    """Join a session - adds team to session and sets active session"""
-    if session.get('role') != 'team_owner':
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
-        sess = cursor.fetchone()
-        
-        if not sess:
-            return jsonify({'error': 'Session not found'}), 404
-        
-        user_team = get_user_team(cursor, session['user_id'], sess['auction_id'])
-        if not user_team:
-            return jsonify({'error': 'Not your auction'}), 403
-        
-        user_team_id = int(user_team['id'])
-        
-        # Parse existing team_ids
-        team_ids = parse_team_ids(sess['team_ids'])
-        
-        # Add team if not already present
-        if user_team_id not in team_ids:
-            team_ids.append(user_team_id)
-            cursor.execute("""
-                UPDATE auction_sessions SET team_ids = %s WHERE id = %s
-            """, (json.dumps(team_ids), session_id))
-            db.commit()
-        
-        # Set as active session
-        session['active_session_id'] = session_id
-        
-    finally:
-        cursor.close()
-        db.close()
-    
-    return jsonify({
-        'success': True, 
-        'session_id': session_id, 
-        'session_name': sess['session_name']
-    })
-
 
 @bp.route('/leave-session', methods=['POST'])
 def leave_session():
