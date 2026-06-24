@@ -1381,6 +1381,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // FIX: Use server response, not template variable
             isMemberSession = data.is_member;
 
             document.getElementById('sessionSelector').classList.add('hidden');

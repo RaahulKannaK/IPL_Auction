@@ -769,3 +769,52 @@ def skip_player():
         'all_skipped': False,
         'message': f'Skipped ({skip_count}/{total_teams}) teams'
     })
+
+# ============================================================
+# GET SESSION INFO — tells frontend if user is member of this session
+# ============================================================
+@bp.route('/session-info')
+def session_info():
+    """Get session info including is_member status for current user"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    session_id = request.args.get('session_id', type=int)
+    if not session_id:
+        return jsonify({'error': 'No session_id'}), 400
+
+    auction_id = session.get('active_auction_id')
+    if not auction_id:
+        return jsonify({'error': 'No active auction'}), 400
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            "SELECT * FROM auction_sessions WHERE id = %s AND auction_id = %s",
+            (session_id, auction_id)
+        )
+        sess = cursor.fetchone()
+
+        if not sess:
+            return jsonify({'success': False, 'error': 'Session not found'}), 404
+
+        user_team = get_user_team(cursor, session['user_id'], auction_id)
+        if not user_team:
+            return jsonify({'success': False, 'error': 'No team'}), 403
+
+        team_ids = parse_team_ids(sess['team_ids'])
+        is_member = int(user_team['id']) in team_ids
+
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify({
+        'success': True,
+        'session_id': session_id,
+        'session_name': sess.get('session_name', f'Session {session_id}'),
+        'is_member': is_member,
+        'status': sess.get('status')
+    })
