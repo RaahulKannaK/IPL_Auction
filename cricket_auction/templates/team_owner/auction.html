@@ -141,8 +141,7 @@
         padding: 10px 18px;
         border-radius: 14px;
         border: 1px solid rgba(255, 42, 0, 0.3);
-        background: rgba(255, 42, 0, 0.08);
-        color: #ff6b6b;
+        background: rgba(255, 42, 0, 0.08); color: #ff6b6b;
         font-weight: 700;
         font-size: 0.85rem;
         text-decoration: none;
@@ -985,7 +984,7 @@
                 {% endif %}
 
                 {% if sess.status in ['active', 'paused'] %}
-                <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}')">
+                <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}', true)">
                     🚀 Enter Auction Room
                 </button>
                 {% else %}
@@ -1069,7 +1068,7 @@
                 {% endif %}
 
                 {% if sess.status in ['active', 'paused'] %}
-                <button class="btn-session-action btn-view" onclick="viewSession({{ sess.id }}, '{{ sess.session_name }}')">
+                <button class="btn-session-action btn-view" onclick="viewSession({{ sess.id }}, '{{ sess.session_name }}', false)">
                     👁️ Watch as Audience
                 </button>
                 {% else %}
@@ -1138,7 +1137,7 @@
         </div>
 
         <!-- VIEWER MODE BADGE (shown only for non-member sessions) -->
-        <div id="viewerModeBadge" style="display: none; text-align: center; margin-bottom: 10px;">
+        <div id="viewerModeBadge" style="display: {% if has_active_session and not is_member_session %}block{% else %}none{% endif %}; text-align: center; margin-bottom: 10px;">
             <span class="viewer-badge">👁️ AUDIENCE MODE — You can only watch, not bid</span>
         </div>
 
@@ -1256,7 +1255,7 @@
             <p style="margin-top: 10px;">
                 You can see live bids, player info, and history — but you cannot bid or skip.
             </p>
-            <div class="session-tag" id="audienceSessionTag">Session: --</div>
+            <div class="session-tag" id="audienceSessionTag">Session: {{ current_session.session_name if current_session else '--' }}</div>
         </div>
 
         <!-- BID HISTORY -->
@@ -1334,10 +1333,13 @@
 </div>
 
 <!-- SESSION INFO BAR -->
-<div id="sessionInfoBar" style="display: none; text-align: center; margin-bottom: 10px;">
+<div id="sessionInfoBar" style="{% if not has_active_session %}display: none;{% endif %}; text-align: center; margin-bottom: 10px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(124, 77, 255, 0.1); border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px; color: var(--cosmic-purple-light); font-size: 0.85rem; font-weight: 600;">
         <span id="sessionInfoIcon">📅</span>
-        <span id="sessionInfoName">--</span>
+        <span id="sessionInfoName">{{ current_session.session_name if current_session else '--' }}</span>
+        <span id="sessionInfoMode" style="font-size: 0.75rem; opacity: 0.7;">
+            {% if is_member_session %}(Member){% else %}(Audience){% endif %}
+        </span>
     </div>
 </div>
 
@@ -1346,7 +1348,8 @@
 // ==================== GLOBAL STATE ====================
 let currentAuctionId = {{ auction_id }};
 let currentSessionId = {{ active_session_id if active_session_id else 'null' }};
-let currentSessionName = '';
+let currentSessionName = '{{ current_session.session_name if current_session else '' }}';
+// CRITICAL: Use server-rendered is_member_session, not hardcoded
 let isMemberSession = {{ 'true' if is_member_session else 'false' }};
 let pollInterval = null;
 let lastPlayerId = null;
@@ -1368,6 +1371,7 @@ let pendingBidAmount = null;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
+    // If server says we have an active session, initialize the room
     if (hasActiveSession && currentSessionId) {
         document.getElementById('sessionSelector').classList.add('hidden');
         document.getElementById('auctionRoom').style.display = 'block';
@@ -1376,40 +1380,58 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== SESSION SELECTOR ====================
-function enterSession(sessionId, sessionName) {
+function enterSession(sessionId, sessionName, isMember) {
+    // CRITICAL: Pass is_member explicitly to server
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             session_id: sessionId,
-            is_member: true
+            is_member: true  // Explicit: this is a member entry
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            // Update ALL client state BEFORE showing room
             currentSessionId = sessionId;
             currentSessionName = sessionName || 'Session ' + sessionId;
-            isMemberSession = true;
+            isMemberSession = data.is_member;  // Use server-confirmed value
             hasActiveSession = true;
 
+            // Hide selector, show room
             document.getElementById('sessionSelector').classList.add('hidden');
             document.getElementById('auctionRoom').style.display = 'block';
 
-            document.getElementById('viewerModeBadge').style.display = 'none';
-            document.getElementById('teamInfoBar').style.display = 'block';
-            document.getElementById('bidCenter').style.display = 'block';
-            document.getElementById('audiencePanel').style.display = 'none';
+            // Configure UI based on membership
+            if (isMemberSession) {
+                // MEMBER MODE
+                document.getElementById('viewerModeBadge').style.display = 'none';
+                document.getElementById('teamInfoBar').style.display = 'block';
+                document.getElementById('bidCenter').style.display = 'block';
+                document.getElementById('audiencePanel').style.display = 'none';
+            } else {
+                // FALLBACK: Should not happen for enterSession, but safety
+                document.getElementById('viewerModeBadge').style.display = 'block';
+                document.getElementById('teamInfoBar').style.display = 'none';
+                document.getElementById('bidCenter').style.display = 'none';
+                document.getElementById('audiencePanel').style.display = 'block';
+            }
 
+            // Update session info bar
             const infoBar = document.getElementById('sessionInfoBar');
             const infoName = document.getElementById('sessionInfoName');
             const infoIcon = document.getElementById('sessionInfoIcon');
-            if (infoBar && infoName) {
+            const infoMode = document.getElementById('sessionInfoMode');
+            if (infoBar) {
                 infoBar.style.display = 'block';
                 infoName.textContent = currentSessionName;
                 infoIcon.textContent = getSessionIcon(sessionName);
+                if (infoMode) infoMode.textContent = isMemberSession ? '(Member)' : '(Audience)';
             }
 
+            // Reset all auction state for new session
+            resetAuctionState();
             initAuctionRoom();
             refreshPlayers();
         } else {
@@ -1422,43 +1444,53 @@ function enterSession(sessionId, sessionName) {
     });
 }
 
-function viewSession(sessionId, sessionName) {
+function viewSession(sessionId, sessionName, isMember) {
+    // CRITICAL: Pass is_member=false explicitly
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             session_id: sessionId,
-            is_member: false
+            is_member: false  // Explicit: this is viewer mode
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
+            // Update ALL client state
             currentSessionId = sessionId;
             currentSessionName = sessionName || 'Session ' + sessionId;
-            isMemberSession = false;
+            isMemberSession = data.is_member;  // Server confirms false
             hasActiveSession = true;
 
+            // Hide selector, show room
             document.getElementById('sessionSelector').classList.add('hidden');
             document.getElementById('auctionRoom').style.display = 'block';
 
+            // VIEWER MODE UI
             document.getElementById('viewerModeBadge').style.display = 'block';
             document.getElementById('teamInfoBar').style.display = 'none';
             document.getElementById('bidCenter').style.display = 'none';
             document.getElementById('audiencePanel').style.display = 'block';
 
+            // Update audience tag
             const audienceTag = document.getElementById('audienceSessionTag');
             if (audienceTag) audienceTag.textContent = 'Session: ' + currentSessionName;
 
+            // Update session info bar
             const infoBar = document.getElementById('sessionInfoBar');
             const infoName = document.getElementById('sessionInfoName');
             const infoIcon = document.getElementById('sessionInfoIcon');
-            if (infoBar && infoName) {
+            const infoMode = document.getElementById('sessionInfoMode');
+            if (infoBar) {
                 infoBar.style.display = 'block';
                 infoName.textContent = currentSessionName + ' (Audience)';
                 infoIcon.textContent = '👁️';
+                if (infoMode) infoMode.textContent = '(Audience)';
             }
 
+            // Reset state and init
+            resetAuctionState();
             initAuctionRoom();
             refreshPlayers();
         }
@@ -1473,6 +1505,37 @@ function getSessionIcon(sessionName) {
     if (nameLower.includes('weekend')) return '🏖️';
     if (nameLower.includes('afternoon')) return '☀️';
     return '📅';
+}
+
+// ==================== RESET AUCTION STATE ====================
+function resetAuctionState() {
+    // CRITICAL: Clear all auction-related state when switching sessions
+    lastPlayerId = null;
+    currentSessionPlayerId = null;
+    bidHistory = [];
+    hasSkippedCurrentPlayer = false;
+    currentBasePrice = 2.0;
+    currentBidAmount = 0;
+    hasBids = false;
+    currentBidderId = null;
+    previousHasBids = false;
+    pendingWillingPricePlayer = null;
+    pendingBidAmount = null;
+    currentLeagueName = '';
+    
+    // Clear UI
+    clearBidHistory();
+    resetSkipUI();
+    
+    // Reset player display
+    const waitingBox = document.getElementById('waitingBox');
+    const activeBox = document.getElementById('activePlayerBox');
+    if (waitingBox) waitingBox.style.display = 'block';
+    if (activeBox) activeBox.style.display = 'none';
+    
+    // Reset bid center
+    const bidCenter = document.getElementById('bidCenter');
+    if (bidCenter) bidCenter.classList.remove('disabled-overlay');
 }
 
 // ==================== AUCTION ROOM ====================
@@ -1526,41 +1589,34 @@ function initAuctionRoom() {
 }
 
 function leaveRoom() {
-    currentSessionId = null;
-    currentSessionName = '';
-    lastPlayerId = null;
-    currentSessionPlayerId = null;
-    bidHistory = [];
-    hasSkippedCurrentPlayer = false;
-    currentBasePrice = 2.0;
-    currentBidAmount = 0;
-    hasBids = false;
-    currentBidderId = null;
-    previousHasBids = false;
-    pendingWillingPricePlayer = null;
-    pendingBidAmount = null;
-    currentLeagueName = '';
-    hasActiveSession = false;
-    isMemberSession = false;
-
+    // CRITICAL: Stop polling FIRST
     stopPolling();
     closeWillingPopup();
 
+    // Tell server to clear session
     fetch('/team-owner/auction/leave-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
     })
     .then(() => {
+        // Reset ALL client state
+        currentSessionId = null;
+        currentSessionName = '';
+        hasActiveSession = false;
+        isMemberSession = false;
+        
+        resetAuctionState();
+
+        // Show selector, hide room
         document.getElementById('auctionRoom').style.display = 'none';
         document.getElementById('sessionSelector').classList.remove('hidden');
 
+        // Hide session info bar
         const infoBar = document.getElementById('sessionInfoBar');
         if (infoBar) infoBar.style.display = 'none';
-
-        updatePlayerDisplay(null, 0, null, null, 0);
-        clearBidHistory();
     })
     .catch(() => {
+        // Even on error, reset UI
         document.getElementById('auctionRoom').style.display = 'none';
         document.getElementById('sessionSelector').classList.remove('hidden');
     });
@@ -1578,7 +1634,6 @@ function refreshSessionList() {
 }
 
 function renderSessionCards(sessions, allTeams, myTeamId) {
-    // Re-render the session grid without full page reload
     const mySessionsContainer = document.querySelector('.section-header.my-sessions + .session-grid');
     const otherSessionsContainer = document.querySelector('.section-header.other-sessions + .session-grid');
 
@@ -1599,7 +1654,9 @@ function createSessionCardHTML(sess, allTeams, myTeamId, isMySession) {
     const statusIcon = sess.status === 'active' ? '●' : (sess.status === 'paused' ? '⏸' : '🔒');
     const btnClass = isMySession ? 'btn-enter' : 'btn-view';
     const btnText = isMySession ? '🚀 Enter Auction Room' : '👁️ Watch as Audience';
-    const btnOnclick = isMySession ? `enterSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}')` : `viewSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}')`;
+    const btnOnclick = isMySession 
+        ? `enterSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}', true)` 
+        : `viewSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}', false)`;
     const cardClass = isMySession ? 'session-card my-session' : 'session-card';
 
     const teamsPreview = sess.team_ids_list && sess.team_ids_list.length > 0

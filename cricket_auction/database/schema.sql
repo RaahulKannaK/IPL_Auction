@@ -214,3 +214,231 @@ CREATE TABLE session_players (
 -- Add session_id to auction_players to track which session a player was originally assigned to
 ALTER TABLE auction_players ADD COLUMN session_id INT NULL AFTER auction_id;
 ALTER TABLE auction_players ADD FOREIGN KEY (session_id) REFERENCES auction_sessions(id);
+
+-- ============================================================
+-- 1. BIDS TABLE: Add session_player_id for session-scoped bidding
+-- ============================================================
+ALTER TABLE bids 
+ADD COLUMN session_player_id INT NULL AFTER auction_player_id;
+
+ALTER TABLE bids 
+ADD FOREIGN KEY (session_player_id) REFERENCES session_players(id);
+
+-- Make auction_player_id nullable since we'll use session_player_id instead
+ALTER TABLE bids 
+MODIFY auction_player_id INT NULL;
+
+-- Add index for performance
+CREATE INDEX idx_bids_session ON bids(session_id, session_player_id);
+
+
+-- ============================================================
+-- 2. PLAYER_SKIPS TABLE: Add session_id and session_player_id
+-- ============================================================
+ALTER TABLE player_skips 
+ADD COLUMN session_id INT NULL AFTER auction_id;
+
+ALTER TABLE player_skips 
+ADD COLUMN session_player_id INT NULL AFTER auction_player_id;
+
+ALTER TABLE player_skips 
+ADD FOREIGN KEY (session_id) REFERENCES auction_sessions(id);
+
+ALTER TABLE player_skips 
+ADD FOREIGN KEY (session_player_id) REFERENCES session_players(id);
+
+-- Make old columns nullable
+ALTER TABLE player_skips 
+MODIFY auction_player_id INT NULL;
+
+ALTER TABLE player_skips 
+MODIFY player_id INT NULL;
+
+-- Add index
+CREATE INDEX idx_skips_session ON player_skips(session_id, session_player_id);
+
+
+-- ============================================================
+-- 3. HIDDEN_MAX_BIDS TABLE: Add session_player_id
+-- ============================================================
+ALTER TABLE hidden_max_bids 
+ADD COLUMN session_player_id INT NULL AFTER auction_player_id;
+
+ALTER TABLE hidden_max_bids 
+ADD FOREIGN KEY (session_player_id) REFERENCES session_players(id);
+
+ALTER TABLE hidden_max_bids 
+MODIFY auction_player_id INT NULL;
+
+CREATE INDEX idx_hidden_session ON hidden_max_bids(session_player_id, team_id);
+
+
+-- ============================================================
+-- 4. PURSE_RESERVATIONS TABLE: Add session_player_id
+-- ============================================================
+ALTER TABLE purse_reservations 
+ADD COLUMN session_player_id INT NULL AFTER auction_player_id;
+
+ALTER TABLE purse_reservations 
+ADD FOREIGN KEY (session_player_id) REFERENCES session_players(id);
+
+ALTER TABLE purse_reservations 
+MODIFY auction_player_id INT NULL;
+
+CREATE INDEX idx_purse_session ON purse_reservations(session_player_id, team_id);
+
+
+-- ============================================================
+-- 5. TEAM_PLAYERS TABLE: Add session_player_id
+-- ============================================================
+ALTER TABLE team_players 
+ADD COLUMN session_player_id INT NULL AFTER auction_player_id;
+
+ALTER TABLE team_players 
+ADD FOREIGN KEY (session_player_id) REFERENCES session_players(id);
+
+ALTER TABLE team_players 
+MODIFY auction_player_id INT NULL;
+
+CREATE INDEX idx_team_players_session ON team_players(session_player_id);
+
+
+-- ============================================================
+-- 6. AUCTIONS TABLE: Add last_sold_session_player_id
+-- ============================================================
+ALTER TABLE auctions 
+ADD COLUMN last_sold_session_player_id INT NULL AFTER last_sold_auction_player_id;
+
+-- Note: last_sold_auction_player_id stays for backward compat
+-- last_sold_session_player_id is the new primary field for session-scoped tracking
+
+
+-- ============================================================
+-- 7. AUCTION_SESSIONS TABLE: Add current tracking columns
+-- ============================================================
+-- These let each session track its own current player/bid independently
+ALTER TABLE auction_sessions 
+ADD COLUMN current_player_id INT NULL AFTER team_ids;
+
+ALTER TABLE auction_sessions 
+ADD COLUMN current_bid DECIMAL(10,2) DEFAULT 0.00 AFTER current_player_id;
+
+ALTER TABLE auction_sessions 
+ADD COLUMN current_bidder_id INT NULL AFTER current_bid;
+
+ALTER TABLE auction_sessions 
+ADD FOREIGN KEY (current_bidder_id) REFERENCES teams(id);
+
+-- This is CRITICAL: allows each session to have independent bidding state
+-- Instead of using auctions.current_player_id for everything
+
+
+-- ============================================================
+-- 8. SESSION_PLAYERS TABLE: Add skip_reason for session-local skips
+-- ============================================================
+ALTER TABLE session_players 
+ADD COLUMN skip_reason VARCHAR(50) NULL AFTER sold_price;
+
+ALTER TABLE session_players 
+ADD COLUMN skip_notes TEXT NULL AFTER skip_reason;
+
+
+-- ============================================================
+-- 9. BIDS TABLE: Add session_id foreign key (already exists but verify)
+-- ============================================================
+-- session_id already exists in your schema, just ensure FK is there
+ALTER TABLE bids 
+ADD FOREIGN KEY (session_id) REFERENCES auction_sessions(id);
+
+-- Add composite index for common lookups
+CREATE INDEX idx_bids_auction_session ON bids(auction_id, session_id);
+
+
+
+
+
+
+-- Run this FIRST (keep your existing tables, add these new ones)
+
+-- ============================================================
+-- NEW: Session-specific bids (clean, no nullable FKs)
+-- ============================================================
+CREATE TABLE session_bids (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    team_id INT NOT NULL,
+    bid_amount DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    INDEX idx_session_bids_lookup (session_id, session_player_id),
+    INDEX idx_session_bids_team (session_id, team_id)
+);
+
+-- ============================================================
+-- NEW: Session-specific skips
+-- ============================================================
+CREATE TABLE session_skips (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    team_id INT NOT NULL,
+    reason VARCHAR(50) DEFAULT 'manual',
+    notes TEXT,
+    skipped_by INT NOT NULL,
+    skipped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    FOREIGN KEY (skipped_by) REFERENCES users(id),
+    UNIQUE KEY unique_session_skip (session_id, session_player_id, team_id)
+);
+
+-- ============================================================
+-- NEW: Session-specific team assignments (sold players)
+-- ============================================================
+CREATE TABLE session_team_players (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    purchase_price DECIMAL(10,2) NOT NULL,
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_session_team_player (team_id, session_player_id)
+);
+
+-- ============================================================
+-- NEW: Session-specific hidden max bids
+-- ============================================================
+CREATE TABLE session_hidden_max_bids (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    team_id INT NOT NULL,
+    max_bid DECIMAL(10,2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    INDEX idx_hidden_lookup (session_player_id, team_id)
+);
+
+-- ============================================================
+-- NEW: Session-specific purse reservations
+-- ============================================================
+CREATE TABLE session_purse_reservations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    reserved_amount DECIMAL(10,2) NOT NULL,
+    status ENUM('active', 'released', 'converted') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id) ON DELETE CASCADE,
+    INDEX idx_purse_team (team_id, session_player_id)
+);
+
