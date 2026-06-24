@@ -1421,6 +1421,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== SESSION SELECTOR ====================
 function enterSession(sessionId, sessionName) {
+    // CLEAR old players immediately so no stale data flashes
+    clearPlayersGrid();
+    document.getElementById('playersPanel').style.display = 'none';
+
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1468,6 +1472,10 @@ function enterSession(sessionId, sessionName) {
 }
 
 function viewSession(sessionId, sessionName) {
+    // CLEAR old players immediately so no stale data flashes
+    clearPlayersGrid();
+    document.getElementById('playersPanel').style.display = 'none';
+
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1510,6 +1518,16 @@ function viewSession(sessionId, sessionName) {
         }
     })
     .catch(err => console.error('View session error:', err));
+}
+
+// ADD this helper function
+function clearPlayersGrid() {
+    const grid = document.getElementById('playersGrid');
+    const badge = document.getElementById('playerCountBadge');
+    if (grid) {
+        grid.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 40px; font-size: 0.9rem;">Loading players...</p>';
+    }
+    if (badge) badge.textContent = '...';
 }
 
 function getSessionIcon(sessionName) {
@@ -1591,6 +1609,8 @@ function leaveRoom() {
 
     stopPolling();
     closeWillingPopup();
+    clearPlayersGrid();  // CLEAR on leave too
+    document.getElementById('playersPanel').style.display = 'none';
 
     fetch('/team-owner/auction/leave-session', {
         method: 'POST',
