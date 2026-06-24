@@ -141,7 +141,8 @@
         padding: 10px 18px;
         border-radius: 14px;
         border: 1px solid rgba(255, 42, 0, 0.3);
-        background: rgba(255, 42, 0, 0.08); color: #ff6b6b;
+        background: rgba(255, 42, 0, 0.08);
+        color: #ff6b6b;
         font-weight: 700;
         font-size: 0.85rem;
         text-decoration: none;
@@ -984,7 +985,7 @@
                 {% endif %}
 
                 {% if sess.status in ['active', 'paused'] %}
-                <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}', true)">
+                <button class="btn-session-action btn-enter" onclick="enterSession({{ sess.id }}, '{{ sess.session_name }}')">
                     🚀 Enter Auction Room
                 </button>
                 {% else %}
@@ -1068,7 +1069,7 @@
                 {% endif %}
 
                 {% if sess.status in ['active', 'paused'] %}
-                <button class="btn-session-action btn-view" onclick="viewSession({{ sess.id }}, '{{ sess.session_name }}', false)">
+                <button class="btn-session-action btn-view" onclick="viewSession({{ sess.id }}, '{{ sess.session_name }}')">
                     👁️ Watch as Audience
                 </button>
                 {% else %}
@@ -1137,7 +1138,7 @@
         </div>
 
         <!-- VIEWER MODE BADGE (shown only for non-member sessions) -->
-        <div id="viewerModeBadge" style="display: {% if has_active_session and not is_member_session %}block{% else %}none{% endif %}; text-align: center; margin-bottom: 10px;">
+        <div id="viewerModeBadge" style="display: none; text-align: center; margin-bottom: 10px;">
             <span class="viewer-badge">👁️ AUDIENCE MODE — You can only watch, not bid</span>
         </div>
 
@@ -1255,7 +1256,7 @@
             <p style="margin-top: 10px;">
                 You can see live bids, player info, and history — but you cannot bid or skip.
             </p>
-            <div class="session-tag" id="audienceSessionTag">Session: {{ current_session.session_name if current_session else '--' }}</div>
+            <div class="session-tag" id="audienceSessionTag">Session: --</div>
         </div>
 
         <!-- BID HISTORY -->
@@ -1333,13 +1334,10 @@
 </div>
 
 <!-- SESSION INFO BAR -->
-<div id="sessionInfoBar" style="{% if not has_active_session %}display: none;{% endif %}; text-align: center; margin-bottom: 10px;">
+<div id="sessionInfoBar" style="display: none; text-align: center; margin-bottom: 10px;">
     <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: rgba(124, 77, 255, 0.1); border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 20px; color: var(--cosmic-purple-light); font-size: 0.85rem; font-weight: 600;">
         <span id="sessionInfoIcon">📅</span>
-        <span id="sessionInfoName">{{ current_session.session_name if current_session else '--' }}</span>
-        <span id="sessionInfoMode" style="font-size: 0.75rem; opacity: 0.7;">
-            {% if is_member_session %}(Member){% else %}(Audience){% endif %}
-        </span>
+        <span id="sessionInfoName">--</span>
     </div>
 </div>
 
@@ -1348,8 +1346,7 @@
 // ==================== GLOBAL STATE ====================
 let currentAuctionId = {{ auction_id }};
 let currentSessionId = {{ active_session_id if active_session_id else 'null' }};
-let currentSessionName = '{{ current_session.session_name if current_session else '' }}';
-// CRITICAL: Use server-rendered is_member_session, not hardcoded
+let currentSessionName = '';
 let isMemberSession = {{ 'true' if is_member_session else 'false' }};
 let pollInterval = null;
 let lastPlayerId = null;
@@ -1371,67 +1368,81 @@ let pendingBidAmount = null;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
-    // If server says we have an active session, initialize the room
     if (hasActiveSession && currentSessionId) {
-        document.getElementById('sessionSelector').classList.add('hidden');
-        document.getElementById('auctionRoom').style.display = 'block';
-        initAuctionRoom();
+
+        fetch(
+            '/team-owner/auction/session-info?session_id=' +
+            currentSessionId
+        )
+        .then(r => r.json())
+        .then(data => {
+
+            if (!data.success) {
+                return;
+            }
+
+            isMemberSession = data.is_member;
+
+            document.getElementById('sessionSelector').classList.add('hidden');
+            document.getElementById('auctionRoom').style.display = 'block';
+
+            if (isMemberSession) {
+
+                document.getElementById('viewerModeBadge').style.display = 'none';
+                document.getElementById('teamInfoBar').style.display = 'block';
+                document.getElementById('bidCenter').style.display = 'block';
+                document.getElementById('audiencePanel').style.display = 'none';
+
+            } else {
+
+                document.getElementById('viewerModeBadge').style.display = 'block';
+                document.getElementById('teamInfoBar').style.display = 'none';
+                document.getElementById('bidCenter').style.display = 'none';
+                document.getElementById('audiencePanel').style.display = 'block';
+
+            }
+
+            initAuctionRoom();
+        });
     }
 });
 
 // ==================== SESSION SELECTOR ====================
-function enterSession(sessionId, sessionName, isMember) {
-    // CRITICAL: Pass is_member explicitly to server
+function enterSession(sessionId, sessionName) {
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             session_id: sessionId,
-            is_member: true  // Explicit: this is a member entry
+            is_member: true,
+            team_id: myTeamId
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Update ALL client state BEFORE showing room
             currentSessionId = sessionId;
             currentSessionName = sessionName || 'Session ' + sessionId;
-            isMemberSession = data.is_member;  // Use server-confirmed value
+            isMemberSession = true;
             hasActiveSession = true;
 
-            // Hide selector, show room
             document.getElementById('sessionSelector').classList.add('hidden');
             document.getElementById('auctionRoom').style.display = 'block';
 
-            // Configure UI based on membership
-            if (isMemberSession) {
-                // MEMBER MODE
-                document.getElementById('viewerModeBadge').style.display = 'none';
-                document.getElementById('teamInfoBar').style.display = 'block';
-                document.getElementById('bidCenter').style.display = 'block';
-                document.getElementById('audiencePanel').style.display = 'none';
-            } else {
-                // FALLBACK: Should not happen for enterSession, but safety
-                document.getElementById('viewerModeBadge').style.display = 'block';
-                document.getElementById('teamInfoBar').style.display = 'none';
-                document.getElementById('bidCenter').style.display = 'none';
-                document.getElementById('audiencePanel').style.display = 'block';
-            }
+            document.getElementById('viewerModeBadge').style.display = 'none';
+            document.getElementById('teamInfoBar').style.display = 'block';
+            document.getElementById('bidCenter').style.display = 'block';
+            document.getElementById('audiencePanel').style.display = 'none';
 
-            // Update session info bar
             const infoBar = document.getElementById('sessionInfoBar');
             const infoName = document.getElementById('sessionInfoName');
             const infoIcon = document.getElementById('sessionInfoIcon');
-            const infoMode = document.getElementById('sessionInfoMode');
-            if (infoBar) {
+            if (infoBar && infoName) {
                 infoBar.style.display = 'block';
                 infoName.textContent = currentSessionName;
                 infoIcon.textContent = getSessionIcon(sessionName);
-                if (infoMode) infoMode.textContent = isMemberSession ? '(Member)' : '(Audience)';
             }
 
-            // Reset all auction state for new session
-            resetAuctionState();
             initAuctionRoom();
             refreshPlayers();
         } else {
@@ -1444,53 +1455,44 @@ function enterSession(sessionId, sessionName, isMember) {
     });
 }
 
-function viewSession(sessionId, sessionName, isMember) {
-    // CRITICAL: Pass is_member=false explicitly
+function viewSession(sessionId, sessionName) {
     fetch('/team-owner/auction/set-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             session_id: sessionId,
-            is_member: false  // Explicit: this is viewer mode
+            is_member: false,
+            team_id: myTeamId
         })
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Update ALL client state
             currentSessionId = sessionId;
             currentSessionName = sessionName || 'Session ' + sessionId;
-            isMemberSession = data.is_member;  // Server confirms false
+            isMemberSession = false;
             hasActiveSession = true;
 
-            // Hide selector, show room
             document.getElementById('sessionSelector').classList.add('hidden');
             document.getElementById('auctionRoom').style.display = 'block';
 
-            // VIEWER MODE UI
             document.getElementById('viewerModeBadge').style.display = 'block';
             document.getElementById('teamInfoBar').style.display = 'none';
             document.getElementById('bidCenter').style.display = 'none';
             document.getElementById('audiencePanel').style.display = 'block';
 
-            // Update audience tag
             const audienceTag = document.getElementById('audienceSessionTag');
             if (audienceTag) audienceTag.textContent = 'Session: ' + currentSessionName;
 
-            // Update session info bar
             const infoBar = document.getElementById('sessionInfoBar');
             const infoName = document.getElementById('sessionInfoName');
             const infoIcon = document.getElementById('sessionInfoIcon');
-            const infoMode = document.getElementById('sessionInfoMode');
-            if (infoBar) {
+            if (infoBar && infoName) {
                 infoBar.style.display = 'block';
                 infoName.textContent = currentSessionName + ' (Audience)';
                 infoIcon.textContent = '👁️';
-                if (infoMode) infoMode.textContent = '(Audience)';
             }
 
-            // Reset state and init
-            resetAuctionState();
             initAuctionRoom();
             refreshPlayers();
         }
@@ -1505,37 +1507,6 @@ function getSessionIcon(sessionName) {
     if (nameLower.includes('weekend')) return '🏖️';
     if (nameLower.includes('afternoon')) return '☀️';
     return '📅';
-}
-
-// ==================== RESET AUCTION STATE ====================
-function resetAuctionState() {
-    // CRITICAL: Clear all auction-related state when switching sessions
-    lastPlayerId = null;
-    currentSessionPlayerId = null;
-    bidHistory = [];
-    hasSkippedCurrentPlayer = false;
-    currentBasePrice = 2.0;
-    currentBidAmount = 0;
-    hasBids = false;
-    currentBidderId = null;
-    previousHasBids = false;
-    pendingWillingPricePlayer = null;
-    pendingBidAmount = null;
-    currentLeagueName = '';
-    
-    // Clear UI
-    clearBidHistory();
-    resetSkipUI();
-    
-    // Reset player display
-    const waitingBox = document.getElementById('waitingBox');
-    const activeBox = document.getElementById('activePlayerBox');
-    if (waitingBox) waitingBox.style.display = 'block';
-    if (activeBox) activeBox.style.display = 'none';
-    
-    // Reset bid center
-    const bidCenter = document.getElementById('bidCenter');
-    if (bidCenter) bidCenter.classList.remove('disabled-overlay');
 }
 
 // ==================== AUCTION ROOM ====================
@@ -1589,34 +1560,41 @@ function initAuctionRoom() {
 }
 
 function leaveRoom() {
-    // CRITICAL: Stop polling FIRST
+    currentSessionId = null;
+    currentSessionName = '';
+    lastPlayerId = null;
+    currentSessionPlayerId = null;
+    bidHistory = [];
+    hasSkippedCurrentPlayer = false;
+    currentBasePrice = 2.0;
+    currentBidAmount = 0;
+    hasBids = false;
+    currentBidderId = null;
+    previousHasBids = false;
+    pendingWillingPricePlayer = null;
+    pendingBidAmount = null;
+    currentLeagueName = '';
+    hasActiveSession = false;
+    isMemberSession = false;
+
     stopPolling();
     closeWillingPopup();
 
-    // Tell server to clear session
     fetch('/team-owner/auction/leave-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
     })
     .then(() => {
-        // Reset ALL client state
-        currentSessionId = null;
-        currentSessionName = '';
-        hasActiveSession = false;
-        isMemberSession = false;
-        
-        resetAuctionState();
-
-        // Show selector, hide room
         document.getElementById('auctionRoom').style.display = 'none';
         document.getElementById('sessionSelector').classList.remove('hidden');
 
-        // Hide session info bar
         const infoBar = document.getElementById('sessionInfoBar');
         if (infoBar) infoBar.style.display = 'none';
+
+        updatePlayerDisplay(null, 0, null, null, 0);
+        clearBidHistory();
     })
     .catch(() => {
-        // Even on error, reset UI
         document.getElementById('auctionRoom').style.display = 'none';
         document.getElementById('sessionSelector').classList.remove('hidden');
     });
@@ -1634,6 +1612,7 @@ function refreshSessionList() {
 }
 
 function renderSessionCards(sessions, allTeams, myTeamId) {
+    // Re-render the session grid without full page reload
     const mySessionsContainer = document.querySelector('.section-header.my-sessions + .session-grid');
     const otherSessionsContainer = document.querySelector('.section-header.other-sessions + .session-grid');
 
@@ -1654,9 +1633,7 @@ function createSessionCardHTML(sess, allTeams, myTeamId, isMySession) {
     const statusIcon = sess.status === 'active' ? '●' : (sess.status === 'paused' ? '⏸' : '🔒');
     const btnClass = isMySession ? 'btn-enter' : 'btn-view';
     const btnText = isMySession ? '🚀 Enter Auction Room' : '👁️ Watch as Audience';
-    const btnOnclick = isMySession 
-        ? `enterSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}', true)` 
-        : `viewSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}', false)`;
+    const btnOnclick = isMySession ? `enterSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}')` : `viewSession(${sess.id}, '${sess.session_name.replace(/'/g, "\\'")}')`;
     const cardClass = isMySession ? 'session-card my-session' : 'session-card';
 
     const teamsPreview = sess.team_ids_list && sess.team_ids_list.length > 0
@@ -1700,120 +1677,281 @@ function createSessionCardHTML(sess, allTeams, myTeamId, isMySession) {
 // ==================== FAST POLLING ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
+
     pollInterval = setInterval(() => {
+
         if (!currentAuctionId || !currentSessionId) return;
 
-        const url = '/admin/auction/status?auction_id=' + currentAuctionId +
-                    '&team_id=' + (myTeamId || '') +
-                    '&session_id=' + currentSessionId;
+        const url =
+            '/admin/auction/status?auction_id=' +
+            currentAuctionId +
+            '&team_id=' +
+            (myTeamId || '') +
+            '&session_id=' +
+            currentSessionId;
 
         fetch(url)
         .then(r => r.json())
         .then(data => {
+
+            // =========================
+            // SESSION MISMATCH PROTECTION
+            // =========================
+            if (
+                data.session_id &&
+                parseInt(data.session_id) !== parseInt(currentSessionId)
+            ) {
+                console.warn(
+                    'Ignoring wrong session data',
+                    data.session_id,
+                    currentSessionId
+                );
+                return;
+            }
+
+            // =========================
+            // SESSION CLOSED PROTECTION
+            // =========================
+            if (
+                data.status === 'none' ||
+                data.status === 'closed'
+            ) {
+                return;
+            }
+
             if (data.status === 'live' || data.status === 'paused') {
+
                 const statusEl = document.getElementById('roomStatus');
+
                 if (statusEl) {
+
                     if (data.status === 'live') {
+
                         statusEl.className = 'live-badge';
-                        statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
+                        statusEl.style.background =
+                            'rgba(34, 197, 94, 0.12)';
                         statusEl.style.color = '#22c55e';
-                        statusEl.style.borderColor = 'rgba(34, 197, 94, 0.25)';
-                        statusEl.innerHTML = '<div class="live-dot"></div> LIVE';
+                        statusEl.style.borderColor =
+                            'rgba(34, 197, 94, 0.25)';
+                        statusEl.innerHTML =
+                            '<div class="live-dot"></div> LIVE';
+
                     } else {
+
                         statusEl.className = 'live-badge';
-                        statusEl.style.background = 'rgba(245, 158, 11, 0.12)';
+                        statusEl.style.background =
+                            'rgba(245, 158, 11, 0.12)';
                         statusEl.style.color = '#f59e0b';
-                        statusEl.style.borderColor = 'rgba(245, 158, 11, 0.25)';
+                        statusEl.style.borderColor =
+                            'rgba(245, 158, 11, 0.25)';
                         statusEl.innerHTML = '⏸ PAUSED';
                     }
                 }
 
-                if (data.league_name && data.league_name !== currentLeagueName) {
+                // =========================
+                // LEAGUE INFO
+                // =========================
+                if (
+                    data.league_name &&
+                    data.league_name !== currentLeagueName
+                ) {
+
                     currentLeagueName = data.league_name;
-                    const leagueDisplay = document.getElementById('leagueNameDisplay');
-                    const leagueText = document.getElementById('leagueNameText');
+
+                    const leagueDisplay =
+                        document.getElementById('leagueNameDisplay');
+
+                    const leagueText =
+                        document.getElementById('leagueNameText');
+
                     if (leagueDisplay && leagueText) {
-                        leagueText.textContent = data.league_name;
-                        leagueDisplay.style.display = 'inline-flex';
+
+                        leagueText.textContent =
+                            data.league_name;
+
+                        leagueDisplay.style.display =
+                            'inline-flex';
                     }
                 }
 
-                if (data.total_teams !== undefined) totalTeams = data.total_teams;
+                if (data.total_teams !== undefined) {
+                    totalTeams = data.total_teams;
+                }
 
-                // Only show willing price popup for members
-                if (isMemberSession && data.sold_to_team_id === myTeamId && data.sold_player_name && !data.willing_price_set) {
-                    if (pendingWillingPricePlayer !== data.sold_auction_player_id) {
-                        showWillingPopup(data.sold_player_name, data.sold_price, data.sold_auction_player_id);
+                // =========================
+                // WILLING PRICE
+                // =========================
+                if (
+                    isMemberSession &&
+                    data.sold_to_team_id === myTeamId &&
+                    data.sold_player_name &&
+                    !data.willing_price_set
+                ) {
+
+                    if (
+                        pendingWillingPricePlayer !==
+                        data.sold_auction_player_id
+                    ) {
+
+                        showWillingPopup(
+                            data.sold_player_name,
+                            data.sold_price,
+                            data.sold_auction_player_id
+                        );
                     }
                 }
 
                 const playerId = data.session_player_id;
                 const serverHasBids = data.has_bids || false;
 
-                // New player - reset everything
-                if (playerId && playerId !== lastPlayerId) {
+                // =========================
+                // NEW PLAYER
+                // =========================
+                if (
+                    playerId &&
+                    playerId !== lastPlayerId
+                ) {
+
                     lastPlayerId = playerId;
                     currentSessionPlayerId = playerId;
+
                     hasSkippedCurrentPlayer = false;
+
                     resetSkipUI();
                     clearBidHistory();
-                    currentBasePrice = parseFloat(data.base_price) || 2.0;
-                    currentBidAmount = parseFloat(data.current_bid) || 0;
+
+                    currentBasePrice =
+                        parseFloat(data.base_price) || 2.0;
+
+                    currentBidAmount =
+                        parseFloat(data.current_bid) || 0;
+
                     hasBids = serverHasBids;
-                    currentBidderId = data.current_bidder_id || null;
+
+                    currentBidderId =
+                        data.current_bidder_id || null;
+
                     pendingBidAmount = null;
                 }
 
-                // Player reset (all bids cleared - e.g. rebid)
-                if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
+                // =========================
+                // REBID RESET
+                // =========================
+                if (
+                    playerId &&
+                    playerId === lastPlayerId &&
+                    previousHasBids &&
+                    !serverHasBids
+                ) {
+
                     hasSkippedCurrentPlayer = false;
+
                     resetSkipUI();
                     clearBidHistory();
-                    currentBasePrice = parseFloat(data.base_price) || 2.0;
-                    currentBidAmount = parseFloat(data.current_bid) || 0;
+
+                    currentBasePrice =
+                        parseFloat(data.base_price) || 2.0;
+
+                    currentBidAmount =
+                        parseFloat(data.current_bid) || 0;
+
                     hasBids = false;
                     currentBidderId = null;
                     pendingBidAmount = null;
                 }
 
-                // Handle pending bid state
-                const serverBid = parseFloat(data.current_bid) || 0;
-                const serverBidder = data.current_bidder_id || null;
+                // =========================
+                // BID SYNC
+                // =========================
+                const serverBid =
+                    parseFloat(data.current_bid) || 0;
+
+                const serverBidder =
+                    data.current_bidder_id || null;
 
                 if (pendingBidAmount !== null) {
-                    if (serverBidder === myTeamId && Math.abs(serverBid - pendingBidAmount) < 0.001) {
+
+                    if (
+                        serverBidder === myTeamId &&
+                        Math.abs(
+                            serverBid - pendingBidAmount
+                        ) < 0.001
+                    ) {
+
                         pendingBidAmount = null;
+
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
-                    } else if (serverBid > pendingBidAmount || (serverBidder !== myTeamId && serverBidder !== null)) {
+
+                    } else if (
+                        serverBid > pendingBidAmount ||
+                        (
+                            serverBidder !== myTeamId &&
+                            serverBidder !== null
+                        )
+                    ) {
+
                         pendingBidAmount = null;
+
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
                     }
+
                 } else {
+
                     currentBidAmount = serverBid;
                     currentBidderId = serverBidder;
                     hasBids = serverHasBids;
                 }
 
-                updatePlayerDisplay(data.current_player, currentBidAmount, data.current_bidder, data.player_category, data.base_price);
+                // =========================
+                // UPDATE PLAYER UI
+                // =========================
+                updatePlayerDisplay(
+                    data.current_player,
+                    currentBidAmount,
+                    data.current_bidder,
+                    data.player_category,
+                    data.base_price
+                );
 
-                // Only update bid controls if member
+                // =========================
+                // MEMBER CONTROLS
+                // =========================
                 if (isMemberSession) {
-                    updateBidControls(currentBidAmount, data.base_price, hasBids, currentBidderId);
+
+                    updateBidControls(
+                        currentBidAmount,
+                        data.base_price,
+                        hasBids,
+                        currentBidderId
+                    );
                 }
 
                 previousHasBids = serverHasBids;
 
-                if (data.skip_count !== undefined && totalTeams > 0) {
-                    updateSkipStatus(data.skip_count, totalTeams);
+                // =========================
+                // SKIP STATUS
+                // =========================
+                if (
+                    data.skip_count !== undefined &&
+                    totalTeams > 0
+                ) {
+
+                    updateSkipStatus(
+                        data.skip_count,
+                        totalTeams
+                    );
                 }
             }
         })
-        .catch(() => {});
-    }, 300);
+        .catch(err => {
+            console.error('Polling error:', err);
+        });
+
+    }, 1000);
 }
 
 function stopPolling() {
@@ -1949,7 +2087,7 @@ function updateBidChips(currentBid) {
         btn.onclick = () => placeBid(newBid);
     });
 
-    const customBtn = chipButtons[5];
+    const customBtn = chipButtons[6];
     if (customBtn) {
         customBtn.innerHTML = '<span class="amount">✏️</span><span style="font-size:0.75rem;">Custom</span>';
         customBtn.onclick = showCustomBid;
@@ -2087,11 +2225,10 @@ function executeBid(amount) {
             updatePlayerDisplay(
                 document.getElementById('currentPlayerName') ? document.getElementById('currentPlayerName').textContent : '--',
                 currentBidAmount,
-                myTeamName + ' (YOU)',
+                myTeamName,
                 null,
                 currentBasePrice
             );
-            addHistory(myTeamName, currentBidAmount, false);
             if (isMemberSession) {
                 updateBidControls(currentBidAmount, currentBasePrice, true, myTeamId);
             }
@@ -2345,7 +2482,9 @@ function refreshPlayers() {
     // CRITICAL: Always pass session_id to get session-specific players
     let endpoint = '/team-owner/auction/players';
     if (currentSessionId) {
-        endpoint += '?session_id=' + currentSessionId;
+        endpoint +=
+        '?session_id=' +
+        encodeURIComponent(currentSessionId);
     }
 
     fetch(endpoint)

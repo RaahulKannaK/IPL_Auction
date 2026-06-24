@@ -838,7 +838,7 @@ function startFastPolling() {
                 indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block; animation: livePulse 1s infinite;"></span> Reconnecting...';
             }
         });
-    }, 300);
+    }, 1000);
 }
 
 function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
@@ -847,7 +847,7 @@ function flashPlayerUpdate() {
     document.querySelectorAll('.display-card').forEach(card => {
         card.style.transition = 'none';
         card.style.boxShadow = '0 0 40px rgba(124, 77, 255, 0.3)';
-        setTimeout(() => { card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; card.style.boxShadow = ''; }, 300);
+        setTimeout(() => { card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; card.style.boxShadow = ''; }, 1000);
     });
 }
 

@@ -99,5 +99,5 @@ def dashboard_activity():
             cursor.close()
             db.close()
     
-    activities = get_cached(cache_key, fetch_activities, ttl_seconds=5)
+    activities = get_cached(cache_key, fetch_activities, ttl_seconds=0)
     return jsonify({'activities': activities})

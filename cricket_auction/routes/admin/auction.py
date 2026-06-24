@@ -185,7 +185,8 @@ def auction_room():
             """, (active_session_id, auction_session['current_player_id']))
             skip_votes = cursor.fetchall()
             
-            all_skipped = len(skip_votes) >= total_teams and total_teams > 0
+            unique_skip_teams = len(set(v['team_id'] for v in skip_votes))
+            all_skipped = unique_skip_teams >= total_teams and total_teams > 0
         
         # === GET ALL SESSIONS FOR NAVIGATION ===
         cursor.execute("""
@@ -296,10 +297,12 @@ def select_player():
         
         # Update AUCTION_SESSIONS (not auctions) with current player
         cursor.execute("""
-            UPDATE auction_sessions 
-            SET current_player_id = %s, current_bid = %s, current_bidder_id = NULL
+            UPDATE auction_sessions
+            SET current_player_id = %s,
+                current_bid = 0,
+                current_bidder_id = NULL
             WHERE id = %s
-        """, (session_player_id, player['base_price'], active_session_id))
+        """, (session_player_id, active_session_id))
         
         db.commit()
     finally:
@@ -340,7 +343,7 @@ def place_bid():
     user_role = session.get('role')
     
     if user_role == 'team_owner':
-        user_team = get_user_team(session['user_id'], auction_id)
+        user_team = get_user_team(cursor, session['user_id'], auction_id)
         if not user_team or user_team['id'] != team_id:
             return jsonify({'error': 'You can only bid for your own team'}), 403
     
@@ -478,6 +481,9 @@ def sell_player():
         if not auction_session or not auction_session.get('current_bidder_id') or float(auction_session.get('current_bid') or 0) <= 0:
             return jsonify({'error': 'No active bid - cannot sell.'}), 400
         
+        if auction_session['current_player_id'] != session_player_id:
+            return jsonify({'error': 'Player mismatch'}), 400
+        
         team_id = auction_session['current_bidder_id']
         sold_price = auction_session['current_bid']
         
@@ -502,10 +508,30 @@ def sell_player():
         """, (team_id, sold_price, session_player_id))
         
         # Update team spent
-        cursor.execute(
-            "UPDATE teams SET spent = spent + %s WHERE id = %s",
-            (sold_price, team_id)
-        )
+        cursor.execute("""
+            SELECT reserved_amount
+            FROM session_purse_reservations
+            WHERE session_player_id=%s
+            AND team_id=%s
+            AND status='active'
+        """, (session_player_id, team_id))
+
+        reservation = cursor.fetchone()
+        reserved_amount = reservation['reserved_amount'] if reservation else 0
+
+        cursor.execute("""
+            UPDATE teams
+            SET spent = spent + %s,
+                reserved = GREATEST(0, reserved - %s)
+            WHERE id = %s
+        """, (sold_price, reserved_amount, team_id))
+
+        cursor.execute("""
+            UPDATE session_purse_reservations
+            SET status='used'
+            WHERE session_player_id=%s
+            AND team_id=%s
+        """, (session_player_id, team_id))
         
         # Add to session_team_players
         cursor.execute("""
@@ -932,7 +958,7 @@ def get_status():
             cursor.close()
             db.close()
     
-    result = get_cached(cache_key, fetch_status, ttl_seconds=5)
+    result = get_cached(cache_key, fetch_status, ttl_seconds=0)
     return jsonify(result)
 
 
@@ -990,7 +1016,7 @@ def place_hidden_bid():
     team_id = data.get('team_id')
     max_amount = float(data.get('max_amount', 0))
     
-    user_team = get_user_team(session['user_id'], auction_id)
+    user_team = get_user_team(cursor, session['user_id'], auction_id)
     if session.get('role') == 'team_owner' and (not user_team or user_team['id'] != team_id):
         return jsonify({'error': 'You can only set hidden bids for your own team'}), 403
     
@@ -1010,24 +1036,32 @@ def place_hidden_bid():
             return jsonify({'error': f'Insufficient funds. Available: ₹{available:.2f}Cr'}), 400
         
         cursor.execute("""
-            DELETE FROM session_hidden_max_bids 
-            WHERE session_player_id = %s AND team_id = %s
+            DELETE FROM session_purse_reservations
+            WHERE session_player_id = %s
+            AND team_id = %s
+            AND status = 'active'
         """, (session_player_id, team_id))
         
         cursor.execute("""
             INSERT INTO session_hidden_max_bids (session_id, session_player_id, team_id, max_bid) 
             VALUES (%s, %s, %s, %s)
         """, (active_session_id, session_player_id, team_id, max_amount))
-        
+
         cursor.execute("""
-            INSERT INTO session_purse_reservations (team_id, session_player_id, reserved_amount) 
-            VALUES (%s, %s, %s)
-        """, (team_id, session_player_id, max_amount))
-        
-        cursor.execute(
-            "UPDATE teams SET reserved = reserved + %s WHERE id = %s",
-            (max_amount, team_id)
-        )
+            SELECT reserved_amount
+            FROM session_purse_reservations
+            WHERE session_player_id=%s
+            AND team_id=%s
+            AND status='active'
+        """, (session_player_id, team_id))
+
+        old_res = cursor.fetchone()
+
+        if old_res:
+            cursor.execute(
+                "UPDATE teams SET reserved = reserved - %s WHERE id=%s",
+                (old_res['reserved_amount'], team_id)
+            )
         
         db.commit()
     finally:
@@ -1066,7 +1100,8 @@ def auto_counter_bid():
             return jsonify({'auto_bid': False})
         
         winner = hidden_bids[0]
-        next_bid = current_bid + 0.5
+        increment = get_min_bid_increment(current_bid)
+        next_bid = current_bid + increment
         if next_bid > winner['max_bid']:
             next_bid = winner['max_bid']
         
@@ -1139,31 +1174,3 @@ def get_players():
     
     return jsonify({'players': players})
 
-@bp.route('/auction/players')
-def get_auction_players():
-    """Get session-scoped players for refresh"""
-    auction_id = request.args.get('auction_id', type=int)
-    session_id = request.args.get('session_id', type=int) or session.get('active_session_id')
-    
-    if not session_id:
-        return jsonify({'error': 'No session specified'}), 400
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        cursor.execute("""
-            SELECT sp.id as session_player_id, sp.base_price, sp.status,
-                   p.id as player_id, p.player_name, p.category, p.overseas
-            FROM session_players sp
-            JOIN players p ON sp.player_id = p.id
-            WHERE sp.session_id = %s AND sp.status IN ('available', 'unsold')
-            ORDER BY p.player_name
-        """, (session_id,))
-        players = cursor.fetchall()
-        
-    finally:
-        cursor.close()
-        db.close()
-    
-    return jsonify({'players': players})
