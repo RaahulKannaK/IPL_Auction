@@ -1369,59 +1369,30 @@ let pendingBidAmount = null;
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
     if (hasActiveSession && currentSessionId) {
+        // Server already rendered correct is_member_session in template
+        // Just apply it directly — no extra fetch needed
+        document.getElementById('sessionSelector').classList.add('hidden');
+        document.getElementById('auctionRoom').style.display = 'block';
 
-        // HIDE auction room until we confirm membership status
-        document.getElementById('auctionRoom').style.display = 'none';
+        if (isMemberSession) {
+            document.getElementById('viewerModeBadge').style.display = 'none';
+            document.getElementById('teamInfoBar').style.display = 'block';
+            document.getElementById('bidCenter').style.display = 'block';
+            document.getElementById('audiencePanel').style.display = 'none';
+        } else {
+            document.getElementById('viewerModeBadge').style.display = 'block';
+            document.getElementById('teamInfoBar').style.display = 'none';
+            document.getElementById('bidCenter').style.display = 'none';
+            document.getElementById('audiencePanel').style.display = 'block';
+        }
 
-        fetch(
-            '/team-owner/auction/session-info?session_id=' +
-            currentSessionId
-        )
-        .then(r => r.json())
-        .then(data => {
-
-            if (!data.success) {
-                // On error, show selector
-                document.getElementById('sessionSelector').classList.remove('hidden');
-                return;
-            }
-
-            // FIX: Use server response, not template variable
-            isMemberSession = data.is_member;
-
-            document.getElementById('sessionSelector').classList.add('hidden');
-
-            // NOW show auction room after we know the mode
-            document.getElementById('auctionRoom').style.display = 'block';
-
-            if (isMemberSession) {
-
-                document.getElementById('viewerModeBadge').style.display = 'none';
-                document.getElementById('teamInfoBar').style.display = 'block';
-                document.getElementById('bidCenter').style.display = 'block';
-                document.getElementById('audiencePanel').style.display = 'none';
-
-            } else {
-
-                document.getElementById('viewerModeBadge').style.display = 'block';
-                document.getElementById('teamInfoBar').style.display = 'none';
-                document.getElementById('bidCenter').style.display = 'none';
-                document.getElementById('audiencePanel').style.display = 'block';
-
-            }
-
-            initAuctionRoom();
-        })
-        .catch(err => {
-            console.error('Session info error:', err);
-            document.getElementById('sessionSelector').classList.remove('hidden');
-        });
+        initAuctionRoom();
     }
 });
 
 // ==================== SESSION SELECTOR ====================
 function enterSession(sessionId, sessionName) {
-    // CLEAR old players immediately so no stale data flashes
+    // CLEAR stale players immediately before any fetch
     clearPlayersGrid();
     document.getElementById('playersPanel').style.display = 'none';
 
@@ -1472,7 +1443,7 @@ function enterSession(sessionId, sessionName) {
 }
 
 function viewSession(sessionId, sessionName) {
-    // CLEAR old players immediately so no stale data flashes
+    // CLEAR stale players immediately before any fetch
     clearPlayersGrid();
     document.getElementById('playersPanel').style.display = 'none';
 
@@ -1518,16 +1489,6 @@ function viewSession(sessionId, sessionName) {
         }
     })
     .catch(err => console.error('View session error:', err));
-}
-
-// ADD this helper function
-function clearPlayersGrid() {
-    const grid = document.getElementById('playersGrid');
-    const badge = document.getElementById('playerCountBadge');
-    if (grid) {
-        grid.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 40px; font-size: 0.9rem;">Loading players...</p>';
-    }
-    if (badge) badge.textContent = '...';
 }
 
 function getSessionIcon(sessionName) {
@@ -1586,6 +1547,8 @@ function initAuctionRoom() {
     })
     .catch(err => console.error('Init auction room error:', err));
 
+    // DON'T call refreshPlayers() here — template already has correct data on page load
+    // Only refresh when user clicks toggle or refresh button
     startFastPolling();
 }
 
@@ -1609,7 +1572,7 @@ function leaveRoom() {
 
     stopPolling();
     closeWillingPopup();
-    clearPlayersGrid();  // CLEAR on leave too
+    clearPlayersGrid();
     document.getElementById('playersPanel').style.display = 'none';
 
     fetch('/team-owner/auction/leave-session', {
@@ -1644,7 +1607,6 @@ function refreshSessionList() {
 }
 
 function renderSessionCards(sessions, allTeams, myTeamId) {
-    // Re-render the session grid without full page reload
     const mySessionsContainer = document.querySelector('.section-header.my-sessions + .session-grid');
     const otherSessionsContainer = document.querySelector('.section-header.other-sessions + .session-grid');
 
@@ -1711,98 +1673,49 @@ function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
 
     pollInterval = setInterval(() => {
-
         if (!currentAuctionId || !currentSessionId) return;
 
-        const url =
-            '/admin/auction/status?auction_id=' +
-            currentAuctionId +
-            '&team_id=' +
-            (myTeamId || '') +
-            '&session_id=' +
-            currentSessionId;
+        const url = '/admin/auction/status?auction_id=' + currentAuctionId +
+                    '&team_id=' + (myTeamId || '') +
+                    '&session_id=' + currentSessionId;
 
         fetch(url)
         .then(r => r.json())
         .then(data => {
-
-            // =========================
-            // SESSION MISMATCH PROTECTION
-            // =========================
-            if (
-                data.session_id &&
-                parseInt(data.session_id) !== parseInt(currentSessionId)
-            ) {
-                console.warn(
-                    'Ignoring wrong session data',
-                    data.session_id,
-                    currentSessionId
-                );
+            if (data.session_id && parseInt(data.session_id) !== parseInt(currentSessionId)) {
+                console.warn('Ignoring wrong session data', data.session_id, currentSessionId);
                 return;
             }
 
-            // =========================
-            // SESSION CLOSED PROTECTION
-            // =========================
-            if (
-                data.status === 'none' ||
-                data.status === 'closed'
-            ) {
+            if (data.status === 'none' || data.status === 'closed') {
                 return;
             }
 
             if (data.status === 'live' || data.status === 'paused') {
-
                 const statusEl = document.getElementById('roomStatus');
-
                 if (statusEl) {
-
                     if (data.status === 'live') {
-
                         statusEl.className = 'live-badge';
-                        statusEl.style.background =
-                            'rgba(34, 197, 94, 0.12)';
+                        statusEl.style.background = 'rgba(34, 197, 94, 0.12)';
                         statusEl.style.color = '#22c55e';
-                        statusEl.style.borderColor =
-                            'rgba(34, 197, 94, 0.25)';
-                        statusEl.innerHTML =
-                            '<div class="live-dot"></div> LIVE';
-
+                        statusEl.style.borderColor = 'rgba(34, 197, 94, 0.25)';
+                        statusEl.innerHTML = '<div class="live-dot"></div> LIVE';
                     } else {
-
                         statusEl.className = 'live-badge';
-                        statusEl.style.background =
-                            'rgba(245, 158, 11, 0.12)';
+                        statusEl.style.background = 'rgba(245, 158, 11, 0.12)';
                         statusEl.style.color = '#f59e0b';
-                        statusEl.style.borderColor =
-                            'rgba(245, 158, 11, 0.25)';
+                        statusEl.style.borderColor = 'rgba(245, 158, 11, 0.25)';
                         statusEl.innerHTML = '⏸ PAUSED';
                     }
                 }
 
-                // =========================
-                // LEAGUE INFO
-                // =========================
-                if (
-                    data.league_name &&
-                    data.league_name !== currentLeagueName
-                ) {
-
+                if (data.league_name && data.league_name !== currentLeagueName) {
                     currentLeagueName = data.league_name;
-
-                    const leagueDisplay =
-                        document.getElementById('leagueNameDisplay');
-
-                    const leagueText =
-                        document.getElementById('leagueNameText');
-
+                    const leagueDisplay = document.getElementById('leagueNameDisplay');
+                    const leagueText = document.getElementById('leagueNameText');
                     if (leagueDisplay && leagueText) {
-
-                        leagueText.textContent =
-                            data.league_name;
-
-                        leagueDisplay.style.display =
-                            'inline-flex';
+                        leagueText.textContent = data.league_name;
+                        leagueDisplay.style.display = 'inline-flex';
                     }
                 }
 
@@ -1810,172 +1723,70 @@ function startFastPolling() {
                     totalTeams = data.total_teams;
                 }
 
-                // =========================
-                // WILLING PRICE
-                // =========================
-                if (
-                    isMemberSession &&
-                    data.sold_to_team_id === myTeamId &&
-                    data.sold_player_name &&
-                    !data.willing_price_set
-                ) {
-
-                    if (
-                        pendingWillingPricePlayer !==
-                        data.sold_auction_player_id
-                    ) {
-
-                        showWillingPopup(
-                            data.sold_player_name,
-                            data.sold_price,
-                            data.sold_auction_player_id
-                        );
+                if (isMemberSession && data.sold_to_team_id === myTeamId && data.sold_player_name && !data.willing_price_set) {
+                    if (pendingWillingPricePlayer !== data.sold_auction_player_id) {
+                        showWillingPopup(data.sold_player_name, data.sold_price, data.sold_auction_player_id);
                     }
                 }
 
                 const playerId = data.session_player_id;
                 const serverHasBids = data.has_bids || false;
 
-                // =========================
-                // NEW PLAYER
-                // =========================
-                if (
-                    playerId &&
-                    playerId !== lastPlayerId
-                ) {
-
+                if (playerId && playerId !== lastPlayerId) {
                     lastPlayerId = playerId;
                     currentSessionPlayerId = playerId;
-
                     hasSkippedCurrentPlayer = false;
-
                     resetSkipUI();
                     clearBidHistory();
-
-                    currentBasePrice =
-                        parseFloat(data.base_price) || 2.0;
-
-                    currentBidAmount =
-                        parseFloat(data.current_bid) || 0;
-
+                    currentBasePrice = parseFloat(data.base_price) || 2.0;
+                    currentBidAmount = parseFloat(data.current_bid) || 0;
                     hasBids = serverHasBids;
-
-                    currentBidderId =
-                        data.current_bidder_id || null;
-
+                    currentBidderId = data.current_bidder_id || null;
                     pendingBidAmount = null;
                 }
 
-                // =========================
-                // REBID RESET
-                // =========================
-                if (
-                    playerId &&
-                    playerId === lastPlayerId &&
-                    previousHasBids &&
-                    !serverHasBids
-                ) {
-
+                if (playerId && playerId === lastPlayerId && previousHasBids && !serverHasBids) {
                     hasSkippedCurrentPlayer = false;
-
                     resetSkipUI();
                     clearBidHistory();
-
-                    currentBasePrice =
-                        parseFloat(data.base_price) || 2.0;
-
-                    currentBidAmount =
-                        parseFloat(data.current_bid) || 0;
-
+                    currentBasePrice = parseFloat(data.base_price) || 2.0;
+                    currentBidAmount = parseFloat(data.current_bid) || 0;
                     hasBids = false;
                     currentBidderId = null;
                     pendingBidAmount = null;
                 }
 
-                // =========================
-                // BID SYNC
-                // =========================
-                const serverBid =
-                    parseFloat(data.current_bid) || 0;
-
-                const serverBidder =
-                    data.current_bidder_id || null;
+                const serverBid = parseFloat(data.current_bid) || 0;
+                const serverBidder = data.current_bidder_id || null;
 
                 if (pendingBidAmount !== null) {
-
-                    if (
-                        serverBidder === myTeamId &&
-                        Math.abs(
-                            serverBid - pendingBidAmount
-                        ) < 0.001
-                    ) {
-
+                    if (serverBidder === myTeamId && Math.abs(serverBid - pendingBidAmount) < 0.001) {
                         pendingBidAmount = null;
-
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
-
-                    } else if (
-                        serverBid > pendingBidAmount ||
-                        (
-                            serverBidder !== myTeamId &&
-                            serverBidder !== null
-                        )
-                    ) {
-
+                    } else if (serverBid > pendingBidAmount || (serverBidder !== myTeamId && serverBidder !== null)) {
                         pendingBidAmount = null;
-
                         currentBidAmount = serverBid;
                         currentBidderId = serverBidder;
                         hasBids = serverHasBids;
                     }
-
                 } else {
-
                     currentBidAmount = serverBid;
                     currentBidderId = serverBidder;
                     hasBids = serverHasBids;
                 }
 
-                // =========================
-                // UPDATE PLAYER UI
-                // =========================
-                updatePlayerDisplay(
-                    data.current_player,
-                    currentBidAmount,
-                    data.current_bidder,
-                    data.player_category,
-                    data.base_price
-                );
+                updatePlayerDisplay(data.current_player, currentBidAmount, data.current_bidder, data.player_category, data.base_price);
 
-                // =========================
-                // MEMBER CONTROLS
-                // =========================
                 if (isMemberSession) {
-
-                    updateBidControls(
-                        currentBidAmount,
-                        data.base_price,
-                        hasBids,
-                        currentBidderId
-                    );
+                    updateBidControls(currentBidAmount, data.base_price, hasBids, currentBidderId);
                 }
 
                 previousHasBids = serverHasBids;
 
-                // =========================
-                // SKIP STATUS
-                // =========================
-                if (
-                    data.skip_count !== undefined &&
-                    totalTeams > 0
-                ) {
-
-                    updateSkipStatus(
-                        data.skip_count,
-                        totalTeams
-                    );
+                if (data.skip_count !== undefined && totalTeams > 0) {
+                    updateSkipStatus(data.skip_count, totalTeams);
                 }
             }
         })
@@ -2236,7 +2047,6 @@ function executeBid(amount) {
 
         if (data.error) {
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
-            // Sync with server state
             fetch('/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId)
             .then(r => r.json())
             .then(serverData => {
@@ -2507,16 +2317,22 @@ function togglePlayers() {
     }
 }
 
+function clearPlayersGrid() {
+    const grid = document.getElementById('playersGrid');
+    const badge = document.getElementById('playerCountBadge');
+    if (grid) {
+        grid.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 40px; font-size: 0.9rem;">Loading players...</p>';
+    }
+    if (badge) badge.textContent = '...';
+}
+
 function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     if (btn) btn.classList.add('spinning');
 
-    // CRITICAL: Always pass session_id to get session-specific players
     let endpoint = '/team-owner/auction/players';
     if (currentSessionId) {
-        endpoint +=
-        '?session_id=' +
-        encodeURIComponent(currentSessionId);
+        endpoint += '?session_id=' + encodeURIComponent(currentSessionId);
     }
 
     fetch(endpoint)
