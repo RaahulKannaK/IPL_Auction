@@ -24,10 +24,15 @@ def list_sessions():
         flash('Unauthorized')
         return redirect('/')
     
-    auction_id = session.get('active_auction_id')
+    # Accept auction from URL param or session
+    auction_id = request.args.get('auction', type=int) or session.get('active_auction_id')
     if not auction_id:
         flash('Please enter an auction room first')
         return redirect('/admin/')
+    
+    # Store in session for persistence
+    if auction_id:
+        session['active_auction_id'] = auction_id
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
@@ -638,10 +643,15 @@ def players_by_session():
         flash('Unauthorized')
         return redirect('/')
     
-    auction_id = session.get('active_auction_id')
+    # Accept auction from URL param or session
+    auction_id = request.args.get('auction', type=int) or session.get('active_auction_id')
     if not auction_id:
         flash('Please enter an auction room first')
         return redirect('/admin/')
+    
+    # Store in session for persistence
+    if auction_id:
+        session['active_auction_id'] = auction_id
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
