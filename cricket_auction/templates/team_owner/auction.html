@@ -1370,24 +1370,52 @@ let pendingBidAmount = null;
 document.addEventListener('DOMContentLoaded', function() {
     if (hasActiveSession && currentSessionId) {
 
-        // Server already rendered correct is_member_session in template
-        // Just apply it directly — no extra fetch needed
-        document.getElementById('sessionSelector').classList.add('hidden');
-        document.getElementById('auctionRoom').style.display = 'block';
+        // HIDE auction room until we confirm membership status
+        document.getElementById('auctionRoom').style.display = 'none';
 
-        if (isMemberSession) {
-            document.getElementById('viewerModeBadge').style.display = 'none';
-            document.getElementById('teamInfoBar').style.display = 'block';
-            document.getElementById('bidCenter').style.display = 'block';
-            document.getElementById('audiencePanel').style.display = 'none';
-        } else {
-            document.getElementById('viewerModeBadge').style.display = 'block';
-            document.getElementById('teamInfoBar').style.display = 'none';
-            document.getElementById('bidCenter').style.display = 'none';
-            document.getElementById('audiencePanel').style.display = 'block';
-        }
+        fetch(
+            '/team-owner/auction/session-info?session_id=' +
+            currentSessionId
+        )
+        .then(r => r.json())
+        .then(data => {
 
-        initAuctionRoom();
+            if (!data.success) {
+                // On error, show selector
+                document.getElementById('sessionSelector').classList.remove('hidden');
+                return;
+            }
+
+            // FIX: Use server response, not template variable
+            isMemberSession = data.is_member;
+
+            document.getElementById('sessionSelector').classList.add('hidden');
+
+            // NOW show auction room after we know the mode
+            document.getElementById('auctionRoom').style.display = 'block';
+
+            if (isMemberSession) {
+
+                document.getElementById('viewerModeBadge').style.display = 'none';
+                document.getElementById('teamInfoBar').style.display = 'block';
+                document.getElementById('bidCenter').style.display = 'block';
+                document.getElementById('audiencePanel').style.display = 'none';
+
+            } else {
+
+                document.getElementById('viewerModeBadge').style.display = 'block';
+                document.getElementById('teamInfoBar').style.display = 'none';
+                document.getElementById('bidCenter').style.display = 'none';
+                document.getElementById('audiencePanel').style.display = 'block';
+
+            }
+
+            initAuctionRoom();
+        })
+        .catch(err => {
+            console.error('Session info error:', err);
+            document.getElementById('sessionSelector').classList.remove('hidden');
+        });
     }
 });
 
