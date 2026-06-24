@@ -6,7 +6,7 @@ bp = Blueprint('auth', __name__, url_prefix='/')
 
 def get_role_dashboard(role):
     dashboards = {
-        'owner': '/admin/dashboard',
+         'team_owner': '/admin/dashboard',
         'admin': '/admin/dashboard',
         'auctioneer': '/admin/dashboard',
         'team_owner': '/team-owner/dashboard',

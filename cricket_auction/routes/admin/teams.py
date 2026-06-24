@@ -66,7 +66,7 @@ def list_teams():
         cursor.execute("""
             SELECT id, username, role 
             FROM users 
-            WHERE role IN ('team_owner', 'admin', 'auctioneer', 'owner')
+            WHERE role IN ('team_owner', 'admin', 'auctioneer',  'team_owner')
             ORDER BY username
         """)
         available_owners = cursor.fetchall()
@@ -229,7 +229,7 @@ def edit_team(id):
 @bp.route('/delete/<int:id>', methods=['POST'])
 def delete_team(id):
     """Delete team (only if no players assigned)"""
-    if session.get('role') not in ['owner', 'admin']:
+    if session.get('role') not in [ 'team_owner', 'admin']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -385,7 +385,7 @@ def available_owners():
         cursor.execute("""
             SELECT id, username, role 
             FROM users 
-            WHERE role IN ('team_owner', 'admin', 'auctioneer', 'owner')
+            WHERE role IN ('team_owner', 'admin', 'auctioneer',  'team_owner')
             ORDER BY username
         """)
         users = cursor.fetchall()

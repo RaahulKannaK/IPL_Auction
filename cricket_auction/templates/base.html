@@ -312,7 +312,7 @@
             {% endif %}
 
         <!-- ========== TEAM OWNER (includes owner) ========== -->
-        {% elif session.role in ['team_owner', 'owner'] %}
+        {% elif session.role in ['team_owner',  'team_owner'] %}
             <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
             {% if session.get('active_auction_id') %}
                 <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
@@ -335,7 +335,7 @@
         {% if session.get('active_league_name') %}
             <div class="auction-context" style="margin-left: auto;">
                 🔸 {{ session.active_league_name }}
-                {% if session.role in ['team_owner', 'owner'] %}
+                {% if session.role in ['team_owner',  'team_owner'] %}
                     <a href="/team-owner/exit-auction" class="exit">✕ Exit</a>
                 {% elif session.role == 'viewer' %}
                     <a href="/viewer/exit-auction" class="exit">✕ Exit</a>

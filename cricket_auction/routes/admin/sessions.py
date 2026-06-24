@@ -104,7 +104,7 @@ def list_sessions():
 @bp.route('/create', methods=['POST'])
 def create_session():
     """Create a new session with selected teams and time slot"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     auction_id = session.get('active_auction_id')
@@ -166,7 +166,7 @@ def create_session():
 @bp.route('/<int:session_id>/assign-players')
 def assign_players_page(session_id):
     """Page to assign players to a session - smart logic based on team coverage"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -320,7 +320,7 @@ def assign_players_page(session_id):
 @bp.route('/<int:session_id>/assign-players', methods=['POST'])
 def assign_players(session_id):
     """Assign players to session - from previous session, CSV upload, fresh selection, or manual entry"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     # === CHECK FOR FILE UPLOAD FIRST (before any JSON parsing) ===
@@ -530,7 +530,7 @@ def import_players_to_session(session_id):
 @bp.route('/<int:session_id>/players')
 def get_session_players(session_id):
     """Get players in a session with their session-local status"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -565,7 +565,7 @@ def get_session_players(session_id):
 @bp.route('/<int:session_id>/enter')
 def enter_session_room(session_id):
     """Enter auction room for a specific session — just set session and redirect to auction room"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer', 'team_owner']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer', 'team_owner']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -594,7 +594,7 @@ def enter_session_room(session_id):
 @bp.route('/<int:session_id>/close', methods=['POST'])
 def close_session(session_id):
     """Close session and summarize"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -634,7 +634,7 @@ def close_session(session_id):
 @bp.route('/players-by-session')
 def players_by_session():
     """View players organized by session - with session tabs at top"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
@@ -745,7 +745,7 @@ def players_by_session():
 @bp.route('/<int:session_id>/remove-team/<int:team_id>', methods=['POST'])
 def remove_team_from_session(session_id, team_id):
     """Remove a team from session"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -845,7 +845,7 @@ Trent Boult,bowler,true,1.5
 @bp.route('/<int:session_id>/players/<int:sp_id>', methods=['DELETE'])
 def delete_session_player(session_id, sp_id):
     """Remove a player from a session by session_players.id (junction table PK)"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -883,7 +883,7 @@ def delete_session_player(session_id, sp_id):
 @bp.route('/<int:session_id>/players', methods=['POST'])
 def add_session_player(session_id):
     """Add a single player to session manually (creates in master DB if not exists)"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json(silent=True) or request.form
@@ -967,7 +967,7 @@ def add_session_player(session_id):
 @bp.route('/<int:session_id>/delete', methods=['POST'])
 def delete_session(session_id):
     """Permanently delete a session and all its data"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()

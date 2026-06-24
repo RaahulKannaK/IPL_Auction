@@ -100,7 +100,7 @@ def view_team_detail(team_id):
         'team': {
             'id': team['id'],
             'name': team['team_name'],
-            'owner': team['owner_1_name'],
+             'team_owner': team['owner_1_name'],
             'purse_limit': float(team['purse_limit'] or 100),
             'spent': float(team['spent'] or 0),
             'reserved': float(team['reserved'] or 0),

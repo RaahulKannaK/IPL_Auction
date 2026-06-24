@@ -8,7 +8,7 @@ bp = Blueprint('admin_reports', __name__, url_prefix='/admin/reports')
 
 @bp.route('/')
 def reports_dashboard():
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/dashboard')
     
@@ -68,7 +68,7 @@ def reports_dashboard():
 
 @bp.route('/team_spending')
 def team_spending_api():
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
@@ -85,7 +85,7 @@ def team_spending_api():
 
 @bp.route('/auction_history')
 def auction_history_api():
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()

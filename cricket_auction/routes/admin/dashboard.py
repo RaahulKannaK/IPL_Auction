@@ -7,7 +7,7 @@ bp = Blueprint('admin_dashboard', __name__, url_prefix='/admin')
 @bp.route('/')
 def admin_panel():
     """Main dashboard - shows create/join auction options"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized access')
         return redirect('/')
     
@@ -53,7 +53,7 @@ def admin_dashboard():
 @bp.route('/enter-auction/<int:auction_id>')
 def enter_auction(auction_id):
     """Enter auction room - sets session and redirects to auction room"""
-    if session.get('role') not in ['owner', 'admin', 'auctioneer']:
+    if session.get('role') not in ['team_owner', 'admin', 'auctioneer']:
         flash('Unauthorized')
         return redirect('/')
     
