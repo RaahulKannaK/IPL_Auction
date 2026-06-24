@@ -1102,7 +1102,7 @@
 </div>
 
 <!-- ==================== AUCTION ROOM ==================== -->
-<div id="auctionRoom" style="{% if not has_active_session %}display: none;{% endif %}">
+<div id="auctionRoom" style="display: none;">
     <button onclick="leaveRoom()" class="back-btn">← Back to Sessions</button>
     
     <div class="auction-container">
@@ -1370,6 +1370,9 @@ let pendingBidAmount = null;
 document.addEventListener('DOMContentLoaded', function() {
     if (hasActiveSession && currentSessionId) {
 
+        // HIDE auction room until we confirm membership status
+        document.getElementById('auctionRoom').style.display = 'none';
+
         fetch(
             '/team-owner/auction/session-info?session_id=' +
             currentSessionId
@@ -1378,6 +1381,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
 
             if (!data.success) {
+                // On error, show selector
+                document.getElementById('sessionSelector').classList.remove('hidden');
                 return;
             }
 
@@ -1385,6 +1390,8 @@ document.addEventListener('DOMContentLoaded', function() {
             isMemberSession = data.is_member;
 
             document.getElementById('sessionSelector').classList.add('hidden');
+
+            // NOW show auction room after we know the mode
             document.getElementById('auctionRoom').style.display = 'block';
 
             if (isMemberSession) {
@@ -1404,6 +1411,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             initAuctionRoom();
+        })
+        .catch(err => {
+            console.error('Session info error:', err);
+            document.getElementById('sessionSelector').classList.remove('hidden');
         });
     }
 });
