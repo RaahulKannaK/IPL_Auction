@@ -1514,9 +1514,7 @@ function leaveRoom() {
     fetch('/team-owner/auction/leave-session', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'}
-    })
-    .then(() => window.location.reload())
-    .catch(() => window.location.reload());
+    }).catch(() => {});
 }
 
 function refreshSessionList() {
