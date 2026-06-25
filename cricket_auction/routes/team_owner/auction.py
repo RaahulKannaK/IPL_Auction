@@ -148,7 +148,7 @@ def sessions_list():
 # ==================== JOIN SESSION (VIEWER MODE) ====================
 
 @bp.route('/session/<int:session_id>/join')
-def join_session():
+def join_session(session_id):
     """Join a session - either as bidder (your session) or viewer (other session)"""
     if not session.get('user_id'):
         return redirect('/')
@@ -157,7 +157,6 @@ def join_session():
         flash('Unauthorized')
         return redirect('/')
     
-    session_id = request.view_args['session_id']
     mode = request.args.get('mode', 'bid')  # 'bid' or 'view'
     
     db = get_db()
@@ -206,7 +205,6 @@ def join_session():
         db.close()
     
     return redirect(f'/team_owner/auction?session={session_id}&mode={mode}')
-
 
 # ==================== MAIN AUCTION ROOM ====================
 
