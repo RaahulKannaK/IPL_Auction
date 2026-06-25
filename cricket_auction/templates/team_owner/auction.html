@@ -819,7 +819,7 @@ function startTeamOwnerPolling() {
                             data.last_sold_session_player_id
                         );
 
-                    }, 1000);
+                    }, 2000);
                 }
 
                 // Update sync indicator
@@ -848,7 +848,7 @@ function startTeamOwnerPolling() {
             }
         });
 
-    }, 1000);
+    }, 2000);
 }
 
 function askWillingPrice(playerName, soldPrice, sessionPlayerId) {
@@ -915,7 +915,7 @@ function flashPlayerUpdate() {
         setTimeout(() => { 
             card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; 
             card.style.boxShadow = ''; 
-        }, 1000);
+        }, 2000);
     });
 }
 
