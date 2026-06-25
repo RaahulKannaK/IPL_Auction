@@ -579,9 +579,9 @@ def sell_player():
         
         # Clear reservations for this player
         cursor.execute("""
-            DELETE FROM session_purse_reservations 
-            WHERE session_id = %s AND session_player_id = %s
-        """, (active_session_id, session_player_id))
+            DELETE FROM session_purse_reservations
+            WHERE session_player_id = %s
+        """, (session_player_id,))
         
         db.commit()
     finally:
