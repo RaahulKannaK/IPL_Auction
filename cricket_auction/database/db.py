@@ -7,28 +7,31 @@ import time
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
     pool_size=3,              # Reduced from 5 — Render free has 512MB RAM
-    pool_reset_session=False,  # CHANGED: Faster — don't reset session state
+    pool_reset_session=False,  # Faster — don't reset session state
     host=Config.DB_HOST,
     port=Config.DB_PORT,
     user=Config.DB_USER,
     password=Config.DB_PASSWORD,
     database=Config.DB_NAME,
-    connection_timeout=10,    # Reduced from 30 — fail fast
+    connection_timeout=10,     # Fail fast
     connect_timeout=10,
     read_timeout=10,
     write_timeout=10,
-    autocommit=False,         # CHANGED: Critical — batch transactions
+    autocommit=False,          # Critical — batch transactions
     charset='utf8mb4',
-    collation='utf8mb4_unicode_ci',
-    use_pure=False,           # Use C extension if available (faster)
-    consume_results=True        # Auto-clean cursors
+    use_unicode=True,
+    get_warnings=False,
+    raise_on_warnings=False,
+    buffered=False,
+    raw=False,
 )
 
 def get_db():
     """Get connection from pool. Must call commit() or rollback() manually."""
     conn = connection_pool.get_connection()
-    conn.autocommit = False    # Ensure
+    conn.autocommit = False
     return conn
+
 
 # === SIMPLE IN-MEMORY CACHE (process-local, fast) ===
 _cache = {}
@@ -70,9 +73,18 @@ def cache_stats():
     rate = (_cache_hits / total) * 100
     return f"Cache: {_cache_hits} hits, {_cache_misses} misses, {rate:.1f}% hit rate"
 
+
 # === CONNECTION CONTEXT MANAGER (safer, cleaner) ===
 class db_transaction:
-    """Context manager for safe DB transactions. Use this everywhere."""
+    """Context manager for safe DB transactions. Use this everywhere.
+    
+    Usage:
+        with db_transaction() as cursor:
+            cursor.execute("SELECT ...")
+            rows = cursor.fetchall()
+            cursor.execute("UPDATE ...")
+        # Auto-commits on success, rolls back on exception
+    """
     
     def __init__(self, cursor_dict=True):
         self.cursor_dict = cursor_dict
