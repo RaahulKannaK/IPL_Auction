@@ -1082,3 +1082,69 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
+
+@bp.route('/check_willing_price')
+def check_willing_price():
+
+    user_id = session.get('user_id')
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM pending_willing_price
+        WHERE user_id=%s
+        AND popup_shown=0
+        LIMIT 1
+    """, (user_id,))
+
+    row = cursor.fetchone()
+
+    if not row:
+        return jsonify({'show_popup': False})
+
+    cursor.execute("""
+        UPDATE pending_willing_price
+        SET popup_shown=1
+        WHERE id=%s
+    """, (row['id'],))
+
+    db.commit()
+
+    return jsonify({
+        'show_popup': True,
+        'sale_id': row['id'],
+        'player_id': row['player_id'],
+        'session_player_id': row['session_player_id'],
+        'player_name': row['player_name'],
+        'purchase_price': row['purchase_price']
+    })
+
+@bp.route('/save_willing_price', methods=['POST'])
+def save_willing_price():
+
+    data = request.get_json()
+
+    session_player_id = data['session_player_id']
+    willing_price = float(data['willing_price'])
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE session_team_players
+        SET willing_price = %s
+        WHERE team_id = %s
+        AND session_player_id = %s
+    """, (
+        willing_price,
+        session['team_id'],
+        session_player_id
+    ))
+
+    db.commit()
+
+    return jsonify({'success': True})
+
+

@@ -716,18 +716,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== TEAM OWNER POLLING ====================
+let lastSoldPlayerSeen = null;
+
 function startTeamOwnerPolling() {
     if (pollInterval) clearInterval(pollInterval);
+
     pollInterval = setInterval(() => {
         if (!currentSessionId) return;
-        
-        // Use the SAME endpoint as admin — this is the key fix!
+
         let url = '/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
-        
+
         fetch(url)
         .then(r => r.json())
         .then(data => {
+
             if (data.status === 'live' || data.status === 'paused') {
+
                 // Update status badge
                 const statusEl = document.getElementById('roomStatus');
                 if (statusEl) {
@@ -739,30 +743,34 @@ function startTeamOwnerPolling() {
                         statusEl.innerHTML = '⏸ PAUSED';
                     }
                 }
-                
+
                 const serverPlayerId = data.session_player_id;
                 const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
-                
+
                 if (hasServerPlayer) {
-                    // New player appeared on server
+
                     if (serverPlayerId !== lastPlayerId) {
                         lastPlayerId = serverPlayerId;
                         currentSessionPlayerId = serverPlayerId;
                         isAllSkipped = false;
                         flashPlayerUpdate();
-                        
-                        // Reset bid selection for new player
+
                         selectedBidAmount = 0;
                         clearActiveChips();
                     }
-                    
-                    // ALWAYS update display with server data
-                    const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
-                    if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
-                    
-                    // Check if we are current bidder
-                    isCurrentBidder = data.current_bidder_id === currentTeamId;
-                    
+
+                    const effectiveBasePrice =
+                        (data.base_price > 0)
+                            ? data.base_price
+                            : currentBasePrice;
+
+                    if (data.base_price > 0) {
+                        currentBasePrice = parseFloat(data.base_price);
+                    }
+
+                    isCurrentBidder =
+                        data.current_bidder_id === currentTeamId;
+
                     updateTeamOwnerDisplay(
                         data.current_player,
                         data.current_bid,
@@ -772,41 +780,129 @@ function startTeamOwnerPolling() {
                         data.overseas,
                         serverPlayerId
                     );
-                    
-                    // Update skip votes
+
                     if (data.skip_count !== undefined) {
-                        const skipCounter = document.getElementById('skipCounter');
-                        if (skipCounter) skipCounter.textContent = data.skip_count;
+                        const skipCounter =
+                            document.getElementById('skipCounter');
+
+                        if (skipCounter) {
+                            skipCounter.textContent = data.skip_count;
+                        }
                     }
-                    
-                    // Highlight in-auction player card
+
                     highlightInAuctionPlayer(serverPlayerId);
-                } 
+                }
                 else if (!hasServerPlayer && lastPlayerId) {
-                    // Server cleared player (sold/unsold/deselected)
+
                     clearTeamOwnerDisplay();
                     lastPlayerId = null;
                     currentSessionPlayerId = null;
                 }
-                
+
+                // ===============================
+                // WILLING PRICE POPUP
+                // ===============================
+                if (
+                    data.player_sold === true &&
+                    parseInt(data.sold_team_id) === parseInt(currentTeamId) &&
+                    parseInt(data.session_teams || 0) < parseInt(data.auction_teams || 0) &&
+                    lastSoldPlayerSeen !== data.player_name
+                ) {
+
+                    lastSoldPlayerSeen = data.player_name;
+
+                    setTimeout(() => {
+
+                        askWillingPrice(
+                            data.player_name,
+                            parseFloat(data.sold_price || 0),
+                            data.last_sold_session_player_id
+                        );
+
+                    }, 1000);
+                }
+
                 // Update sync indicator
                 const indicator = document.getElementById('syncIndicator');
+
                 if (indicator) {
-                    indicator.className = 'sync-indicator sync-active';
-                    indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Live Sync';
+                    indicator.className =
+                        'sync-indicator sync-active';
+
+                    indicator.innerHTML =
+                        '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Live Sync';
                 }
             }
         })
         .catch(() => {
-            const indicator = document.getElementById('syncIndicator');
+
+            const indicator =
+                document.getElementById('syncIndicator');
+
             if (indicator) {
-                indicator.className = 'sync-indicator sync-pending';
-                indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block; animation: livePulse 1s infinite;"></span> Reconnecting...';
+                indicator.className =
+                    'sync-indicator sync-pending';
+
+                indicator.innerHTML =
+                    '<span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;animation:livePulse 1s infinite;"></span> Reconnecting...';
             }
         });
+
     }, 1000);
 }
 
+function askWillingPrice(playerName, soldPrice, sessionPlayerId) {
+
+    const msg =
+`🏏 ${playerName} purchased for ₹${soldPrice} Cr
+
+This player may appear in future sessions.
+
+Enter your MAX WILLING PRICE.
+
+Example:
+Bought for ₹2 Cr
+Willing Price = ₹7 Cr
+
+Hidden auto-bidding will continue until ₹7 Cr.`;
+
+    const willingPrice = prompt(msg);
+
+    if (!willingPrice) return;
+
+    const amount = parseFloat(willingPrice);
+
+    if (isNaN(amount) || amount < soldPrice) {
+        alert(
+            `Willing price must be at least ₹${soldPrice} Cr`
+        );
+        return;
+    }
+
+    fetch('/team_owner/save_willing_price', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            auction_id: currentAuctionId,
+            session_player_id: sessionPlayerId,
+            willing_price: amount
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(
+                `✅ Willing Price Saved: ₹${amount} Cr`
+            );
+        } else {
+            alert(
+                data.error || 'Failed to save'
+            );
+        }
+    });
+}
 function stopPolling() { 
     if (pollInterval) clearInterval(pollInterval); 
     pollInterval = null; 
@@ -1188,6 +1284,52 @@ function skipPlayer() {
     });
 }
 
+function checkWillingPricePopup() {
+
+    fetch('/team_owner/check_willing_price?auction_id=' + currentAuctionId)
+    .then(r => r.json())
+    .then(data => {
+
+        if (!data.show_popup) return;
+
+        if (lastSoldCheckId === data.sale_id) return;
+
+        lastSoldCheckId = data.sale_id;
+
+        const amount = prompt(
+            `${data.player_name} was purchased by your team for ₹${data.purchase_price}Cr
+
+Enter SECRET Max Willing Price:
+
+Other teams will NOT see this value.
+
+Example: 7`
+        );
+
+        if (!amount) return;
+
+        fetch('/team_owner/save_willing_price', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                player_id: data.player_id,
+                session_player_id: data.session_player_id,
+                willing_price: parseFloat(amount)
+            })
+        })
+        .then(r => r.json())
+        .then(resp => {
+
+            if(resp.success){
+                alert('✅ Secret willing price saved');
+            } else {
+                alert(resp.error || 'Failed');
+            }
+
+        });
+
+    });
+}
 // ==================== AUTO BID ====================
 function checkAutoBid(currentBid) {
     if (!currentSessionPlayerId || !currentSessionId) return;
