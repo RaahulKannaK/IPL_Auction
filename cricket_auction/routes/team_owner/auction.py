@@ -551,6 +551,10 @@ def place_bid():
         return jsonify({'error': 'View mode - bidding disabled'}), 403
     
     data = request.get_json()
+    print("=" * 50)
+    print("BID REQUEST")
+    print(data)
+    print("=" * 50)
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
     team_id = int(data.get('team_id'))
@@ -589,8 +593,8 @@ def place_bid():
         """, (active_session_id, session_player_id, team_id))
         existing_skip = cursor.fetchone()
         if existing_skip:
-            return jsonify({'error': 'You skipped this player. Cannot bid.'}), 400
-        
+            print("BID FAILED: USER SKIPPED PLAYER")
+            return jsonify({'error': 'You skipped this player. Cannot bid.'}), 400        
         cursor.execute("SELECT * FROM teams WHERE id = %s", (team_id,))
         team = cursor.fetchone()
         if not team:
@@ -599,8 +603,8 @@ def place_bid():
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
         auction = cursor.fetchone()
         if auction['status'] != 'live':
+            print("BID FAILED: AUCTION NOT LIVE")
             return jsonify({'error': 'Auction not live'}), 400
-        
         # Get base price from session_players
         cursor.execute("SELECT base_price FROM session_players WHERE id = %s", (session_player_id,))
         sp_row = cursor.fetchone()
@@ -637,10 +641,12 @@ def place_bid():
         """, (active_session_id, session_player_id))
         last_bid = cursor.fetchone()
         if last_bid and last_bid['team_id'] == team_id:
+            print("BID FAILED: ALREADY HIGHEST BIDDER")
             return jsonify({'error': 'You are already the highest bidder.'}), 400
         
         available = float(team['purse_limit']) - float(team['spent'] or 0) - float(team['reserved'] or 0)
         if amount > available:
+            print(f"BID FAILED: INSUFFICIENT FUNDS amount={amount} available={available}")
             return jsonify({'error': f'Insufficient funds. Available: ₹{available:.2f}Cr'}), 400
         
         cursor.execute("""
