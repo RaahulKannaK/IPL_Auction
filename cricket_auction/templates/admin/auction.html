@@ -617,9 +617,14 @@
                     {% endif %}
                 </div>
                 <div class="player-price">Base: ₹{{ player.base_price or 2.00 }}Cr</div>
-                <div class="player-status status-{{ player.session_status or player.sp_status or player.status }}">
-    {{ (player.session_status or player.sp_status or player.status).upper() }}
+                <div class="player-status status-{{ player.session_status or player.sp_status or player.status or 'available' }}">
+    {{ (player.session_status or player.sp_status or player.status or 'available').upper() }}
 </div>
+{% if (player.session_status or player.sp_status or player.status) == 'available' %}
+    🗑 Delete
+{% else %}
+    Locked
+{% endif %}
             </div>
             {% endif %}
             {% endfor %}
