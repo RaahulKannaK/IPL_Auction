@@ -141,6 +141,7 @@ def auction_room():
         # Current player from session state
         current_player = None
         current_bid = 0
+        current_bidder = None
         skip_votes = []
         total_teams = len(session_teams)
         all_skipped = False
@@ -162,6 +163,17 @@ def auction_room():
             """, (active_session_id, auction_session['current_player_id']))
             bid_result = cursor.fetchone()
             has_bids = bid_result['bid_count'] > 0 if bid_result else False
+            
+            # === ADD THIS BLOCK ===
+            current_bidder = None
+            if auction_session.get('current_bidder_id'):
+                cursor.execute("""
+                    SELECT team_name FROM teams WHERE id = %s
+                """, (auction_session['current_bidder_id'],))
+                bidder_row = cursor.fetchone()
+                if bidder_row:
+                    current_bidder = bidder_row['team_name']
+            # === END ADD ===
             
             cursor.execute("""
                 SELECT ss.*, t.team_name, u.username as skipped_by_name
@@ -222,6 +234,7 @@ def auction_room():
         all_sessions=all_sessions,
         current_player=current_player,
         current_bid=current_bid,
+        current_bidder=current_bidder,
         has_bids=has_bids,
         skip_votes=skip_votes,
         total_teams=total_teams,
