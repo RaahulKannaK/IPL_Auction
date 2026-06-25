@@ -9,6 +9,7 @@
         --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
         --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
         --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --green: #22c55e; --green-light: #4ade80;
         --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
     }
@@ -99,7 +100,6 @@
     .btn-unsold { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
     .btn-unsold:hover { background: rgba(100, 116, 139, 0.2); box-shadow: 0 0 20px rgba(100, 116, 139, 0.15); }
     .btn-unsold.forced { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .btn-unsold.forced:hover { box-shadow: 0 0 25px rgba(239, 68, 68, 0.2); }
     .btn-undo { background: rgba(255, 42, 0, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
     .btn-undo:hover { background: rgba(255, 42, 0, 0.2); box-shadow: 0 0 20px rgba(255, 42, 0, 0.15); }
     .btn-next { background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
@@ -173,13 +173,159 @@
     .status-sold { color: #22c55e; }
     .status-in_auction { color: #f59e0b; }
 
-    .timer-display {
-        background: linear-gradient(135deg, rgba(69, 10, 10, 0.6), rgba(127, 29, 29, 0.4));
-        border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 20px;
-        padding: 25px; text-align: center; margin-bottom: 20px;
+    .history-panel { max-height: 220px; overflow-y: auto; }
+    .history-panel::-webkit-scrollbar { width: 4px; }
+    .history-panel::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
+    .history-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 12px 16px; border-radius: 12px; margin-bottom: 6px;
+        background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(100, 120, 200, 0.05);
+        transition: all 0.3s;
     }
-    .timer-display h4 { color: #fca5a5; font-size: 0.85rem; margin-bottom: 15px; letter-spacing: 2px; }
-    .timer-value { font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; font-weight: 700; color: #ef4444; text-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+    .history-item:hover { background: rgba(124, 77, 255, 0.04); border-color: rgba(124, 77, 255, 0.1); }
+    .history-bidder { color: var(--text-secondary); font-weight: 500; }
+    .history-amount { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); font-weight: 600; }
+    .history-auto { background: rgba(139, 92, 246, 0.15); color: var(--cosmic-purple-light); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; margin-left: 10px; }
+
+    .sold-toast {
+        position: fixed; top: 25px; right: 25px;
+        background: linear-gradient(135deg, rgba(6, 78, 59, 0.95), rgba(5, 8, 16, 0.95));
+        border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 20px;
+        padding: 25px 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        z-index: 1000; display: none; backdrop-filter: blur(20px);
+    }
+    .sold-toast.show { display: block; animation: toastSlide 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes toastSlide { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .sold-toast h3 { color: #22c55e; font-family: 'Space Grotesk'; margin-bottom: 8px; font-size: 1.2rem; }
+    .sold-toast p { color: var(--text-secondary); font-size: 0.95rem; }
+
+    .selected-player-bar {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 78, 59, 0.3));
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 16px;
+        padding: 20px 30px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .selected-player-bar .info { display: flex; align-items: center; gap: 15px; }
+    .selected-player-bar .avatar {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+    }
+    .selected-player-bar .name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #22c55e;
+    }
+    .selected-player-bar .meta { color: var(--text-dim); font-size: 0.9rem; }
+    .selected-player-bar .action { font-size: 0.85rem; color: var(--text-dim); }
+
+    .back-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 20px; border-radius: 12px;
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-dim); cursor: pointer; font-weight: 600;
+        transition: all 0.3s; margin-bottom: 20px; text-decoration: none;
+    }
+    .back-btn:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); background: rgba(124, 77, 255, 0.08); }
+
+    .sync-indicator {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 20px;
+        font-size: 0.75rem; font-weight: 600;
+        transition: all 0.3s;
+    }
+    .sync-active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .sync-pending { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+    .skip-votes-panel {
+        background: linear-gradient(135deg, rgba(69, 10, 10, 0.4), rgba(127, 29, 29, 0.2));
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .skip-votes-panel h4 { color: #fca5a5; font-size: 0.9rem; margin-bottom: 15px; letter-spacing: 2px; }
+    .skip-vote-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px; border-radius: 10px;
+        background: rgba(0,0,0,0.2); margin-bottom: 6px;
+    }
+    .skip-vote-item .team { color: var(--text-secondary); font-weight: 600; }
+    .skip-vote-item .reason { color: var(--text-dim); font-size: 0.8rem; }
+    .skip-vote-item .time { color: var(--text-dim); font-size: 0.75rem; margin-left: auto; }
+
+    .countdown-display {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(153, 27, 27, 0.3));
+        border: 2px solid rgba(239, 68, 68, 0.4);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 20px;
+        display: none;
+    }
+    .countdown-display.active { display: block; animation: pulseRed 1s infinite; }
+    @keyframes pulseRed { 0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); } 50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); } }
+    .countdown-display h3 { color: #fca5a5; font-size: 1rem; margin-bottom: 10px; }
+    .countdown-value { font-family: 'JetBrains Mono'; font-size: 5rem; font-weight: 700; color: #ef4444; text-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+    .countdown-display p { color: #fca5a5; margin-top: 10px; font-size: 0.9rem; }
+
+    .force-unsold-panel {
+        background: linear;
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 18px; padding: 22px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative; overflow: hidden; cursor: pointer;
+    }
+    .player-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--cosmic-purple), var(--ice-blue), transparent);
+        opacity: 0; transition: opacity 0.3s;
+    }
+    .player-card:hover::before { opacity: 0.5; }
+    .player-card:hover {
+        border-color: rgba(124, 77, 255, 0.3);
+        transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    }
+    .player-card.selected {
+        border-color: #22c55e; background: rgba(6, 78, 59, 0.3);
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.15);
+    }
+    .player-card.selected::before { opacity: 1; background: linear-gradient(90deg, transparent, #22c55e, var(--ice-blue), transparent); }
+
+    .player-avatar {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem; margin-bottom: 15px;
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.3);
+    }
+    .player-name { font-weight: 700; color: var(--text-primary); font-size: 1.05rem; margin-bottom: 8px; }
+    .player-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .cat-badge {
+        padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+    }
+    .badge-batsman { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+    .badge-bowler { background: rgba(255, 42, 0, 0.15); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
+    .badge-all_rounder { background: rgba(184, 255, 106, 0.15); color: #b8ff6a; border: 1px solid rgba(184, 255, 106, 0.2); }
+    .badge-wicket_keeper { background: rgba(247, 181, 0, 0.15); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
+    .badge-overseas { background: rgba(139, 92, 246, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(139, 92, 246, 0.2); }
+
+    .player-price { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 8px; }
+    .player-status { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .status-unsold { color: var(--text-dim); }
+    .status-sold { color: #22c55e; }
+    .status-in_auction { color: #f59e0b; }
 
     .history-panel { max-height: 220px; overflow-y: auto; }
     .history-panel::-webkit-scrollbar { width: 4px; }
@@ -461,7 +607,7 @@
         </div>
     </div>
 
-    <!-- Session Navigation (if multiple sessions exist) -->
+    <!-- Session Navigation -->
     {% if all_sessions and all_sessions|length > 1 %}
     <div class="session-nav">
         {% for sess in all_sessions %}
@@ -541,13 +687,6 @@
             <button onclick="sellPlayer()" class="ctrl-btn btn-sell">✅ Sell to Highest Bidder</button>
         </div>
 
-        <!-- Timer Card -->
-        <div class="timer-display" id="timerCard" style="display: none;">
-            <h4>⏰ FINAL CALL</h4>
-            <div class="timer-value" id="countdown">10</div>
-            <p style="color: #fca5a5; margin-top: 10px;">Seconds remaining to bid!</p>
-        </div>
-
         <!-- Bid History -->
         <div style="margin-top: 20px;">
             <h4 style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">📜 Bid History</h4>
@@ -595,7 +734,6 @@
             </div>
         </div>
         
-        <!-- NO INLINE onclick — uses event delegation in JS -->
         <div class="players-grid" id="playersGrid">
             {% for player in players %}
             {% if player.session_player_id %}
@@ -669,13 +807,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const basePrice = parseFloat(card.dataset.base) || 2.0;
             const overseas = card.dataset.overseas === 'true';
             
-            adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, { currentTarget: card });
+            adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, card);
         });
     }
     
     {% if current_player and current_player.session_player_id %}
-    currentSessionPlayerId = {{ current_player.session_player_id if current_player else 'null' }};
-    lastPlayerId = {{ current_player.session_player_id if current_player else 'null' }};
+    currentSessionPlayerId = {{ current_player.session_player_id }};
+    lastPlayerId = {{ current_player.session_player_id }};
     hasBids = {{ 'true' if has_bids else 'false' }};
     currentBasePrice = {{ current_player.base_price if current_player else 2.00 }};
 
@@ -694,12 +832,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== FAST POLLING ====================
-// ==================== FAST POLLING ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
         if (!currentSessionId) return;
-        if (isBroadcasting) return;
         
         let url = '/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
         
@@ -721,7 +857,9 @@ function startFastPolling() {
                 const serverPlayerId = data.session_player_id;
                 const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
                 
+                // Only update display if server has a player AND we're not in the middle of broadcasting
                 if (hasServerPlayer) {
+                    // New player on server
                     if (serverPlayerId !== lastPlayerId) {
                         lastPlayerId = serverPlayerId;
                         currentSessionPlayerId = serverPlayerId;
@@ -732,8 +870,9 @@ function startFastPolling() {
                         flashPlayerUpdate();
                     }
                     
+                    // Update display from server
                     const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
-                    const effectiveCurrentBid = (data.current_bid > 0) ? data.current_bid : effectiveBasePrice;
+                    const effectiveCurrentBid = data.current_bid || 0;
                     
                     updateCurrentPlayerDisplay(
                         data.current_player,
@@ -743,27 +882,27 @@ function startFastPolling() {
                         effectiveBasePrice,
                         serverPlayerId
                     );
+                    
+                    if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
+                    
+                    const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
+                    if (bidsExist !== hasBids) updateAdminControls(bidsExist);
+                    
+                    if (data.skip_count !== undefined) updateSkipVotes(data.skip_count, data.total_teams, data.all_skipped);
+                    
+                    const currentBid = parseFloat(data.current_bid) || 0;
+                    if (isFinalCallActive && currentBid > lastBidAmount) {
+                        stopFinalCall();
+                        showStatus('bidStatus', '📢 New bid received! Final call cancelled. Auction continues!', '#22c55e');
+                        updateAdminControls(true);
+                    }
                 } 
-                else if ((serverPlayerId === null || serverPlayerId === 0) && !isBroadcasting) {
-                    // Server has no player AND we're not in the middle of broadcasting
-                    // FIX: Don't clear if user has locally selected a player but not broadcast yet
-                    if (!currentSessionPlayerId && !adminSelectedPlayer) {
+                else if (!hasServerPlayer && lastPlayerId) {
+                    // Server cleared the player (sold/unsold/deselected)
+                    // Only clear if we don't have a locally selected player waiting to broadcast
+                    if (!adminSelectedPlayer) {
                         clearAuctionDisplay();
                     }
-                }
-                
-                if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
-                
-                const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
-                if (bidsExist !== hasBids) updateAdminControls(bidsExist);
-                
-                if (data.skip_count !== undefined) updateSkipVotes(data.skip_count, data.total_teams, data.all_skipped);
-                
-                const currentBid = parseFloat(data.current_bid) || 0;
-                if (isFinalCallActive && currentBid > lastBidAmount) {
-                    stopFinalCall();
-                    showStatus('bidStatus', '📢 New bid received! Final call cancelled. Auction continues!', '#22c55e');
-                    updateAdminControls(true);
                 }
                 
                 const indicator = document.getElementById('syncIndicator');
@@ -815,23 +954,16 @@ function updateAdminControls(bidsExist) {
 }
 
 // ==================== ADMIN PLAYER SELECTION ====================
-function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, event) {
+function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, cardElement) {
     const parsedId = parseInt(sessionPlayerId);
     if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
         alert('ERROR: Invalid player ID (' + sessionPlayerId + ').');
         return;
     }
     
-    let target = null;
-    if (event && event.currentTarget) {
-        target = event.currentTarget;
-    } else {
-        target = document.querySelector('.player-card[data-session-player-id="' + parsedId + '"]');
-    }
-    
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-    if (target) {
-        target.classList.add('selected');
+    if (cardElement) {
+        cardElement.classList.add('selected');
     }
     
     adminSelectedPlayer = { 
@@ -904,7 +1036,7 @@ function broadcastPlayer() {
             
             updateCurrentPlayerDisplay(
                 data.player_name || selected.name, 
-                data.base_price || selected.basePrice, 
+                0,  // Current bid starts at 0 (no bids yet)
                 null, 
                 data.category || selected.category, 
                 data.base_price || selected.basePrice, 
@@ -947,13 +1079,28 @@ function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, ba
     if (bp) bp.textContent = effectiveBase.toFixed(2);
     
     const cb = document.getElementById('currentBid');
+    // If no bids yet, show base price as "starting from" but label it clearly
     const effectiveBid = (currentBid && parseFloat(currentBid) > 0) 
         ? parseFloat(currentBid) 
-        : effectiveBase;
-    if (cb) cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
+        : 0;
+    if (cb) {
+        if (effectiveBid > 0) {
+            cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
+        } else {
+            cb.textContent = '₹' + effectiveBase.toFixed(2) + 'Cr';
+            cb.style.opacity = '0.6';
+        }
+    }
     
     const cbd = document.getElementById('currentBidder');
-    if (cbd) cbd.textContent = bidder || 'No bids yet';
+    if (cbd) {
+        if (bidder && effectiveBid > 0) {
+            cbd.textContent = bidder;
+            if (cb) cb.style.opacity = '1';
+        } else {
+            cbd.textContent = 'No bids yet';
+        }
+    }
     
     if (sessionPlayerId && sessionPlayerId > 0) {
         currentSessionPlayerId = sessionPlayerId;
@@ -1001,6 +1148,7 @@ function clearAuctionDisplay() {
     document.getElementById('playerCategory').textContent = '--';
     document.getElementById('basePrice').textContent = '0.00';
     document.getElementById('currentBid').textContent = '₹0.00Cr';
+    document.getElementById('currentBid').style.opacity = '1';
     document.getElementById('currentBidder').textContent = 'No bids yet';
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>';
     document.getElementById('bidCount').textContent = '0 bids placed';
@@ -1063,7 +1211,9 @@ function rebidPlayer() {
 }
 
 function resetBidDisplay() {
+    // After rebid, current bid is 0 (no bids), display shows base price faded
     document.getElementById('currentBid').textContent = '₹' + currentBasePrice.toFixed(2) + 'Cr';
+    document.getElementById('currentBid').style.opacity = '0.6';
     document.getElementById('currentBidder').textContent = 'No bids yet';
     bidHistory = [];
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">Bidding reset. Waiting for new bids.</p>';
@@ -1150,7 +1300,7 @@ function confirmUnsold() {
             stopFinalCall();
             showStatus('bidStatus', '❌ Player marked unsold', '#94a3b8');
             removePlayerFromGrid(currentSessionPlayerId);
-            nextPlayer();
+            clearAuctionDisplay();
         } else {
             alert(data.error || 'Failed to mark unsold');
         }
@@ -1286,7 +1436,7 @@ function sellPlayer() {
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 5000);
             removePlayerFromGrid(currentSessionPlayerId);
-            nextPlayer();
+            clearAuctionDisplay();
         } else {
             alert(data.error || 'Failed to sell player');
         }
@@ -1319,7 +1469,7 @@ function forceUnsold() {
             stopSkipCountdown();
             showStatus('bidStatus', '❌ Player force-unsold (all skipped)', '#ef4444');
             removePlayerFromGrid(currentSessionPlayerId);
-            nextPlayer();
+            clearAuctionDisplay();
         } else {
             alert(data.error || 'Failed to force unsold');
         }
@@ -1329,56 +1479,23 @@ function forceUnsold() {
 // ==================== NEXT PLAYER ====================
 function nextPlayer() {
     if (currentSessionPlayerId) {
+        let body = {
+            auction_id: currentAuctionId,
+            session_player_id: currentSessionPlayerId,
+            session_id: currentSessionId
+        };
         fetch('/admin/auction/deselect_player', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                auction_id: currentAuctionId,
-                session_player_id: currentSessionPlayerId,
-                session_id: currentSessionId
-            })
+            body: JSON.stringify(body)
         }).then(() => {
-            clearAuctionDisplayLocal();
+            clearAuctionDisplay();
         }).catch(() => {
-            clearAuctionDisplayLocal();
+            clearAuctionDisplay();
         });
     } else {
-        clearAuctionDisplayLocal();
+        clearAuctionDisplay();
     }
-}
-
-function clearAuctionDisplayLocal() {
-    document.getElementById('currentPlayer').textContent = 'Waiting...';
-    document.getElementById('playerCategory').textContent = '--';
-    document.getElementById('basePrice').textContent = '0.00';
-    document.getElementById('currentBid').textContent = '₹0.00Cr';
-    document.getElementById('currentBidder').textContent = 'No bids yet';
-    document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>';
-    
-    const bar = document.getElementById('selectedPlayerBar');
-    if (bar) {
-        bar.style.display = 'none';
-        document.getElementById('selectedPlayerBarName').textContent = 'Select a Player';
-        document.getElementById('selectedPlayerBarMeta').textContent = 'Click on a player card below';
-    }
-    
-    const broadcastBtn = document.getElementById('broadcastBtn');
-    if (broadcastBtn) broadcastBtn.style.display = 'none';
-    
-    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-    adminSelectedPlayer = null;
-    
-    currentSessionPlayerId = null;
-    lastPlayerId = null;
-    bidHistory = [];
-    isAllSkipped = false;
-    hasBids = false;
-    currentBasePrice = 2.0;
-    stopCountdown();
-    stopSkipCountdown();
-    stopFinalCall();
-    resetSkipUI();
-    updateAdminControls(false);
 }
 
 function removePlayerFromGrid(sessionPlayerId) {
@@ -1426,7 +1543,6 @@ function updatePlayersGrid(players) {
     const currentFilter = document.querySelector('.filter-btn.active');
     const filterCat = currentFilter ? currentFilter.dataset.category || 'all' : 'all';
     
-    // Helper to escape HTML
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -1468,6 +1584,7 @@ function updatePlayersGrid(players) {
         c.style.display = (filterCat === 'all' || c.dataset.category === filterCat) ? 'block' : 'none';
     });
 }
+
 // ==================== FILTER PLAYERS ====================
 function filterPlayers(cat) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
