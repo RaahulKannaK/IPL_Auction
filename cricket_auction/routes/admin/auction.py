@@ -249,7 +249,6 @@ def auction_room():
 
 
 # ==================== SELECT PLAYER ====================
-
 @bp.route('/auction/select_player', methods=['POST'])
 def select_player():
     """Select a player for bidding"""
@@ -257,6 +256,8 @@ def select_player():
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
+    print(f"DEBUG INCOMING: {data}")  # Temporary debug
+    
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
     
@@ -270,21 +271,20 @@ def select_player():
     try:
         session_player_id = int(session_player_id)
         auction_id = int(auction_id)
-        active_session_id = int(active_session_id)  # ← ADD: Ensure it's an integer
+        active_session_id = int(active_session_id)
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid IDs'}), 400
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
-    # ← ADD: Verify session exists before doing anything
-    cursor.execute("SELECT id FROM auction_sessions WHERE id = %s", (active_session_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        db.close()
-        return jsonify({'error': f'Session {active_session_id} not found'}), 404
-    
     try:
+        # Verify session exists
+        cursor.execute("SELECT id FROM auction_sessions WHERE id = %s", (active_session_id,))
+        sess_check = cursor.fetchone()
+        if not sess_check:
+            return jsonify({'error': f'Session {active_session_id} not found'}), 404
+        
         cursor.execute("""
             SELECT sp.*, p.player_name, p.category, p.overseas, p.base_price as player_base_price
             FROM session_players sp
@@ -321,18 +321,18 @@ def select_player():
             WHERE id = %s
         """, (session_player_id, active_session_id))
         
-        # ← ADD: Check if UPDATE actually happened
-        if cursor.rowcount == 0:
-            db.rollback()
-            return jsonify({'error': f'Failed to update session {active_session_id}'}), 500
-        
         db.commit()
         
-        # ← ADD: Verify the update persisted
+        # Verify update
         cursor.execute("SELECT current_player_id, current_bid FROM auction_sessions WHERE id = %s", (active_session_id,))
         verify = cursor.fetchone()
-        print(f"DEBUG select_player: AFTER COMMIT session={active_session_id}, current_player_id={verify['current_player_id']}, current_bid={verify['current_bid']}")
+        print(f"DEBUG AFTER COMMIT: session={active_session_id}, current_player_id={verify['current_player_id']}, current_bid={verify['current_bid']}")
         
+    except Exception as e:
+        print(f"DEBUG ERROR in select_player: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
     finally:
         cursor.close()
         db.close()
@@ -348,7 +348,7 @@ def select_player():
         'session_player_id': session_player_id,
         'overseas': player.get('overseas', False)
     })
-# ==================== BIDDING ====================
+
 
 @bp.route('/auction/bid', methods=['POST'])
 def place_bid():
