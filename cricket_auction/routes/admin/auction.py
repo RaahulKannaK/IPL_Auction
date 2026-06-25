@@ -303,12 +303,23 @@ def select_player():
             cursor.execute("DELETE FROM session_bids WHERE session_id = %s AND session_player_id = %s", (active_session_id, session_player_id))
             
             # Update player status
+            # Reset any existing in_auction player in this session
             cursor.execute("""
-                UPDATE session_players 
-                SET skip_reason = NULL, skip_notes = NULL, status = 'in_auction'
+                UPDATE session_players
+                SET status = 'available'
+                WHERE session_id = %s
+                AND status = 'in_auction'
+                AND id != %s
+            """, (active_session_id, session_player_id))
+
+            # Set selected player as in_auction
+            cursor.execute("""
+                UPDATE session_players
+                SET skip_reason = NULL,
+                    skip_notes = NULL,
+                    status = 'in_auction'
                 WHERE id = %s
             """, (session_player_id,))
-            
             # Update auction session
             cursor.execute("""
                 UPDATE auction_sessions
@@ -322,7 +333,19 @@ def select_player():
             print("player status =", player.get('status'))
             print("current_player_id =", session_player_id)
             db.commit()
-            
+            cursor.execute("""
+                SELECT current_player_id
+                FROM auction_sessions
+                WHERE id = %s
+            """, (active_session_id,))
+            print("VERIFY SESSION =", cursor.fetchone())
+
+            cursor.execute("""
+                SELECT status
+                FROM session_players
+                WHERE id = %s
+            """, (session_player_id,))
+            print("VERIFY PLAYER =", cursor.fetchone())
             # Verify it stuck
             cursor.execute("SELECT current_player_id FROM auction_sessions WHERE id = %s", (active_session_id,))
             verify = cursor.fetchone()
@@ -954,11 +977,17 @@ def _do_fetch_status(auction_id, active_session_id):
                 
                 if session_player_id:
                     cursor.execute("""
-                        SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id, sp.status
+                        SELECT p.player_name,
+                            p.category,
+                            p.overseas,
+                            sp.base_price,
+                            sp.id as session_player_id,
+                            sp.status
                         FROM session_players sp
                         JOIN players p ON sp.player_id = p.id
                         WHERE sp.id = %s
-                    """, (session_player_id,))
+                        AND sp.session_id = %s
+                    """, (session_player_id, active_session_id))
                     player = cursor.fetchone()
                     if player:
                         result['current_player'] = player['player_name']
