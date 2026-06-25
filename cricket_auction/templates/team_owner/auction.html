@@ -562,10 +562,9 @@
     <!-- ===== BID CONTROLS ===== -->
     {% if mode != 'view' %}
     <div class="bid-controls">
-        <div class="bid-amount-row">
-            <button class="bid-adjust-btn" onclick="adjustBid(-0.5)">−</button>
-            <div class="bid-amount-display" id="bidAmountDisplay">₹0.00</div>
-            <button class="bid-adjust-btn" onclick="adjustBid(0.5)">+</button>
+        <!-- Bid Amount Display (shows proposed bid, not increment controls) -->
+        <div class="bid-amount-row" style="margin-bottom: 20px;">
+            <div class="bid-amount-display" id="bidAmountDisplay" style="min-width: 220px; font-size: 2rem;">₹0.00</div>
         </div>
 
         <div class="quick-bids">
@@ -580,7 +579,6 @@
         </div>
 
         <button onclick="placeBid()" class="main-bid-btn" id="placeBidBtn">🚀 PLACE BID</button>
-
         <div class="skip-section">
             <button onclick="skipPlayer()" class="skip-btn" id="skipBtn" disabled>⏭️ SKIP</button>
             <div class="skip-counter">
@@ -591,25 +589,41 @@
         <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px; font-size: 0.9rem;"></div>
     </div>
 
-    <!-- ===== HIDDEN MAX BID ===== -->
-    <div class="hidden-bid-panel">
-        <div class="title">🔒 Hidden Max Bid</div>
-        <div class="hint">Auto-bid up to your max limit. Other teams can't see this.</div>
-        <div class="hidden-input-row">
-            <input type="number" id="hiddenMaxBid" placeholder="Max amount (Cr)" step="0.1" min="0">
-            <button onclick="setHiddenBid()" class="hidden-set-btn">SET</button>
+    <!-- ===== WILLING PRICE POPUP MODAL ===== -->
+    <div class="modal-overlay" id="willingPriceModal" style="z-index: 3000;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>💰 Set Willing Price</h2>
+            </div>
+            <div class="modal-body" style="padding: 30px; text-align: center;">
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🏏</div>
+                    <div id="willingPlayerName" style="font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 5px;"></div>
+                    <div id="willingPlayerMeta" style="color: var(--text-dim); font-size: 0.9rem;"></div>
+                </div>
+                
+                <div style="background: rgba(0,0,0,0.2); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                    <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">Sold For</div>
+                    <div id="willingSoldPrice" style="font-family: 'JetBrains Mono'; font-size: 2rem; font-weight: 700; color: var(--gold-light);"></div>
+                    <div id="willingSoldTo" style="color: var(--text-secondary); margin-top: 8px; font-size: 0.9rem;"></div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Your Willing Price (Cr)</label>
+                    <input type="number" id="willingPriceInput" step="0.1" min="0" 
+                        style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(139,92,246,0.3); color: var(--text-primary); padding: 14px; border-radius: 14px; font-size: 1.2rem; font-family: 'JetBrains Mono'; text-align: center; outline: none;"
+                        placeholder="Enter amount">
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">Remaining Purse: <span id="willingPurseDisplay" style="color: var(--green-light); font-weight: 600;"></span></div>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button onclick="submitWillingPrice()" class="main-bid-btn" style="flex: 1; font-size: 1rem; padding: 16px;">💾 SAVE</button>
+                    <button onclick="closeWillingModal()" class="skip-btn" style="flex: 1; padding: 16px; font-size: 1rem;">SKIP</button>
+                </div>
+                <div id="willingStatus" style="margin-top: 15px; min-height: 20px; font-size: 0.85rem;"></div>
+            </div>
         </div>
-        <div id="hiddenBidStatus" style="margin-top: 10px; text-align: center; color: var(--text-dim); min-height: 20px; font-size: 0.85rem;"></div>
     </div>
-    {% else %}
-    <!-- View Mode Message -->
-    <div style="text-align: center; padding: 40px; color: var(--text-dim);">
-        <div style="font-size: 3rem; margin-bottom: 15px;">👁</div>
-        <h3 style="color: var(--ice-blue); font-family: 'Space Grotesk'; margin-bottom: 10px;">View Only Mode</h3>
-        <p>You are watching this session. Bidding is disabled.</p>
-    </div>
-    {% endif %}
-
     <!-- ===== BID HISTORY ===== -->
     <div class="history-section">
         <div class="history-title">📜 Recent Bids</div>
@@ -830,25 +844,30 @@ function clearDisplay() {
 }
 
 // ==================== BID AMOUNT CONTROLS ====================
+let remainingPurse = {{ ((user_team.purse_limit or 0) - (user_team.spent or 0) - (user_team.reserved or 0)) if user_team else 0 }};
+
 function updateBidAmountDisplay() {
     const display = document.getElementById('bidAmountDisplay');
-    if (display) display.textContent = '₹' + currentBidAmount.toFixed(2);
-}
-
-function adjustBid(delta) {
-    if (isViewMode) return;
-    currentBidAmount = Math.max(0, currentBidAmount + delta);
-    updateBidAmountDisplay();
-    clearActiveChips();
+    if (display) display.textContent = '₹' + currentBidAmount.toFixed(2) + 'Cr';
 }
 
 function setBidAmount(increment) {
     if (isViewMode) return;
+    
     const cbText = document.getElementById('currentBid').textContent;
     const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
     const base = currentBasePrice;
     const current = cb > 0 ? cb : base;
-    currentBidAmount = current + increment;
+    
+    let newAmount = current + increment;
+    
+    // Check against remaining purse
+    if (newAmount > remainingPurse) {
+        showStatus('bidStatus', `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
+        return;
+    }
+    
+    currentBidAmount = newAmount;
     updateBidAmountDisplay();
     
     // Highlight active chip
@@ -862,15 +881,39 @@ function clearActiveChips() {
 
 function enableCustomBid() {
     if (isViewMode) return;
-    const custom = prompt('Enter custom bid amount (Cr):');
+    
+    const custom = prompt(`Enter custom bid amount (Cr).\nRemaining purse: ₹${remainingPurse.toFixed(2)}Cr\nCurrent bid: ₹${currentBidAmount.toFixed(2)}Cr`);
     if (custom && !isNaN(parseFloat(custom))) {
-        currentBidAmount = parseFloat(custom);
+        const amount = parseFloat(custom);
+        
+        if (amount <= 0) {
+            showStatus('bidStatus', '❌ Amount must be > 0', '#ef4444');
+            return;
+        }
+        
+        // Check against remaining purse
+        if (amount > remainingPurse) {
+            showStatus('bidStatus', `❌ Exceeds remaining purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
+            return;
+        }
+        
+        // Check that custom bid is higher than current
+        const cbText = document.getElementById('currentBid').textContent;
+        const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
+        const base = currentBasePrice;
+        const current = cb > 0 ? cb : base;
+        
+        if (amount <= current) {
+            showStatus('bidStatus', `❌ Must be > ₹${current.toFixed(2)}Cr`, '#ef4444');
+            return;
+        }
+        
+        currentBidAmount = amount;
         updateBidAmountDisplay();
         clearActiveChips();
         event.target.classList.add('active');
     }
 }
-
 // ==================== SKIP BUTTON ====================
 function updateSkipButton(playerActive) {
     const skipBtn = document.getElementById('skipBtn');
@@ -906,6 +949,23 @@ function startFastPolling() {
         fetch(url)
         .then(r => r.json())
         .then(data => {
+            // Check if a player was just sold (and we haven't shown popup yet)
+            if (data.sold_player && data.sold_to_team && data.sold_price) {
+                // Only show popup if this is NOT the buyer team (buyer doesn't need willing price)
+                if (data.sold_to_team_id !== myTeamId && !data.willing_price_shown) {
+                    openWillingPriceModal(
+                        data.sold_player_name,
+                        data.sold_player_category,
+                        data.sold_price,
+                        data.sold_to_team,
+                        data.sold_session_player_id,
+                        data.sold_overseas
+                    );
+                }
+                clearDisplay();
+                return;
+            }
+            
             if (data.status === 'live' || data.status === 'paused') {
                 const playerId = data.session_player_id;
                 if (playerId && playerId !== lastPlayerId) {
@@ -917,7 +977,7 @@ function startFastPolling() {
                     updateSkipButton(true);
                 }
                 
-                if (!playerId && currentSessionPlayerId) {
+                if (!playerId && currentSessionPlayerId && !data.sold_player) {
                     clearDisplay();
                 }
                 
@@ -931,6 +991,11 @@ function startFastPolling() {
                 );
                 
                 if (data.base_price) currentBasePrice = parseFloat(data.base_price);
+                
+                // Update remaining purse from server
+                if (data.remaining_purse !== undefined) {
+                    remainingPurse = parseFloat(data.remaining_purse);
+                }
                 
                 // Update skip counter from polling
                 const skipCounter = document.getElementById('skipCounter');
@@ -995,6 +1060,12 @@ function placeBid() {
     if (!amount || amount <= 0) { showStatus('bidStatus', '❌ Enter amount', '#ef4444'); return; }
     if (amount <= current) { showStatus('bidStatus', `❌ Must be > ₹${current.toFixed(2)}Cr`, '#ef4444'); return; }
     
+    // Check remaining purse
+    if (amount > remainingPurse) {
+        showStatus('bidStatus', `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
+        return;
+    }
+    
     let body = { 
         auction_id: currentAuctionId,
         session_player_id: currentSessionPlayerId,
@@ -1024,6 +1095,52 @@ function placeBid() {
     })
     .catch(err => {
         showStatus('bidStatus', '❌ Error: ' + err.message, '#ef4444');
+    });
+}
+
+function setHiddenBid() {
+    if (isViewMode) {
+        showStatus('hiddenBidStatus', '👁 View mode', '#00d4ff');
+        return;
+    }
+    if (!currentSessionPlayerId || !myTeamId) {
+        showStatus('hiddenBidStatus', '❌ No active player', '#ef4444');
+        return;
+    }
+    
+    const maxAmount = parseFloat(document.getElementById('hiddenMaxBid').value);
+    if (!maxAmount || maxAmount <= 0) {
+        showStatus('hiddenBidStatus', '❌ Enter valid amount', '#ef4444');
+        return;
+    }
+    
+    // Check against remaining purse
+    if (maxAmount > remainingPurse) {
+        showStatus('hiddenBidStatus', `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
+        return;
+    }
+    
+    let body = {
+        auction_id: currentAuctionId,
+        session_player_id: currentSessionPlayerId,
+        team_id: myTeamId,
+        max_amount: maxAmount,
+        session_id: currentSessionId
+    };
+    
+    fetch('/team_owner/auction/hidden_bid', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showStatus('hiddenBidStatus', `🔒 Max bid: ₹${maxAmount.toFixed(2)}Cr`, 'var(--cosmic-purple-light)');
+            document.getElementById('hiddenMaxBid').value = '';
+        } else {
+            showStatus('hiddenBidStatus', '❌ ' + (data.error || 'Failed'), '#ef4444');
+        }
     });
 }
 
@@ -1064,31 +1181,58 @@ function skipPlayer() {
     });
 }
 
-function setHiddenBid() {
-    if (isViewMode) {
-        showStatus('hiddenBidStatus', '👁 View mode', '#00d4ff');
-        return;
-    }
-    if (!currentSessionPlayerId || !myTeamId) {
-        showStatus('hiddenBidStatus', '❌ No active player', '#ef4444');
+// ==================== WILLING PRICE POPUP ====================
+let pendingWillingPlayer = null;
+
+function openWillingPriceModal(playerName, category, soldPrice, soldToTeam, sessionPlayerId, isOverseas) {
+    pendingWillingPlayer = {
+        session_player_id: sessionPlayerId,
+        player_name: playerName
+    };
+    
+    document.getElementById('willingPlayerName').textContent = playerName;
+    document.getElementById('willingPlayerMeta').textContent = (category ? category.replace(/_/g, ' ').toUpperCase() : '') + (isOverseas ? ' • 🌍 OVERSEAS' : '');
+    document.getElementById('willingSoldPrice').textContent = '₹' + parseFloat(soldPrice).toFixed(2) + 'Cr';
+    document.getElementById('willingSoldTo').textContent = 'Sold to ' + (soldToTeam || 'Unknown');
+    document.getElementById('willingPurseDisplay').textContent = '₹' + remainingPurse.toFixed(2) + 'Cr';
+    document.getElementById('willingPriceInput').value = '';
+    document.getElementById('willingStatus').textContent = '';
+    
+    document.getElementById('willingPriceModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeWillingModal() {
+    document.getElementById('willingPriceModal').classList.remove('show');
+    document.body.style.overflow = '';
+    pendingWillingPlayer = null;
+}
+
+function submitWillingPrice() {
+    if (!pendingWillingPlayer) return;
+    
+    const amount = parseFloat(document.getElementById('willingPriceInput').value);
+    if (!amount || amount <= 0) {
+        document.getElementById('willingStatus').textContent = '❌ Enter valid amount';
+        document.getElementById('willingStatus').style.color = '#ef4444';
         return;
     }
     
-    const maxAmount = parseFloat(document.getElementById('hiddenMaxBid').value);
-    if (!maxAmount || maxAmount <= 0) {
-        showStatus('hiddenBidStatus', '❌ Enter valid amount', '#ef4444');
+    if (amount > remainingPurse) {
+        document.getElementById('willingStatus').textContent = `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`;
+        document.getElementById('willingStatus').style.color = '#ef4444';
         return;
     }
     
     let body = {
         auction_id: currentAuctionId,
-        session_player_id: currentSessionPlayerId,
+        session_player_id: pendingWillingPlayer.session_player_id,
         team_id: myTeamId,
-        max_amount: maxAmount,
+        willing_price: amount,
         session_id: currentSessionId
     };
     
-    fetch('/team_owner/auction/hidden_bid', {
+    fetch('/team_owner/auction/set_willing_price', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
@@ -1096,13 +1240,24 @@ function setHiddenBid() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            showStatus('hiddenBidStatus', `🔒 Max bid: ₹${maxAmount.toFixed(2)}Cr`, 'var(--cosmic-purple-light)');
-            document.getElementById('hiddenMaxBid').value = '';
+            document.getElementById('willingStatus').textContent = '✅ Saved!';
+            document.getElementById('willingStatus').style.color = '#22c55e';
+            setTimeout(() => closeWillingModal(), 800);
         } else {
-            showStatus('hiddenBidStatus', '❌ ' + (data.error || 'Failed'), '#ef4444');
+            document.getElementById('willingStatus').textContent = '❌ ' + (data.error || 'Failed');
+            document.getElementById('willingStatus').style.color = '#ef4444';
         }
+    })
+    .catch(err => {
+        document.getElementById('willingStatus').textContent = '❌ Error: ' + err.message;
+        document.getElementById('willingStatus').style.color = '#ef4444';
     });
 }
+
+// Close on overlay click
+document.getElementById('willingPriceModal').addEventListener('click', function(e) {
+    if (e.target === this) closeWillingModal();
+});
 
 function checkAutoBid(currentBid) {
     if (!currentSessionPlayerId || !currentSessionId) return;
