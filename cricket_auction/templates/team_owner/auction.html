@@ -1077,7 +1077,7 @@ function placeBid() {
     const skipBtn = document.getElementById('skipBtn');
     if (skipBtn) skipBtn.disabled = true;
     
-    fetch('/admin/auction/bid', {
+    fetch('/team_owner/auction/bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload)
@@ -1151,7 +1151,7 @@ function skipPlayer() {
     skipBtn.disabled = true;
     skipBtn.textContent = '⏳ Skipping...';
     
-    fetch('/admin/auction/skip', {
+    fetch('/team_owner/auction/skip', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -1187,7 +1187,7 @@ function skipPlayer() {
 function checkAutoBid(currentBid) {
     if (!currentSessionPlayerId || !currentSessionId) return;
     
-    fetch('/admin/auction/auto_bid', {
+    fetch('/team_owner/auction/auto_bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
