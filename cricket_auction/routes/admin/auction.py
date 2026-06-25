@@ -4,6 +4,9 @@ import json
 import time
 import logging
 
+import time
+
+start = time.time()
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('admin_auction', __name__, url_prefix='/admin')
@@ -1031,6 +1034,11 @@ def _do_fetch_status(auction_id, active_session_id):
 
 @bp.route('/auction/status')
 def get_status():
+    print(
+    "ADMIN STATUS TIME:",
+    round(time.time() - start, 3),
+    "seconds"
+)
     """Get auction status — NO CACHE"""
     auction_id = request.args.get('auction_id')
     active_session_id = request.args.get('session_id') or session.get('active_session_id')

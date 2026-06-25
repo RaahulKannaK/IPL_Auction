@@ -2,6 +2,10 @@ from flask import Blueprint, render_template, request, redirect, session, flash,
 from database.db import get_db, get_cached, clear_cache
 import json
 
+import time
+
+start = time.time()
+
 bp = Blueprint('team_owner_auction', __name__, url_prefix='/team_owner')
 
 def get_user_team(cursor, user_id, auction_id):
@@ -924,6 +928,11 @@ def auto_counter_bid():
 
 @bp.route('/auction/status')
 def get_status():
+    print(
+    "ADMIN STATUS TIME:",
+    round(time.time() - start, 3),
+    "seconds"
+)
     """Get auction status for team owner"""
     auction_id = request.args.get('auction_id')
     team_id = request.args.get('team_id', type=int)
