@@ -673,21 +673,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    {% if current_player %}
-    currentSessionPlayerId = {{ current_player.session_player_id }};
-    lastPlayerId = {{ current_player.session_player_id }};
-    hasBids = {{ has_bids|tojson }};
-    currentBasePrice = {{ (current_player.base_price or 2.0)|tojson }};
-    
+    {% if current_player and current_player.session_player_id %}
+    currentSessionPlayerId = {{ current_player.session_player_id if current_player else 'null' }};
+    lastPlayerId = {{ current_player.session_player_id if current_player else 'null' }};
+    hasBids = {{ 'true' if has_bids else 'false' }};
+    currentBasePrice = {{ current_player.base_price if current_player else 2.00 }};
+
     updateCurrentPlayerDisplay(
-        '{{ current_player.player_name }}', 
-        {{ current_bid if current_bid is not none else 0 }}, 
-        '{{ current_bidder or "No bids yet" }}', 
-        '{{ current_player.category }}', 
-        {{ current_player.base_price or 2.0 }}, 
-        {{ current_player.session_player_id }}
+        {{ current_player.player_name|tojson }},
+        {{ current_bid if current_bid is not none else 0 }},
+        {{ (current_bidder or "No bids yet")|tojson }},
+        {{ current_player.category|tojson }},
+        {{ (current_player.base_price or 2.0)|float }},
+        {{ current_player.session_player_id|int }}
     );
-    updateAdminControls({{ 'true' if has_bids else 'false' }});
+    updateAdminControls({{ has_bids|tojson }});
     {% endif %}
     
     startFastPolling();

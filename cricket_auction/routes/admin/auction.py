@@ -341,15 +341,14 @@ def place_bid():
         return jsonify({'error': 'No active session'}), 400
     
     user_role = session.get('role')
-    
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
     if user_role == 'team_owner':
         user_team = get_user_team(cursor, session['user_id'], auction_id)
         if not user_team or user_team['id'] != team_id:
             return jsonify({'error': 'You can only bid for your own team'}), 403
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
     try:
         # Verify team is in session
         cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
@@ -1016,15 +1015,13 @@ def place_hidden_bid():
     team_id = data.get('team_id')
     max_amount = float(data.get('max_amount', 0))
     
-    user_team = get_user_team(cursor, session['user_id'], auction_id)
-    if session.get('role') == 'team_owner' and (not user_team or user_team['id'] != team_id):
-        return jsonify({'error': 'You can only set hidden bids for your own team'}), 403
-    
     active_session_id = session.get('active_session_id') or data.get('session_id')
-    
+
     db = get_db()
     cursor = db.cursor(dictionary=True)
-    
+
+    user_team = get_user_team(cursor, session['user_id'], auction_id)
+
     try:
         cursor.execute("SELECT * FROM teams WHERE id = %s", (team_id,))
         team = cursor.fetchone()
