@@ -288,7 +288,7 @@ def select_player():
             
             # Get player
             cursor.execute("""
-                SELECT sp.*, p.player_name, p.category, p.overseas, p.base_price as player_base_price
+                SELECT sp.*, p.player_name, p.category, p.overseas, sp.base_price as player_base_price
                 FROM session_players sp
                 JOIN players p ON sp.player_id = p.id
                 WHERE sp.id = %s AND sp.session_id = %s
