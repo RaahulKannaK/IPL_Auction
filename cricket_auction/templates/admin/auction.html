@@ -697,12 +697,13 @@ function startFastPolling() {
                     }
                 }
                 
-                // BUG FIX 2: Proper null checking for playerId
-                if (data.hasOwnProperty('session_player_id')) {
-                    const serverPlayerId = data.session_player_id;
-                    
-                    if (serverPlayerId && serverPlayerId !== lastPlayerId) {
-                        // New player came in from server
+                // CRITICAL FIX: Handle server player state properly
+                const serverPlayerId = data.session_player_id;
+                const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
+                
+                if (hasServerPlayer) {
+                    // Server has a player active
+                    if (serverPlayerId !== lastPlayerId) {
                         lastPlayerId = serverPlayerId;
                         currentSessionPlayerId = serverPlayerId;
                         isAllSkipped = false;
@@ -710,26 +711,32 @@ function startFastPolling() {
                         stopFinalCall();
                         resetSkipUI();
                         flashPlayerUpdate();
-                    } else if (serverPlayerId === null && currentSessionPlayerId) {
-                        // Server explicitly cleared the player
-                        clearAuctionDisplay();
                     }
-                    // If serverPlayerId === lastPlayerId, do nothing (keep current state)
-                }
-                
-                // Always update display from server data if we have a player
-                if (data.current_player && data.session_player_id) {
+                    
+                    // Update display from server, but PRESERVE base_price if server sends 0
+                    const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
+                    const effectiveCurrentBid = (data.current_bid > 0) ? data.current_bid : effectiveBasePrice;
+                    
                     updateCurrentPlayerDisplay(
                         data.current_player,
-                        data.current_bid,
+                        effectiveCurrentBid,
                         data.current_bidder,
                         data.player_category,
-                        data.base_price,
-                        data.session_player_id
+                        effectiveBasePrice,
+                        serverPlayerId
                     );
+                } 
+                else if (serverPlayerId === null || serverPlayerId === 0) {
+                    // Server explicitly has no player
+                    // ONLY clear if we don't have a locally selected player pending
+                    if (!adminSelectedPlayer && !currentSessionPlayerId) {
+                        clearAuctionDisplay();
+                    }
+                    // If we DO have currentSessionPlayerId set locally, keep it
+                    // (the server will catch up on next poll after broadcast)
                 }
                 
-                if (data.base_price) currentBasePrice = parseFloat(data.base_price);
+                if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
                 
                 const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
                 if (bidsExist !== hasBids) updateAdminControls(bidsExist);
@@ -838,13 +845,17 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
 }
 
 function broadcastPlayer() {
-    // BUG FIX: Create local copy immediately so it can't become null
     const selected = adminSelectedPlayer;
     
     if (!selected || !selected.sessionPlayerId) { 
         alert('No player selected!'); 
         return; 
     }
+    
+    // PRE-SET IDs and base price BEFORE fetch so polling doesn't overwrite
+    currentSessionPlayerId = selected.sessionPlayerId;
+    lastPlayerId = selected.sessionPlayerId;
+    currentBasePrice = selected.basePrice;
     
     let body = { 
         auction_id: currentAuctionId, 
@@ -860,17 +871,18 @@ function broadcastPlayer() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            currentSessionPlayerId = selected.sessionPlayerId;
-            lastPlayerId = selected.sessionPlayerId;
+            // Server confirmed, update with server data if provided
+            if (data.base_price) currentBasePrice = parseFloat(data.base_price);
+            
             isAllSkipped = false;
             resetSkipUI();
             
             updateCurrentPlayerDisplay(
-                selected.name, 
-                selected.basePrice, 
+                data.player_name || selected.name, 
+                data.base_price || selected.basePrice,  // Show base price as initial bid
                 null, 
-                selected.category, 
-                selected.basePrice, 
+                data.category || selected.category, 
+                data.base_price || selected.basePrice, 
                 selected.sessionPlayerId
             );
             
@@ -881,13 +893,19 @@ function broadcastPlayer() {
             if (broadcastBtn) broadcastBtn.style.display = 'none';
             
             updateAdminControls(false);
-            adminSelectedPlayer = null; // Clear AFTER successful response
+            adminSelectedPlayer = null;
         } else {
+            // Revert on failure
+            currentSessionPlayerId = null;
+            lastPlayerId = null;
             alert(data.error || 'Failed to select player');
         }
     })
     .catch(err => { 
-        alert('Network error: ' + err.message); 
+        // On network error, DON'T revert — keep the player active
+        // The next poll will either confirm or we can manually deselect
+        console.error('Network error during broadcast:', err);
+        showStatus('bidStatus', '⚠️ Network hiccup — player should still be active. Check Live Sync.', '#f59e0b');
     });
 }
 
@@ -899,22 +917,28 @@ function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, ba
     const pc = document.getElementById('playerCategory');
     if (pc) pc.textContent = category ? category.replace(/_/g, ' ').toUpperCase() : '--';
     
+    // CRITICAL FIX: Never show 0.00 for base price if we know the real one
     const bp = document.getElementById('basePrice');
-    const cleanBase = basePrice ? parseFloat(basePrice).toFixed(2) : '0.00';
+    const cleanBase = (basePrice && parseFloat(basePrice) > 0) 
+        ? parseFloat(basePrice).toFixed(2) 
+        : (currentBasePrice > 0 ? currentBasePrice.toFixed(2) : '0.00');
     if (bp) bp.textContent = cleanBase;
     
+    // CRITICAL FIX: Current bid should show base price when no bids yet
     const cb = document.getElementById('currentBid');
-    if (cb && currentBid !== undefined) cb.textContent = '₹' + parseFloat(currentBid).toFixed(2) + 'Cr';
+    const effectiveBid = (currentBid && parseFloat(currentBid) > 0) 
+        ? parseFloat(currentBid) 
+        : (parseFloat(cleanBase) > 0 ? parseFloat(cleanBase) : 0);
+    if (cb) cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
     
     const cbd = document.getElementById('currentBidder');
     if (cbd) cbd.textContent = bidder || 'No bids yet';
     
-    // BUG FIX 3: Always sync currentSessionPlayerId from server
-    if (sessionPlayerId) {
+    // Only update currentSessionPlayerId if server gives us a valid one
+    if (sessionPlayerId && sessionPlayerId > 0) {
         currentSessionPlayerId = sessionPlayerId;
     }
 }
-
 // ==================== DESELECT PLAYER ====================
 function deselectPlayer() {
     if (!currentSessionPlayerId) { 
