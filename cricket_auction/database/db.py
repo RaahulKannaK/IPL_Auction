@@ -3,21 +3,18 @@ from mysql.connector import pooling
 from config import Config
 import time
 
-# Optimized for Render free tier: 1 worker, limited connections
+# Only use arguments supported by mysql-connector-python 8.2.0
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
-    pool_size=3,              # Reduced from 5 — Render free has 512MB RAM
-    pool_reset_session=False,  # Faster — don't reset session state
+    pool_size=3,
+    pool_reset_session=False,
     host=Config.DB_HOST,
     port=Config.DB_PORT,
     user=Config.DB_USER,
     password=Config.DB_PASSWORD,
     database=Config.DB_NAME,
-    connection_timeout=10,     # Fail fast
-    connect_timeout=10,
-    read_timeout=10,
-    write_timeout=10,
-    autocommit=False,          # Critical — batch transactions
+    connection_timeout=10,
+    autocommit=False,
     charset='utf8mb4',
     use_unicode=True,
     get_warnings=False,
