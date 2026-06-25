@@ -857,50 +857,66 @@ function startFastPolling() {
                 const serverPlayerId = data.session_player_id;
                 const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
                 
-                // Only update display if server has a player AND we're not in the middle of broadcasting
                 if (hasServerPlayer) {
-                    // New player on server
+                    // New player appeared on server
                     if (serverPlayerId !== lastPlayerId) {
-                        lastPlayerId = serverPlayerId;
-                        currentSessionPlayerId = serverPlayerId;
-                        isAllSkipped = false;
-                        stopSkipCountdown();
-                        stopFinalCall();
-                        resetSkipUI();
-                        flashPlayerUpdate();
+                        // If we just broadcast this player, just sync IDs without clearing display
+                        if (isBroadcasting && adminSelectedPlayer && adminSelectedPlayer.sessionPlayerId === serverPlayerId) {
+                            lastPlayerId = serverPlayerId;
+                            currentSessionPlayerId = serverPlayerId;
+                            isBroadcasting = false;
+                        } else {
+                            // Server has a different player — update everything
+                            lastPlayerId = serverPlayerId;
+                            currentSessionPlayerId = serverPlayerId;
+                            isAllSkipped = false;
+                            stopSkipCountdown();
+                            stopFinalCall();
+                            resetSkipUI();
+                            flashPlayerUpdate();
+                        }
                     }
                     
-                    // Update display from server
-                    const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
-                    const effectiveCurrentBid = data.current_bid || 0;
+                    // Update display from server only if:
+                    // 1. We're not in the middle of our own broadcast, OR
+                    // 2. Server has bid data that we need to show
+                    const serverHasBids = data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet';
                     
-                    updateCurrentPlayerDisplay(
-                        data.current_player,
-                        effectiveCurrentBid,
-                        data.current_bidder,
-                        data.player_category,
-                        effectiveBasePrice,
-                        serverPlayerId
-                    );
+                    if (!isBroadcasting || serverHasBids) {
+                        const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
+                        const effectiveCurrentBid = data.current_bid || 0;
+                        
+                        updateCurrentPlayerDisplay(
+                            data.current_player,
+                            effectiveCurrentBid,
+                            data.current_bidder,
+                            data.player_category,
+                            effectiveBasePrice,
+                            serverPlayerId
+                        );
+                        
+                        if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
+                        
+                        const bidsExist = data.has_bids || serverHasBids;
+                        if (bidsExist !== hasBids) updateAdminControls(bidsExist);
+                    }
                     
-                    if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
-                    
-                    const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
-                    if (bidsExist !== hasBids) updateAdminControls(bidsExist);
-                    
-                    if (data.skip_count !== undefined) updateSkipVotes(data.skip_count, data.total_teams, data.all_skipped);
-                    
+                    // Handle new bid during final call — cancel it
                     const currentBid = parseFloat(data.current_bid) || 0;
                     if (isFinalCallActive && currentBid > lastBidAmount) {
                         stopFinalCall();
                         showStatus('bidStatus', '📢 New bid received! Final call cancelled. Auction continues!', '#22c55e');
                         updateAdminControls(true);
                     }
+                    
+                    if (data.skip_count !== undefined) {
+                        updateSkipVotes(data.skip_count, data.total_teams, data.all_skipped);
+                    }
                 } 
                 else if (!hasServerPlayer && lastPlayerId) {
                     // Server cleared the player (sold/unsold/deselected)
                     // Only clear if we don't have a locally selected player waiting to broadcast
-                    if (!adminSelectedPlayer) {
+                    if (!adminSelectedPlayer && !isBroadcasting) {
                         clearAuctionDisplay();
                     }
                 }
@@ -1024,6 +1040,16 @@ function broadcastPlayer() {
     lastPlayerId = adminSelectedPlayer.sessionPlayerId;
     currentBasePrice = adminSelectedPlayer.basePrice;
     
+    // UPDATE DISPLAY IMMEDIATELY — don't wait for server
+    updateCurrentPlayerDisplay(
+        adminSelectedPlayer.name, 
+        0,
+        null, 
+        adminSelectedPlayer.category, 
+        adminSelectedPlayer.basePrice, 
+        adminSelectedPlayer.sessionPlayerId
+    );
+    
     const payload = { 
         auction_id: currentAuctionId, 
         session_player_id: adminSelectedPlayer.sessionPlayerId,
@@ -1052,10 +1078,11 @@ function broadcastPlayer() {
             isAllSkipped = false;
             resetSkipUI();
             
+            // Update from server response if available
             updateCurrentPlayerDisplay(
                 data.player_name || adminSelectedPlayer.name, 
-                0,
-                null, 
+                data.current_bid || 0,
+                data.current_bidder || null, 
                 data.category || adminSelectedPlayer.category, 
                 data.base_price || adminSelectedPlayer.basePrice, 
                 adminSelectedPlayer.sessionPlayerId
@@ -1070,7 +1097,7 @@ function broadcastPlayer() {
             
             updateAdminControls(false);
             
-            // Keep player selected in grid but mark as in_auction
+            // Mark card as in_auction
             document.querySelectorAll('.player-card').forEach(c => {
                 if (parseInt(c.dataset.sessionPlayerId) === adminSelectedPlayer.sessionPlayerId) {
                     c.classList.add('selected');
@@ -1091,15 +1118,16 @@ function broadcastPlayer() {
         isBroadcasting = false;
         console.error('Broadcast error:', err);
         
+        // DON'T clear display on error — keep the player showing
+        // Just show error in status
+        showStatus('bidStatus', '⚠️ ' + err.message + ' — Player shown locally', '#f59e0b');
+        
         if (broadcastBtn) {
             broadcastBtn.disabled = false;
             broadcastBtn.innerHTML = '📢 Send to Auction';
         }
-        
-        showStatus('bidStatus', '⚠️ ' + err.message, '#f59e0b');
     });
 }
-
 // ==================== UPDATE DISPLAY ====================
 function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, basePrice, sessionPlayerId) {
     const cp = document.getElementById('currentPlayer');
@@ -1115,14 +1143,16 @@ function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, ba
     if (bp) bp.textContent = effectiveBase.toFixed(2);
     
     const cb = document.getElementById('currentBid');
-    // If no bids yet, show base price as "starting from" but label it clearly
     const effectiveBid = (currentBid && parseFloat(currentBid) > 0) 
         ? parseFloat(currentBid) 
         : 0;
+    
     if (cb) {
         if (effectiveBid > 0) {
             cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
+            cb.style.opacity = '1';
         } else {
+            // No bids yet — show base price faded
             cb.textContent = '₹' + effectiveBase.toFixed(2) + 'Cr';
             cb.style.opacity = '0.6';
         }
@@ -1130,7 +1160,7 @@ function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, ba
     
     const cbd = document.getElementById('currentBidder');
     if (cbd) {
-        if (bidder && effectiveBid > 0) {
+        if (bidder && bidder !== 'No bids yet' && bidder !== null && bidder !== '') {
             cbd.textContent = bidder;
             if (cb) cb.style.opacity = '1';
         } else {
@@ -1180,6 +1210,12 @@ function deselectPlayer() {
 }
 
 function clearAuctionDisplay() {
+    // Don't clear if we're in the middle of broadcasting a player
+    if (isBroadcasting && adminSelectedPlayer) {
+        console.log('Skipping clear — broadcast in progress');
+        return;
+    }
+    
     document.getElementById('currentPlayer').textContent = 'Waiting...';
     document.getElementById('playerCategory').textContent = '--';
     document.getElementById('basePrice').textContent = '0.00';
@@ -1209,7 +1245,6 @@ function clearAuctionDisplay() {
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
     adminSelectedPlayer = null;
 }
-
 // ==================== RE-BID PLAYER ====================
 function rebidPlayer() {
     if (!currentSessionPlayerId) { 
