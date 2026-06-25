@@ -637,7 +637,7 @@
 <script>
 // ==================== GLOBAL STATE ====================
 let currentAuctionId = {{ auction.id }};
-let currentSessionId = {% if session_id %}{{ session_id }}{% else %}null{% endif %};
+let currentSessionId = {% if session_id is not none and session_id != '' %}{{ session_id }}{% else %}null{% endif %};
 let pollInterval = null;
 let lastPlayerId = null;
 let currentSessionPlayerId = null;
@@ -681,7 +681,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     updateCurrentPlayerDisplay(
         '{{ current_player.player_name }}', 
-        {{ current_bid }}, 
+        {{ current_bid if current_bid is not none else 0 }}, 
         '{{ current_bidder or "No bids yet" }}', 
         '{{ current_player.category }}', 
         {{ current_player.base_price or 2.0 }}, 
@@ -1423,31 +1423,39 @@ function updatePlayersGrid(players) {
     const currentFilter = document.querySelector('.filter-btn.active');
     const filterCat = currentFilter ? currentFilter.dataset.category || 'all' : 'all';
     
+    // Helper to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
     let html = '';
     players.forEach(player => {
         if (!player.session_player_id) return;
         
-        const bp = player.base_price || 2.00;
+        const bp = parseFloat(player.base_price) || 2.00;
         const catClass = 'badge-' + player.category;
         const overseasBadge = player.overseas ? '<span class="cat-badge badge-overseas">🌍 OS</span>' : '';
         const statusClass = 'status-' + (player.status || 'available');
+        const safeName = escapeHtml(player.player_name || 'Unknown');
         
         html += `
         <div class="player-card"
              data-category="${player.category}"
              data-id="${player.player_id}"
              data-session-player-id="${player.session_player_id}"
-             data-name="${player.player_name}"
+             data-name="${safeName}"
              data-base="${bp}"
              data-overseas="${player.overseas ? 'true' : 'false'}"
              data-status="${player.status || 'available'}">
             <div class="player-avatar">🏏</div>
-            <div class="player-name">${player.player_name}</div>
+            <div class="player-name">${safeName}</div>
             <div class="player-meta">
-                <span class="cat-badge ${catClass}">${player.category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                <span class="cat-badge ${catClass}">${(player.category || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
                 ${overseasBadge}
             </div>
-            <div class="player-price">Base: ₹${bp}Cr</div>
+            <div class="player-price">Base: ₹${bp.toFixed(2)}Cr</div>
             <div class="player-status ${statusClass}">${(player.status || 'available').toUpperCase()}</div>
         </div>`;
     });
@@ -1457,7 +1465,6 @@ function updatePlayersGrid(players) {
         c.style.display = (filterCat === 'all' || c.dataset.category === filterCat) ? 'block' : 'none';
     });
 }
-
 // ==================== FILTER PLAYERS ====================
 function filterPlayers(cat) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
