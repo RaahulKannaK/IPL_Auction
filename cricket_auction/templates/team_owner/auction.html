@@ -45,6 +45,7 @@
     }
     .status-live { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); box-shadow: 0 0 20px rgba(34, 197, 94, 0.15); }
     .status-paused { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .status-viewer { background: rgba(100, 116, 139, 0.12); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); }
     .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 15px #22c55e; animation: livePulse 2s infinite; }
     @keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
 
@@ -57,6 +58,14 @@
         padding: 8px 18px; border-radius: 20px;
         background: rgba(124, 77, 255, 0.1); color: var(--cosmic-purple-light);
         border: 1px solid rgba(124, 77, 255, 0.2);
+        font-weight: 600; font-size: 0.85rem;
+    }
+
+    .viewer-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 18px; border-radius: 20px;
+        background: rgba(100, 116, 139, 0.1); color: #94a3b8;
+        border: 1px solid rgba(100, 116, 139, 0.2);
         font-weight: 600; font-size: 0.85rem;
     }
 
@@ -307,22 +316,136 @@
     .bid-section { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
     @media (max-width: 900px) { .bid-section { grid-template-columns: 1fr; } }
 
-    .hidden-bid-section {
-        background: rgba(139, 92, 246, 0.05);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        border-radius: 16px;
-        padding: 20px;
-        margin-top: 15px;
+    /* Session Split View */
+    .session-split { margin-bottom: 30px; }
+    .session-section { margin-bottom: 25px; }
+    .session-section h3 {
+        font-family: 'Space Grotesk'; font-size: 1.1rem; color: var(--text-primary);
+        margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
     }
-    .hidden-bid-section h4 { color: var(--cosmic-purple-light); font-size: 0.9rem; margin-bottom: 12px; }
+    .session-section.yours h3 { color: #22c55e; }
+    .session-section.others h3 { color: var(--text-dim); }
+
+    .session-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+    .session-card {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px; padding: 20px; transition: all 0.3s; cursor: pointer;
+    }
+    .session-card:hover { border-color: rgba(124, 77, 255, 0.3); transform: translateY(-3px); }
+    .session-card.yours { border-left: 3px solid #22c55e; }
+    .session-card.others { border-left: 3px solid var(--text-dim); opacity: 0.8; }
+    .session-card .name { font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+    .session-card .meta { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 12px; }
+    .session-card .badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-member { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .badge-viewer { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+    .session-card .btn {
+        width: 100%; padding: 10px; border-radius: 12px; border: none;
+        font-weight: 700; font-size: 0.9rem; cursor: pointer; margin-top: 10px;
+        transition: all 0.3s;
+    }
+    .btn-enter { background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; }
+    .btn-view { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+    .btn-view:hover { background: rgba(100, 116, 139, 0.2); }
+
+    /* Other Teams Squad */
+    .squad-section { margin-top: 30px; }
+    .squad-team {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px; padding: 20px; margin-bottom: 15px;
+    }
+    .squad-team h4 {
+        font-family: 'Space Grotesk'; color: var(--text-primary); margin-bottom: 12px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .squad-team .purse { color: var(--text-dim); font-size: 0.85rem; margin-left: auto; }
+    .squad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .squad-player {
+        background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 12px;
+        border: 1px solid rgba(100, 120, 200, 0.05);
+    }
+    .squad-player .name { font-weight: 600; color: var(--text-primary); font-size: 0.9rem; }
+    .squad-player .price { font-family: 'JetBrains Mono'; color: var(--gold-light); font-size: 0.85rem; margin-top: 4px; }
+    .squad-player .willing { font-family: 'JetBrains Mono'; color: var(--cosmic-purple-light); font-size: 0.8rem; margin-top: 2px; }
+
+    /* Willing Price Modal */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+        z-index: 2000; display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: var(--bg-panel); border: 1px solid rgba(124, 77, 255, 0.3);
+        border-radius: 24px; padding: 35px; max-width: 450px; width: 90%;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    .modal-box h3 { font-family: 'Space Grotesk'; color: var(--text-primary); margin-bottom: 10px; }
+    .modal-box p { color: var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem; }
+    .modal-box .input-group { margin-bottom: 20px; }
+    .modal-box .btn-group { display: flex; gap: 12px; }
+    .modal-box .btn-group button { flex: 1; padding: 14px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; }
+    .btn-secondary { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
 </style>
 
 <div class="auction-wrapper">
     <!-- Navigation -->
     <div class="nav-bar" style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
         <a href="/team-owner/dashboard" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: rgba(0,0,0,0.2); border: 1px solid rgba(100,120,200,0.15); color: var(--text-dim); text-decoration: none; font-weight: 600; transition: all 0.3s;">← Dashboard</a>
-        <a href="/team_owner/my-team" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; text-decoration: none; font-weight: 700; font-size: 0.85rem;">👥 My Team</a>
+        <a href="/team-owner/my-team" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; text-decoration: none; font-weight: 700; font-size: 0.85rem;">👥 My Team</a>
     </div>
+
+    <!-- SESSION SELECTOR (shown when no active session) -->
+    {% if not has_active_session %}
+    <div class="session-split">
+        <!-- YOUR SESSIONS -->
+        {% if my_sessions %}
+        <div class="session-section yours">
+            <h3>✅ Your Sessions (You can bid)</h3>
+            <div class="session-cards">
+                {% for sess in my_sessions %}
+                <div class="session-card yours" onclick="joinSession({{ sess.id }})">
+                    <div class="name">{{ sess.session_icon }} {{ sess.session_name }}</div>
+                    <div class="meta">
+                        ⏰ {{ sess.start_time }} - {{ sess.end_time }}<br>
+                        👥 {{ sess.slots_filled }}/{{ sess.total_teams }} teams
+                    </div>
+                    <span class="badge badge-member">✅ Member</span>
+                    <button class="btn btn-enter">🚀 Enter Auction Room</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- OTHER SESSIONS -->
+        {% if other_sessions %}
+        <div class="session-section others">
+            <h3>👁️ Other Sessions (Viewer mode only)</h3>
+            <div class="session-cards">
+                {% for sess in other_sessions %}
+                <div class="session-card others" onclick="viewSession({{ sess.id }})">
+                    <div class="name">{{ sess.session_icon }} {{ sess.session_name }}</div>
+                    <div class="meta">
+                        ⏰ {{ sess.start_time }} - {{ sess.end_time }}<br>
+                        👥 {{ sess.slots_filled }}/{{ sess.total_teams }} teams
+                    </div>
+                    <span class="badge badge-viewer">👁️ Viewer</span>
+                    <button class="btn btn-view">👁️ View Auction</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- AUCTION ROOM (shown when active session selected) -->
+    {% if has_active_session %}
 
     <!-- Session Warning if no active session -->
     {% if not session_id %}
@@ -337,11 +460,11 @@
         <h3>👥 {{ user_team.team_name }} — My Squad</h3>
         <div class="team-stats">
             <div class="team-stat">
-                <div class="val">₹{{ "%.2f"|format((user_team.purse_limit or 0) - (user_team.spent or 0) - (user_team.reserved or 0)) }}Cr</div>
+                <div class="val">₹{{ "%.2f"|format((user_team.purse_limit|float) - (user_team.spent|float) - (user_team.reserved|float)) }}Cr</div>
                 <div class="lbl">Available</div>
             </div>
             <div class="team-stat">
-                <div class="val">₹{{ "%.2f"|format(user_team.spent or 0) }}Cr</div>
+                <div class="val">₹{{ "%.2f"|format(user_team.spent|float) }}Cr</div>
                 <div class="lbl">Spent</div>
             </div>
             <div class="team-stat">
@@ -371,8 +494,13 @@
         <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
             {% if current_session %}
             <div class="session-badge">
+                {% if current_session.start_time and current_session.end_time %}
                 ⏰ {{ current_session.start_time }} - {{ current_session.end_time }}
+                {% endif %}
             </div>
+            {% endif %}
+            {% if is_viewer_mode %}
+            <div class="viewer-badge">👁️ VIEWER MODE</div>
             {% endif %}
             <div class="sync-indicator sync-active" id="syncIndicator">
                 <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
@@ -383,19 +511,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Session Navigation -->
-    {% if all_sessions and all_sessions|length > 1 %}
-    <div class="session-nav">
-        {% for sess in all_sessions %}
-        <a href="/team-owner/auction?session={{ sess.id }}" 
-           class="session-chip {% if session_id == sess.id %}active{% endif %}">
-            {{ sess.session_name }}
-            <span class="time">{{ sess.start_time }}</span>
-        </a>
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <!-- Main Display -->
     <div class="glass-panel" style="margin-bottom: 25px;">
@@ -436,7 +551,8 @@
         </div>
     </div>
 
-    <!-- Team Owner Bid Section -->
+    <!-- Team Owner Bid Section (hidden in viewer mode) -->
+    {% if not is_viewer_mode %}
     <div class="bid-section">
         <!-- Place Bid -->
         <div class="glass-panel">
@@ -491,6 +607,15 @@
             <div id="hiddenBidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px;"></div>
         </div>
     </div>
+    {% else %}
+    <!-- Viewer Mode Notice -->
+    <div class="glass-panel" style="margin-bottom: 25px; text-align: center; padding: 30px;">
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <h3 style="color: #94a3b8; font-family: 'Space Grotesk'; margin-bottom: 10px;">👁️ Viewer Mode</h3>
+        <p style="color: var(--text-dim);">You are viewing this session as a spectator. Bidding is disabled.</p>
+    </div>
+    {% endif %}
 
     <!-- Available Players Section -->
     <div class="players-section">
@@ -504,11 +629,11 @@
                     Refresh
                 </button>
                 <div class="filter-bar">
-                    <button onclick="filterPlayers('all')" class="filter-btn active">All</button>
-                    <button onclick="filterPlayers('batsman')" class="filter-btn">Batsmen</button>
-                    <button onclick="filterPlayers('bowler')" class="filter-btn">Bowlers</button>
-                    <button onclick="filterPlayers('all_rounder')" class="filter-btn">All Rounders</button>
-                    <button onclick="filterPlayers('wicket_keeper')" class="filter-btn">Keepers</button>
+                    <button onclick="filterPlayers('all', this)" class="filter-btn active" data-category="all">All</button>
+                    <button onclick="filterPlayers('batsman', this)" class="filter-btn" data-category="batsman">Batsmen</button>
+                    <button onclick="filterPlayers('bowler', this)" class="filter-btn" data-category="bowler">Bowlers</button>
+                    <button onclick="filterPlayers('all_rounder', this)" class="filter-btn" data-category="all_rounder">All Rounders</button>
+                    <button onclick="filterPlayers('wicket_keeper', this)" class="filter-btn" data-category="wicket_keeper">Keepers</button>
                 </div>
             </div>
         </div>
@@ -538,12 +663,56 @@
             {% endfor %}
         </div>
     </div>
+
+    <!-- OTHER TEAMS SQUAD -->
+    {% if other_teams_squad %}
+    <div class="squad-section">
+        <h2 style="font-family: 'Space Grotesk'; color: var(--text-primary); margin-bottom: 20px;">👥 Other Teams Squad</h2>
+        {% for team_data in other_teams_squad %}
+        <div class="squad-team">
+            <h4>
+                {{ team_data.team_name }}
+                <span class="purse">💰 ₹{{ "%.2f"|format(team_data.purse_limit|float - team_data.spent|float) }}Cr available</span>
+            </h4>
+            <div class="squad-grid">
+                {% for player in team_data.players %}
+                <div class="squad-player">
+                    <div class="name">{{ player.player_name }}</div>
+                    <div class="price">💰 ₹{{ "%.2f"|format(player.purchase_price|float) }}Cr</div>
+                    {% if player.willing_price and player.show_willing %}
+                    <div class="willing">🔒 Willing: ₹{{ "%.2f"|format(player.willing_price|float) }}Cr</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% endif %} <!-- end has_active_session -->
 </div>
 
 <!-- Sold Notification Toast -->
 <div class="sold-toast" id="soldNotification">
     <h3>🎉 PLAYER SOLD!</h3>
     <p id="soldMessage"></p>
+</div>
+
+<!-- Willing Price Modal -->
+<div class="modal-overlay" id="willingPriceModal">
+    <div class="modal-box">
+        <h3>💰 Set Willing Price</h3>
+        <p id="willingPriceText">You won the bid! Set your willing price for this player.</p>
+        <div class="input-group">
+            <label>Willing Price (Cr)</label>
+            <input type="number" id="willingPriceInput" step="0.1" min="0">
+        </div>
+        <div class="btn-group">
+            <button onclick="submitWillingPrice()" class="btn-primary">✅ Set Price</button>
+            <button onclick="closeWillingModal()" class="btn-secondary">Skip</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -558,6 +727,8 @@ let countdownTimer = null;
 let currentBasePrice = 2.0;
 let myTeamId = {{ user_team.id if user_team else 'null' }};
 let hasSkipped = false;
+let isViewerMode = {{ 'true' if is_viewer_mode else 'false' }};
+let pendingWillingPrice = null;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -568,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCurrentPlayerDisplay(
         '{{ current_player.player_name }}', 
         {{ current_bid }}, 
-        '{{ current_bidder or "No bids yet" }}', 
+        'No bids yet', 
         '{{ current_player.category }}', 
         {{ current_player.base_price or 2.0 }}, 
         {{ current_player.session_player_id }}
@@ -576,8 +747,45 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSkipButton({{ 'true' if current_player else 'false' }});
     {% endif %}
     
-    startFastPolling();
+    if (!isViewerMode) {
+        startFastPolling();
+    } else {
+        startViewerPolling();
+    }
 });
+
+// ==================== SESSION JOINING ====================
+function joinSession(sessionId) {
+    fetch('/team-owner/select-session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.message || 'Failed to join session');
+        }
+    });
+}
+
+function viewSession(sessionId) {
+    fetch('/team-owner/select-session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId, viewer_mode: true})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.message || 'Failed to view session');
+        }
+    });
+}
 
 // ==================== FAST POLLING ====================
 function startFastPolling() {
@@ -585,7 +793,7 @@ function startFastPolling() {
     pollInterval = setInterval(() => {
         if (!currentSessionId) return;
         
-        let url = '/team_owner/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
+        let url = '/team-owner/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
         if (myTeamId) url += '&team_id=' + myTeamId;
         
         fetch(url)
@@ -635,8 +843,12 @@ function startFastPolling() {
                     indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Live Sync';
                 }
                 
-                // Highlight in-auction player card
                 highlightInAuctionPlayer(playerId);
+                
+                // Check for sold notification + willing price
+                if (data.just_sold && data.sold_to_team_id == myTeamId && data.needs_willing_price) {
+                    showWillingPriceModal(data.player_name, data.sold_price, data.session_player_id);
+                }
             }
         })
         .catch(() => {
@@ -647,6 +859,25 @@ function startFastPolling() {
             }
         });
     }, 1000);
+}
+
+function startViewerPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(() => {
+        if (!currentSessionId) return;
+        let url = '/team-owner/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'live' || data.status === 'paused') {
+                updateCurrentPlayerDisplay(
+                    data.current_player, data.current_bid, data.current_bidder,
+                    data.player_category, data.base_price, data.session_player_id
+                );
+                highlightInAuctionPlayer(data.session_player_id);
+            }
+        });
+    }, 2000);
 }
 
 function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
@@ -711,6 +942,50 @@ function clearAuctionDisplay() {
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('in-auction'));
 }
 
+// ==================== WILLING PRICE MODAL ====================
+function showWillingPriceModal(playerName, soldPrice, sessionPlayerId) {
+    pendingWillingPrice = sessionPlayerId;
+    document.getElementById('willingPriceText').textContent = 
+        `You won ${playerName} for ₹${soldPrice.toFixed(2)}Cr! Set your willing price (what you'd have paid max).`;
+    document.getElementById('willingPriceInput').value = soldPrice.toFixed(2);
+    document.getElementById('willingPriceModal').classList.add('show');
+}
+
+function closeWillingModal() {
+    document.getElementById('willingPriceModal').classList.remove('show');
+    pendingWillingPrice = null;
+}
+
+function submitWillingPrice() {
+    if (!pendingWillingPrice) return;
+    const price = parseFloat(document.getElementById('willingPriceInput').value);
+    if (!price || price < 0) {
+        alert('Enter valid price');
+        return;
+    }
+    
+    fetch('/team-owner/auction/willing-price', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            auction_id: currentAuctionId,
+            session_player_id: pendingWillingPrice,
+            team_id: myTeamId,
+            willing_price: price,
+            session_id: currentSessionId
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeWillingModal();
+            showStatus('bidStatus', '✅ Willing price set!', '#22c55e');
+        } else {
+            alert(data.error || 'Failed');
+        }
+    });
+}
+
 // ==================== BIDDING ====================
 function quickBid(increment) {
     const cbText = document.getElementById('currentBid').textContent;
@@ -721,6 +996,7 @@ function quickBid(increment) {
 }
 
 function placeBid() {
+    if (isViewerMode) { showStatus('bidStatus', '❌ Viewer mode - cannot bid', '#ef4444'); return; }
     if (!currentAuctionId) { showStatus('bidStatus', '❌ Join an auction first!', '#ef4444'); return; }
     if (!currentSessionId) { showStatus('bidStatus', '❌ No active session!', '#ef4444'); return; }
     if (!currentSessionPlayerId) { showStatus('bidStatus', '❌ Wait for auctioneer to select a player!', '#ef4444'); return; }
@@ -744,7 +1020,7 @@ function placeBid() {
         session_id: currentSessionId
     };
     
-    fetch('/team_owner/auction/bid', {
+    fetch('/team-owner/auction/bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
@@ -768,6 +1044,7 @@ function placeBid() {
 }
 
 function skipPlayer() {
+    if (isViewerMode) return;
     if (!currentSessionPlayerId || !myTeamId) return;
     if (!confirm('Skip this player? You will not be able to bid on them later.')) return;
     
@@ -779,7 +1056,7 @@ function skipPlayer() {
         reason: 'manual_skip'
     };
     
-    fetch('/team_owner/auction/skip', {
+    fetch('/team-owner/auction/skip', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
@@ -797,6 +1074,7 @@ function skipPlayer() {
 }
 
 function setHiddenBid() {
+    if (isViewerMode) { showStatus('hiddenBidStatus', '❌ Viewer mode', '#ef4444'); return; }
     if (!currentSessionPlayerId || !myTeamId) {
         showStatus('hiddenBidStatus', '❌ No active player or team!', '#ef4444');
         return;
@@ -816,7 +1094,7 @@ function setHiddenBid() {
         session_id: currentSessionId
     };
     
-    fetch('/team_owner/auction/hidden_bid', {
+    fetch('/team-owner/auction/hidden_bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
@@ -841,7 +1119,7 @@ function checkAutoBid(currentBid) {
         session_id: currentSessionId
     };
     
-    fetch('/team_owner/auction/auto_bid', {
+    fetch('/team-owner/auction/auto_bid', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
@@ -904,7 +1182,7 @@ function refreshPlayers() {
     const btn = document.getElementById('refreshBtn');
     if (btn) btn.classList.add('spinning');
     
-    let endpoint = '/team_owner/auction/players?auction_id=' + currentAuctionId;
+    let endpoint = '/team-owner/auction/players?auction_id=' + currentAuctionId;
     if (currentSessionId) endpoint += '&session_id=' + currentSessionId;
     
     fetch(endpoint)

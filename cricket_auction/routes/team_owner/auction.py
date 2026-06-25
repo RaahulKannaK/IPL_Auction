@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, session, flash,
 from database.db import get_db, get_cached, clear_cache
 import json
 
-bp = Blueprint('team_owner_auction', __name__, url_prefix='/team_owner')
+bp = Blueprint('team_owner_auction', __name__, url_prefix='/team-owner')
 
 def get_user_team(cursor, user_id, auction_id):
     """Get team owned by user"""
@@ -25,7 +25,7 @@ def get_min_bid_increment(current_bid):
 
 @bp.route('/auction')
 def auction_room():
-    """Team owner auction room — view only, bid enabled"""
+    """Team owner auction room — session split view + viewer mode + squad view"""
     if not session.get('user_id'):
         return redirect('/')
     
@@ -33,181 +33,325 @@ def auction_room():
         flash('Unauthorized')
         return redirect('/')
     
-    # Accept session from URL param OR flask session
-    url_session_id = request.args.get('session', type=int)
-    active_session_id = url_session_id or session.get('active_session_id')
     active_auction_id = session.get('active_auction_id')
+    active_team_id = session.get('active_team_id')
+    
+    if not active_auction_id or not active_team_id:
+        flash('No active auction selected')
+        return redirect('/team-owner/dashboard')
     
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Find the auction
-        if active_auction_id:
-            cursor.execute("SELECT * FROM auctions WHERE id = %s", (active_auction_id,))
-        else:
-            cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
-        auction = cursor.fetchone()
-        
-        if not auction:
-            flash('No active auction found')
-            return redirect('/team_owner/')
-        
-        auction_id = auction['id']
-        session['active_auction_id'] = auction_id
-        
-        # MUST HAVE ACTIVE SESSION
-        if not active_session_id:
-            cursor.execute("""
-                SELECT * FROM auction_sessions 
-                WHERE auction_id = %s AND status IN ('active', 'paused')
-                ORDER BY created_at DESC LIMIT 1
-            """, (auction_id,))
-            existing_session = cursor.fetchone()
-            
-            if not existing_session:
-                flash('No active session available. Contact admin.')
-                return redirect('/team_owner/')
-            
-            session['active_session_id'] = existing_session['id']
-            active_session_id = existing_session['id']
-        
-        session['active_session_id'] = active_session_id
-        
-        # LOAD SESSION DETAILS
+        # Verify user still owns team in this auction
         cursor.execute("""
-            SELECT s.*, a.league_name, a.status as auction_status, a.squad_size, 
-                   a.purse_limit, a.overseas_limit
-            FROM auction_sessions s
-            JOIN auctions a ON s.auction_id = a.id
-            WHERE s.id = %s
-        """, (active_session_id,))
-        auction_session = cursor.fetchone()
+            SELECT t.*, a.league_name, a.status as auction_status, 
+                   a.squad_size, a.overseas_limit, a.purse_limit
+            FROM teams t
+            JOIN auctions a ON t.auction_id = a.id
+            WHERE t.auction_id = %s AND t.owner_id = %s
+        """, (active_auction_id, session['user_id']))
+        team = cursor.fetchone()
         
-        if not auction_session:
+        if not team:
+            session.pop('active_auction_id', None)
+            session.pop('active_team_id', None)
+            session.pop('active_league_name', None)
             session.pop('active_session_id', None)
-            flash('Session expired. Contact admin.')
-            return redirect('/team_owner/')
+            flash('Invalid auction session. Please select again.')
+            return redirect('/team-owner/dashboard')
         
-        # GET SESSION TEAMS
-        session_team_ids = []
-        if auction_session.get('team_ids'):
-            try:
-                session_team_ids = json.loads(auction_session['team_ids']) if isinstance(auction_session['team_ids'], str) else auction_session['team_ids']
-            except:
-                session_team_ids = []
+        # Get total teams count
+        cursor.execute("SELECT COUNT(*) as total FROM teams WHERE auction_id = %s", (active_auction_id,))
+        result = cursor.fetchone()
+        total_teams = result['total'] if result else 0
         
-        session_teams = []
-        if session_team_ids:
-            format_ids = ','.join(['%s'] * len(session_team_ids))
-            cursor.execute(f"""
-                SELECT t.*, 
-                       (t.purse_limit - COALESCE(t.spent, 0) - COALESCE(t.reserved, 0)) as available_purse,
-                       (SELECT COUNT(*) FROM session_team_players stp 
-                        JOIN session_players sp ON stp.session_player_id = sp.id 
-                        WHERE stp.team_id = t.id AND sp.session_id = {active_session_id}) as squad_count,
-                       (SELECT COUNT(*) FROM session_team_players stp 
-                        JOIN session_players sp ON stp.session_player_id = sp.id 
-                        JOIN players p ON sp.player_id = p.id 
-                        WHERE stp.team_id = t.id AND p.overseas = TRUE AND sp.session_id = {active_session_id}) as overseas_count
-                FROM teams t
-                WHERE t.id IN ({format_ids})
-            """, tuple(session_team_ids))
-            session_teams = cursor.fetchall()
-        
-        # Get user team
-        user_team = get_user_team(cursor, session['user_id'], auction_id)
-        if user_team and user_team['id'] not in session_team_ids:
-            flash('Your team is not part of this session')
-            return redirect('/team_owner/')
-        
-        # GET SESSION PLAYERS (available + unsold + in_auction)
+        # ============================================
+        # FETCH ALL SESSIONS FOR THIS AUCTION
+        # ============================================
         cursor.execute("""
-            SELECT sp.id as session_player_id, sp.base_price, sp.status, 
-                   sp.sold_price, sp.sold_team_id,
-                   p.id as player_id, p.player_name, p.category, p.overseas
-            FROM session_players sp
-            JOIN players p ON sp.player_id = p.id
-            WHERE sp.session_id = %s AND sp.status IN ('available', 'unsold', 'in_auction')
+            SELECT s.* 
+            FROM auction_sessions s
+            WHERE s.auction_id = %s
             ORDER BY 
-                CASE sp.status 
-                    WHEN 'in_auction' THEN 1 
-                    WHEN 'available' THEN 2 
-                    WHEN 'unsold' THEN 3 
+                CASE s.status 
+                    WHEN 'active' THEN 1 
+                    WHEN 'paused' THEN 2 
+                    ELSE 3 
                 END,
-                p.player_name
-        """, (active_session_id,))
-        players = cursor.fetchall()
+                s.created_at DESC
+        """, (active_auction_id,))
+        raw_sessions = cursor.fetchall()
         
-        # CURRENT PLAYER (from session state)
+        # Process sessions - split into my_sessions and other_sessions
+        my_sessions = []
+        other_sessions = []
+        
+        for sess in raw_sessions:
+            team_ids = []
+            if sess['team_ids']:
+                try:
+                    team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                    team_ids = [int(tid) for tid in team_ids]
+                except:
+                    team_ids = []
+            
+            is_member = team['id'] in team_ids if team_ids else False
+            slots_filled = len(team_ids)
+            
+            session_name = sess['session_name'] or f'Session {sess["id"]}'
+            name_lower = session_name.lower()
+            
+            if 'morning' in name_lower:
+                session_icon = '🌅'
+            elif 'evening' in name_lower or 'night' in name_lower:
+                session_icon = '🌙'
+            elif 'weekend' in name_lower:
+                session_icon = '🏖️'
+            elif 'afternoon' in name_lower:
+                session_icon = '☀️'
+            else:
+                session_icon = '📅'
+            
+            session_data = {
+                'id': sess['id'],
+                'session_name': session_name,
+                'status': sess['status'],
+                'start_time': str(sess['start_time'])[:16] if sess['start_time'] else None,
+                'end_time': str(sess['end_time'])[:16] if sess['end_time'] else None,
+                'team_ids_list': team_ids,
+                'total_teams': total_teams,
+                'slots_filled': slots_filled,
+                'slots_left': total_teams - slots_filled,
+                'is_member': is_member,
+                'session_icon': session_icon,
+                'created_at': str(sess['created_at']) if sess['created_at'] else None
+            }
+            
+            if is_member:
+                my_sessions.append(session_data)
+            else:
+                other_sessions.append(session_data)
+        
+        # Check if user has active session selected
+        active_session_id = session.get('active_session_id')
+        is_viewer_mode = session.get('viewer_mode', False)
+        has_active_session = False
+        current_session = None
+        
+        if active_session_id:
+            cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (active_session_id,))
+            current_session = cursor.fetchone()
+            if current_session:
+                try:
+                    sess_team_ids = json.loads(current_session['team_ids']) if isinstance(current_session['team_ids'], str) else current_session['team_ids'] or []
+                    sess_team_ids = [int(tid) for tid in sess_team_ids]
+                    if team['id'] in sess_team_ids:
+                        has_active_session = True
+                        is_viewer_mode = False  # Override viewer mode if actually member
+                    else:
+                        has_active_session = True  # Still has session selected but as viewer
+                except:
+                    pass
+        
+        # ============================================
+        # GET SESSION DATA IF ACTIVE
+        # ============================================
+        players = []
         current_player = None
         current_bid = 0
         has_bids = False
+        other_teams_squad = []
         
-        if auction_session.get('current_player_id'):
+        if has_active_session and active_session_id:
+            # Get session players
             cursor.execute("""
-                SELECT sp.*, p.player_name, p.category, p.overseas, p.id as player_id
+                SELECT sp.id as session_player_id, sp.base_price, sp.status,
+                       p.id as player_id, p.player_name, p.category, p.overseas
                 FROM session_players sp
                 JOIN players p ON sp.player_id = p.id
-                WHERE sp.id = %s AND sp.session_id = %s
-            """, (auction_session['current_player_id'], active_session_id))
-            current_player = cursor.fetchone()
-            current_bid = float(auction_session.get('current_bid') or 0)
+                WHERE sp.session_id = %s AND sp.status IN ('available', 'unsold', 'in_auction')
+                ORDER BY 
+                    CASE sp.status WHEN 'in_auction' THEN 1 WHEN 'available' THEN 2 ELSE 3 END,
+                    p.player_name
+            """, (active_session_id,))
+            players = cursor.fetchall()
+            
+            # Get current auction state
+            if current_session and current_session.get('current_player_id'):
+                cursor.execute("""
+                    SELECT sp.*, p.player_name, p.category, p.overseas, p.id as player_id
+                    FROM session_players sp
+                    JOIN players p ON sp.player_id = p.id
+                    WHERE sp.id = %s AND sp.session_id = %s
+                """, (current_session['current_player_id'], active_session_id))
+                current_player = cursor.fetchone()
+                current_bid = float(current_session.get('current_bid') or 0)
+                
+                cursor.execute("""
+                    SELECT COUNT(*) as bid_count FROM session_bids 
+                    WHERE session_id = %s AND session_player_id = %s
+                """, (active_session_id, current_session['current_player_id']))
+                bid_result = cursor.fetchone()
+                has_bids = bid_result['bid_count'] > 0 if bid_result else False
+            
+            # Format current_session times
+            if current_session:
+                current_session['start_time'] = str(current_session['start_time'])[:16] if current_session['start_time'] else None
+                current_session['end_time'] = str(current_session['end_time'])[:16] if current_session['end_time'] else None
+            
+            # ============================================
+            # GET OTHER TEAMS SQUAD (only purchase prices, not willing prices)
+            # ============================================
+            cursor.execute("""
+                SELECT t.id, t.team_name, t.purse_limit, t.spent,
+                       (t.purse_limit - COALESCE(t.spent, 0) - COALESCE(t.reserved, 0)) as available_purse
+                FROM teams t
+                WHERE t.auction_id = %s AND t.id != %s
+            """, (active_auction_id, team['id']))
+            other_teams = cursor.fetchall()
+            
+            for ot in other_teams:
+                cursor.execute("""
+                    SELECT p.player_name, stp.purchase_price, sp.willing_price
+                    FROM session_team_players stp
+                    JOIN session_players sp ON stp.session_player_id = sp.id
+                    JOIN players p ON sp.player_id = p.id
+                    WHERE stp.team_id = %s AND sp.session_id = %s
+                    ORDER BY stp.purchase_price DESC
+                """, (ot['id'], active_session_id))
+                team_players = cursor.fetchall()
+                
+                # Only show willing price to the team owner who bought the player
+                # For other teams viewing, hide willing_price
+                for tp in team_players:
+                    tp['show_willing'] = False  # Only true for own team view
+                
+                if team_players:
+                    other_teams_squad.append({
+                        'team_id': ot['id'],
+                        'team_name': ot['team_name'],
+                        'purse_limit': float(ot['purse_limit']),
+                        'spent': float(ot['spent'] or 0),
+                        'available_purse': float(ot['available_purse'] or 0),
+                        'players': team_players
+                    })
+            
+            # Get my team stats
+            cursor.execute("""
+                SELECT COUNT(*) as cnt FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                WHERE stp.team_id = %s AND sp.session_id = %s
+            """, (team['id'], active_session_id))
+            result = cursor.fetchone()
+            team['squad_count'] = result['cnt'] if result else 0
             
             cursor.execute("""
-                SELECT COUNT(*) as bid_count FROM session_bids 
-                WHERE session_id = %s AND session_player_id = %s
-            """, (active_session_id, auction_session['current_player_id']))
-            bid_result = cursor.fetchone()
-            has_bids = bid_result['bid_count'] > 0 if bid_result else False
-        
-        # GET ALL SESSIONS FOR NAVIGATION
-        cursor.execute("""
-            SELECT s.*, 
-                   (SELECT COUNT(*) FROM session_players sp WHERE sp.session_id = s.id) as player_count
-            FROM auction_sessions s
-            WHERE s.auction_id = %s
-            ORDER BY s.created_at ASC
-        """, (auction_id,))
-        all_sessions = cursor.fetchall()
-        
-        for sess in all_sessions:
-            if sess.get('team_ids'):
-                try:
-                    sess['team_ids_list'] = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
-                except:
-                    sess['team_ids_list'] = []
-            else:
-                sess['team_ids_list'] = []
-            sess['team_count'] = len(sess['team_ids_list'])
+                SELECT COUNT(*) as cnt FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                JOIN players p ON sp.player_id = p.id
+                WHERE stp.team_id = %s AND p.overseas = TRUE AND sp.session_id = %s
+            """, (team['id'], active_session_id))
+            result = cursor.fetchone()
+            team['overseas_count'] = result['cnt'] if result else 0
         
         # Build auction dict
         auction_dict = {
-            'id': auction_id,
-            'league_name': auction['league_name'],
-            'status': auction['status'],
-            'squad_size': auction.get('squad_size', 18),
-            'purse_limit': auction.get('purse_limit', 100),
-            'overseas_limit': auction.get('overseas_limit', 8)
+            'id': active_auction_id,
+            'league_name': team['league_name'],
+            'status': team['auction_status'],
+            'squad_size': team.get('squad_size', 18),
+            'purse_limit': team.get('purse_limit', 100),
+            'overseas_limit': team.get('overseas_limit', 8)
         }
         
     finally:
         cursor.close()
         db.close()
     
-    return render_template('team_owner/auction.html', 
+    return render_template('team_owner/auction.html',
+        team=team,
+        user_team=team,
         auction=auction_dict,
-        auction_session=auction_session,
+        auction_id=active_auction_id,
+        my_sessions=my_sessions,
+        other_sessions=other_sessions,
+        has_active_session=has_active_session,
+        is_viewer_mode=is_viewer_mode,
+        active_session_id=active_session_id,
         session_id=active_session_id,
-        current_session=auction_session,
-        players=players, 
-        teams=session_teams,
-        user_team=user_team,
-        all_sessions=all_sessions,
+        current_session=current_session,
+        all_sessions=my_sessions + other_sessions,
+        players=players,
+        total_teams=total_teams,
         current_player=current_player,
         current_bid=current_bid,
-        has_bids=has_bids
+        has_bids=has_bids,
+        other_teams_squad=other_teams_squad
     )
+
+
+# ==================== SELECT SESSION ====================
+
+@bp.route('/select-session', methods=['POST'])
+def select_session():
+    """Handle session selection - member or viewer mode"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    session_id = data.get('session_id')
+    viewer_mode = data.get('viewer_mode', False)
+    
+    if not session_id:
+        return jsonify({'success': False, 'message': 'Session ID required'}), 400
+    
+    active_auction_id = session.get('active_auction_id')
+    
+    if not active_auction_id:
+        return jsonify({'success': False, 'message': 'No active auction'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT * FROM auction_sessions 
+            WHERE id = %s AND auction_id = %s
+        """, (session_id, active_auction_id))
+        sess = cursor.fetchone()
+        
+        if not sess:
+            return jsonify({'success': False, 'message': 'Invalid session for this auction'}), 400
+        
+        # Check if team is member of this session
+        team_ids = []
+        if sess['team_ids']:
+            try:
+                team_ids = json.loads(sess['team_ids']) if isinstance(sess['team_ids'], str) else sess['team_ids']
+                team_ids = [int(tid) for tid in team_ids]
+            except:
+                pass
+        
+        cursor.execute("SELECT id FROM teams WHERE owner_id = %s AND auction_id = %s", 
+                      (session['user_id'], active_auction_id))
+        user_team = cursor.fetchone()
+        
+        is_member = user_team and user_team['id'] in team_ids
+        
+        if viewer_mode and is_member:
+            # If trying viewer mode but is member, force member mode
+            viewer_mode = False
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    session['active_session_id'] = session_id
+    session['viewer_mode'] = viewer_mode
+    
+    return jsonify({'success': True, 'redirect': '/team-owner/auction'})
 
 
 # ==================== BIDDING ====================
@@ -220,6 +364,9 @@ def place_bid():
     
     if session.get('role') != 'team_owner':
         return jsonify({'error': 'Unauthorized'}), 403
+    
+    if session.get('viewer_mode'):
+        return jsonify({'error': 'Viewer mode - cannot bid'}), 403
     
     data = request.get_json()
     auction_id = data.get('auction_id')
@@ -350,12 +497,15 @@ def place_bid():
 
 @bp.route('/auction/skip', methods=['POST'])
 def skip_player():
-    """Team owner skips a player — cannot bid on them later"""
+    """Team owner skips a player"""
     if not session.get('user_id'):
         return jsonify({'error': 'Not logged in'}), 401
     
     if session.get('role') != 'team_owner':
         return jsonify({'error': 'Unauthorized'}), 403
+    
+    if session.get('viewer_mode'):
+        return jsonify({'error': 'Viewer mode - cannot skip'}), 403
     
     data = request.get_json()
     auction_id = data.get('auction_id')
@@ -371,12 +521,10 @@ def skip_player():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify team belongs to logged-in user
         user_team = get_user_team(cursor, session['user_id'], auction_id)
         if not user_team or user_team['id'] != team_id:
             return jsonify({'error': 'You can only skip for your own team'}), 403
         
-        # Check if already skipped
         cursor.execute("""
             SELECT * FROM session_skips 
             WHERE session_id = %s AND session_player_id = %s AND team_id = %s
@@ -385,13 +533,11 @@ def skip_player():
         if existing:
             return jsonify({'error': 'Already skipped this player'}), 400
         
-        # Record skip
         cursor.execute("""
             INSERT INTO session_skips (session_id, session_player_id, team_id, skipped_by, reason)
             VALUES (%s, %s, %s, %s, %s)
         """, (active_session_id, session_player_id, team_id, session['user_id'], reason))
         
-        # Count total skips for this player
         cursor.execute("""
             SELECT COUNT(DISTINCT team_id) as skip_count
             FROM session_skips
@@ -399,7 +545,6 @@ def skip_player():
         """, (active_session_id, session_player_id))
         skip_result = cursor.fetchone()
         
-        # Count total teams in session
         cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
         sess = cursor.fetchone()
         total_teams = 0
@@ -427,12 +572,15 @@ def skip_player():
 
 @bp.route('/auction/hidden_bid', methods=['POST'])
 def place_hidden_bid():
-    """Hidden max bid — team owner only for their own team"""
+    """Hidden max bid — team owner only"""
     if not session.get('user_id'):
         return jsonify({'error': 'Not logged in'}), 401
     
     if session.get('role') != 'team_owner':
         return jsonify({'error': 'Unauthorized'}), 403
+    
+    if session.get('viewer_mode'):
+        return jsonify({'error': 'Viewer mode'}), 403
     
     data = request.get_json()
     auction_id = data.get('auction_id')
@@ -446,7 +594,6 @@ def place_hidden_bid():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify team belongs to logged-in user
         user_team = get_user_team(cursor, session['user_id'], auction_id)
         if not user_team or user_team['id'] != team_id:
             return jsonify({'error': 'You can only set hidden bids for your own team'}), 403
@@ -460,19 +607,16 @@ def place_hidden_bid():
         if max_amount > available:
             return jsonify({'error': f'Insufficient funds. Available: ₹{available:.2f}Cr'}), 400
         
-        # Remove old hidden bid for this player+team
         cursor.execute("""
             DELETE FROM session_hidden_max_bids
             WHERE session_id = %s AND session_player_id = %s AND team_id = %s
         """, (active_session_id, session_player_id, team_id))
         
-        # Insert new hidden max bid
         cursor.execute("""
             INSERT INTO session_hidden_max_bids (session_id, session_player_id, team_id, max_bid, is_active) 
             VALUES (%s, %s, %s, %s, TRUE)
         """, (active_session_id, session_player_id, team_id, max_amount))
         
-        # Update purse reservation
         cursor.execute("""
             DELETE FROM session_purse_reservations
             WHERE session_player_id = %s AND team_id = %s AND status = 'active'
@@ -483,7 +627,6 @@ def place_hidden_bid():
             VALUES (%s, %s, %s, %s, 'active')
         """, (active_session_id, session_player_id, team_id, max_amount))
         
-        # Update team reserved amount
         cursor.execute("""
             UPDATE teams SET reserved = reserved + %s WHERE id = %s
         """, (max_amount, team_id))
@@ -496,11 +639,54 @@ def place_hidden_bid():
     return jsonify({'success': True, 'reserved': max_amount})
 
 
+# ==================== WILLING PRICE ====================
+
+@bp.route('/auction/willing-price', methods=['POST'])
+def set_willing_price():
+    """Set willing price for a purchased player"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    auction_id = data.get('auction_id')
+    session_player_id = data.get('session_player_id')
+    team_id = data.get('team_id')
+    willing_price = float(data.get('willing_price', 0))
+    
+    active_session_id = session.get('active_session_id') or data.get('session_id')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Verify team ownership
+        user_team = get_user_team(cursor, session['user_id'], auction_id)
+        if not user_team or user_team['id'] != team_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Update willing price in session_players
+        cursor.execute("""
+            UPDATE session_players 
+            SET willing_price = %s 
+            WHERE id = %s AND sold_team_id = %s
+        """, (willing_price, session_player_id, team_id))
+        
+        db.commit()
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True})
+
+
 # ==================== AUTO BID ====================
 
 @bp.route('/auction/auto_bid', methods=['POST'])
 def auto_counter_bid():
-    """Auto bid — session-scoped (same logic as admin)"""
+    """Auto bid — session-scoped"""
     data = request.get_json()
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
@@ -572,7 +758,7 @@ def auto_counter_bid():
 
 @bp.route('/auction/status')
 def get_status():
-    """Get auction status — session-scoped (same as admin)"""
+    """Get auction status — session-scoped"""
     auction_id = request.args.get('auction_id')
     team_id = request.args.get('team_id', type=int)
     active_session_id = request.args.get('session_id') or session.get('active_session_id')
@@ -601,7 +787,6 @@ def get_status():
                 'session_id': active_session_id
             }
             
-            # Get session-specific state
             if active_session_id:
                 cursor.execute("""
                     SELECT current_player_id, current_bid, current_bidder_id
@@ -622,6 +807,10 @@ def get_status():
                     result['skip_count'] = 0
                     result['total_teams'] = 0
                     result['all_skipped'] = False
+                    result['just_sold'] = False
+                    result['sold_to_team_id'] = None
+                    result['sold_price'] = 0
+                    result['needs_willing_price'] = False
                     
                     if sess.get('current_bidder_id'):
                         cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sess['current_bidder_id'],))
@@ -632,7 +821,8 @@ def get_status():
                     session_player_id = sess.get('current_player_id')
                     if session_player_id:
                         cursor.execute("""
-                            SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
+                            SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id,
+                                   sp.status, sp.sold_team_id, sp.sold_price
                             FROM session_players sp
                             JOIN players p ON sp.player_id = p.id
                             WHERE sp.id = %s
@@ -644,6 +834,27 @@ def get_status():
                             result['base_price'] = float(player['base_price'])
                             result['session_player_id'] = player['session_player_id']
                             result['overseas'] = player.get('overseas', False)
+                            
+                            # Check if just sold and needs willing price
+                            if player['status'] == 'sold' and player['sold_team_id']:
+                                result['just_sold'] = True
+                                result['sold_to_team_id'] = player['sold_team_id']
+                                result['sold_price'] = float(player['sold_price'] or 0)
+                                
+                                # Check if willing price already set
+                                if player.get('willing_price') is None:
+                                    # Check if not all teams in session (condition for willing price)
+                                    cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
+                                    team_data = cursor.fetchone()
+                                    if team_data and team_data['team_ids']:
+                                        try:
+                                            all_team_ids = json.loads(team_data['team_ids']) if isinstance(team_data['team_ids'], str) else team_data['team_ids']
+                                            total_in_session = len(all_team_ids)
+                                            # Willing price needed if session doesn't have all teams
+                                            if total_in_session < total_teams:
+                                                result['needs_willing_price'] = True
+                                        except:
+                                            pass
                         
                         cursor.execute("""
                             SELECT COUNT(*) as bid_count FROM session_bids 
@@ -660,7 +871,6 @@ def get_status():
                         skip_result = cursor.fetchone()
                         result['skip_count'] = skip_result['skip_count'] if skip_result else 0
                         
-                        # Count teams in session
                         cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
                         team_data = cursor.fetchone()
                         if team_data and team_data['team_ids']:
@@ -686,7 +896,7 @@ def get_status():
 
 @bp.route('/auction/players')
 def get_players():
-    """Get available players for current session — team owner view"""
+    """Get available players for current session"""
     auction_id = request.args.get('auction_id')
     active_session_id = request.args.get('session_id') or session.get('active_session_id')
     
@@ -704,11 +914,7 @@ def get_players():
             JOIN players p ON sp.player_id = p.id
             WHERE sp.session_id = %s AND sp.status IN ('available', 'unsold', 'in_auction')
             ORDER BY 
-                CASE sp.status 
-                    WHEN 'in_auction' THEN 1 
-                    WHEN 'available' THEN 2 
-                    WHEN 'unsold' THEN 3 
-                END,
+                CASE sp.status WHEN 'in_auction' THEN 1 WHEN 'available' THEN 2 ELSE 3 END,
                 p.player_name
         """, (active_session_id,))
         players = cursor.fetchall()
