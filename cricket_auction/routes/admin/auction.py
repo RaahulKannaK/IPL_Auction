@@ -252,102 +252,101 @@ def auction_room():
 @bp.route('/auction/select_player', methods=['POST'])
 def select_player():
     """Select a player for bidding"""
-    if session.get('role') not in ['admin', 'auctioneer']:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.get_json()
-    print(f"DEBUG INCOMING: {data}")  # Temporary debug
-    
-    auction_id = data.get('auction_id')
-    session_player_id = data.get('session_player_id')
-    
-    if not auction_id or not session_player_id:
-        return jsonify({'error': 'Missing auction_id or session_player_id'}), 400
-    
-    active_session_id = session.get('active_session_id') or data.get('session_id')
-    if not active_session_id:
-        return jsonify({'error': 'No active session'}), 400
-    
     try:
-        session_player_id = int(session_player_id)
-        auction_id = int(auction_id)
-        active_session_id = int(active_session_id)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid IDs'}), 400
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        # Verify session exists
-        cursor.execute("SELECT id FROM auction_sessions WHERE id = %s", (active_session_id,))
-        sess_check = cursor.fetchone()
-        if not sess_check:
-            return jsonify({'error': f'Session {active_session_id} not found'}), 404
+        if session.get('role') not in ['admin', 'auctioneer']:
+            return jsonify({'error': 'Unauthorized'}), 403
         
-        cursor.execute("""
-            SELECT sp.*, p.player_name, p.category, p.overseas, p.base_price as player_base_price
-            FROM session_players sp
-            JOIN players p ON sp.player_id = p.id
-            WHERE sp.id = %s AND sp.session_id = %s
-        """, (session_player_id, active_session_id))
-        player = cursor.fetchone()
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+            
+        auction_id = data.get('auction_id')
+        session_player_id = data.get('session_player_id')
         
-        if not player:
-            return jsonify({'error': 'Player not found in this session'}), 404
+        if not auction_id or not session_player_id:
+            return jsonify({'error': 'Missing auction_id or session_player_id'}), 400
         
-        # Clear previous state for this session
-        cursor.execute("""
-            DELETE FROM session_skips WHERE session_id = %s
-        """, (active_session_id,))
+        active_session_id = session.get('active_session_id') or data.get('session_id')
+        if not active_session_id:
+            return jsonify({'error': 'No active session'}), 400
         
-        cursor.execute("""
-            DELETE FROM session_bids WHERE session_id = %s AND session_player_id = %s
-        """, (active_session_id, session_player_id))
+        try:
+            session_player_id = int(session_player_id)
+            auction_id = int(auction_id)
+            active_session_id = int(active_session_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid IDs'}), 400
         
-        # Update session player status
-        cursor.execute("""
-            UPDATE session_players 
-            SET skip_reason = NULL, skip_notes = NULL, status = 'in_auction'
-            WHERE id = %s
-        """, (session_player_id,))
+        db = get_db()
+        cursor = db.cursor(dictionary=True)
         
-        # Update auction_sessions with current player, bid = 0 (no bids yet)
-        cursor.execute("""
-            UPDATE auction_sessions
-            SET current_player_id = %s,
-                current_bid = 0,
-                current_bidder_id = NULL
-            WHERE id = %s
-        """, (session_player_id, active_session_id))
+        try:
+            # Verify session exists
+            cursor.execute("SELECT id FROM auction_sessions WHERE id = %s", (active_session_id,))
+            if not cursor.fetchone():
+                return jsonify({'error': f'Session {active_session_id} not found'}), 404
+            
+            # Get player
+            cursor.execute("""
+                SELECT sp.*, p.player_name, p.category, p.overseas, p.base_price as player_base_price
+                FROM session_players sp
+                JOIN players p ON sp.player_id = p.id
+                WHERE sp.id = %s AND sp.session_id = %s
+            """, (session_player_id, active_session_id))
+            player = cursor.fetchone()
+            
+            if not player:
+                return jsonify({'error': 'Player not found in this session'}), 404
+            
+            # Clear previous state
+            cursor.execute("DELETE FROM session_skips WHERE session_id = %s", (active_session_id,))
+            cursor.execute("DELETE FROM session_bids WHERE session_id = %s AND session_player_id = %s", (active_session_id, session_player_id))
+            
+            # Update player status
+            cursor.execute("""
+                UPDATE session_players 
+                SET skip_reason = NULL, skip_notes = NULL, status = 'in_auction'
+                WHERE id = %s
+            """, (session_player_id,))
+            
+            # Update auction session
+            cursor.execute("""
+                UPDATE auction_sessions
+                SET current_player_id = %s,
+                    current_bid = 0,
+                    current_bidder_id = NULL
+                WHERE id = %s
+            """, (session_player_id, active_session_id))
+            
+            db.commit()
+            
+            # Verify it stuck
+            cursor.execute("SELECT current_player_id FROM auction_sessions WHERE id = %s", (active_session_id,))
+            verify = cursor.fetchone()
+            
+        finally:
+            cursor.close()
+            db.close()
         
-        db.commit()
+        clear_cache(f'auction:status:{auction_id}')
+        clear_cache('auction:status:active')
         
-        # Verify update
-        cursor.execute("SELECT current_player_id, current_bid FROM auction_sessions WHERE id = %s", (active_session_id,))
-        verify = cursor.fetchone()
-        print(f"DEBUG AFTER COMMIT: session={active_session_id}, current_player_id={verify['current_player_id']}, current_bid={verify['current_bid']}")
+        return jsonify({
+            'success': True,
+            'player_name': player['player_name'],
+            'category': player['category'],
+            'base_price': float(player['base_price']),
+            'session_player_id': session_player_id,
+            'overseas': player.get('overseas', False),
+            'debug_session': active_session_id,
+            'debug_db_player_id': verify['current_player_id'] if verify else None
+        })
         
     except Exception as e:
-        print(f"DEBUG ERROR in select_player: {str(e)}")
         import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-    finally:
-        cursor.close()
-        db.close()
-    
-    clear_cache(f'auction:status:{auction_id}')
-    clear_cache('auction:status:active')
-    
-    return jsonify({
-        'success': True,
-        'player_name': player['player_name'],
-        'category': player['category'],
-        'base_price': float(player['base_price']),
-        'session_player_id': session_player_id,
-        'overseas': player.get('overseas', False)
-    })
+        error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"SELECT_PLAYER ERROR: {error_msg}")
+        return jsonify({'error': f'Server error: {str(e)}', 'traceback': error_msg}), 500
 
 
 @bp.route('/auction/bid', methods=['POST'])
