@@ -801,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const card = e.target.closest('.player-card');
             if (!card) return;
             
-            const sessionPlayerId = parseInt(card.dataset.sessionPlayerId);
+            const sessionPlayerId = card.dataset.sessionPlayerId;
             const name = card.dataset.name || '';
             const category = card.dataset.category || '';
             const basePrice = parseFloat(card.dataset.base) || 2.0;
@@ -961,70 +961,88 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
         return;
     }
     
+    // Remove previous selection
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
     if (cardElement) {
         cardElement.classList.add('selected');
     }
     
+    // Store selection
     adminSelectedPlayer = { 
         sessionPlayerId: parsedId, 
-        name: name || '', 
+        name: name || 'Unknown', 
         category: category || '', 
         basePrice: parseFloat(basePrice) || 2.0, 
         overseas: overseas === true || overseas === 'true' 
     };
     currentBasePrice = parseFloat(basePrice) || 2.0;
     
+    // Update selection bar
     const bar = document.getElementById('selectedPlayerBar');
+    const barName = document.getElementById('selectedPlayerBarName');
+    const barMeta = document.getElementById('selectedPlayerBarMeta');
+    const barAction = document.getElementById('selectedPlayerBarAction');
+    const broadcastBtn = document.getElementById('broadcastBtn');
+    
     if (bar) {
         bar.style.display = 'flex';
-        
-        const barName = document.getElementById('selectedPlayerBarName');
-        const barMeta = document.getElementById('selectedPlayerBarMeta');
-        const barAction = document.getElementById('selectedPlayerBarAction');
-        
-        if (barName) barName.textContent = name || 'Unknown';
+        if (barName) barName.textContent = adminSelectedPlayer.name;
         if (barMeta) {
             barMeta.textContent = 
-                (category || '').replace(/_/g, ' ').toUpperCase() + 
+                (adminSelectedPlayer.category).replace(/_/g, ' ').toUpperCase() + 
                 (adminSelectedPlayer.overseas ? ' | 🌍 Overseas' : '') + 
-                ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
+                ' | Base: ₹' + adminSelectedPlayer.basePrice.toFixed(2) + 'Cr';
         }
         if (barAction) barAction.textContent = 'Ready to send (ID: ' + parsedId + ')';
     }
     
-    const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) {
-        broadcastBtn.style.display = 'inline-block';
+        broadcastBtn.style.display = 'inline-flex';
+        broadcastBtn.disabled = false;
     }
 }
 
 function broadcastPlayer() {
-    const selected = adminSelectedPlayer;
-    
-    if (!selected || !selected.sessionPlayerId) { 
+    if (!adminSelectedPlayer || !adminSelectedPlayer.sessionPlayerId) { 
         alert('No player selected! Click a player card first.'); 
         return; 
     }
     
+    if (!currentSessionId) {
+        alert('No active session! Please select a session first.');
+        return;
+    }
+    
+    const broadcastBtn = document.getElementById('broadcastBtn');
+    if (broadcastBtn) {
+        broadcastBtn.disabled = true;
+        broadcastBtn.innerHTML = '📡 Sending...';
+    }
+    
     isBroadcasting = true;
+    currentSessionPlayerId = adminSelectedPlayer.sessionPlayerId;
+    lastPlayerId = adminSelectedPlayer.sessionPlayerId;
+    currentBasePrice = adminSelectedPlayer.basePrice;
     
-    currentSessionPlayerId = selected.sessionPlayerId;
-    lastPlayerId = selected.sessionPlayerId;
-    currentBasePrice = selected.basePrice;
-    
-    let body = { 
+    const payload = { 
         auction_id: currentAuctionId, 
-        session_player_id: selected.sessionPlayerId,
-        session_id: currentSessionId
+        session_player_id: adminSelectedPlayer.sessionPlayerId,
+        session_id: currentSessionId,
+        player_name: adminSelectedPlayer.name,
+        category: adminSelectedPlayer.category,
+        base_price: adminSelectedPlayer.basePrice,
+        overseas: adminSelectedPlayer.overseas
     };
     
     fetch('/admin/auction/select_player', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
+        body: JSON.stringify(payload)
     })
-    .then(r => r.json())
+    .then(r => {
+        if (!r.ok) throw new Error('Server error: ' + r.status);
+        return r.json();
+    })
     .then(data => {
         isBroadcasting = false;
         
@@ -1035,32 +1053,50 @@ function broadcastPlayer() {
             resetSkipUI();
             
             updateCurrentPlayerDisplay(
-                data.player_name || selected.name, 
-                0,  // Current bid starts at 0 (no bids yet)
+                data.player_name || adminSelectedPlayer.name, 
+                0,
                 null, 
-                data.category || selected.category, 
-                data.base_price || selected.basePrice, 
-                selected.sessionPlayerId
+                data.category || adminSelectedPlayer.category, 
+                data.base_price || adminSelectedPlayer.basePrice, 
+                adminSelectedPlayer.sessionPlayerId
             );
             
             const barAction = document.getElementById('selectedPlayerBarAction');
             if (barAction) barAction.textContent = '✅ Now live in auction!';
             
-            const broadcastBtn = document.getElementById('broadcastBtn');
-            if (broadcastBtn) broadcastBtn.style.display = 'none';
+            if (broadcastBtn) {
+                broadcastBtn.style.display = 'none';
+            }
             
             updateAdminControls(false);
+            
+            // Keep player selected in grid but mark as in_auction
+            document.querySelectorAll('.player-card').forEach(c => {
+                if (parseInt(c.dataset.sessionPlayerId) === adminSelectedPlayer.sessionPlayerId) {
+                    c.classList.add('selected');
+                    const statusEl = c.querySelector('.player-status');
+                    if (statusEl) {
+                        statusEl.className = 'player-status status-in_auction';
+                        statusEl.textContent = 'IN AUCTION';
+                    }
+                }
+            });
+            
             adminSelectedPlayer = null;
         } else {
-            alert(data.error || 'Failed to select player');
-            currentSessionPlayerId = null;
-            lastPlayerId = null;
+            throw new Error(data.error || 'Failed to select player');
         }
     })
     .catch(err => { 
         isBroadcasting = false;
         console.error('Broadcast error:', err);
-        showStatus('bidStatus', '⚠️ Network hiccup — check Live Sync indicator', '#f59e0b');
+        
+        if (broadcastBtn) {
+            broadcastBtn.disabled = false;
+            broadcastBtn.innerHTML = '📢 Send to Auction';
+        }
+        
+        showStatus('bidStatus', '⚠️ ' + err.message, '#f59e0b');
     });
 }
 
