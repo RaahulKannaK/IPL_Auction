@@ -462,7 +462,7 @@ def set_willing_price():
     
     data = request.get_json()
     session_player_id = data.get('session_player_id')
-    team_id = data.get('team_id')
+    team_id = int(data.get('team_id'))
     willing_price = float(data.get('willing_price', 0))
     
     active_session_id = session.get('active_session_id')
@@ -553,7 +553,7 @@ def place_bid():
     data = request.get_json()
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
-    team_id = data.get('team_id')
+    team_id = int(data.get('team_id'))
     amount = float(data.get('amount', 0))
     
     active_session_id = session.get('active_session_id') or data.get('session_id')
@@ -687,7 +687,7 @@ def skip_player():
     data = request.get_json()
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
-    team_id = data.get('team_id')
+    team_id = int(data.get('team_id'))
     reason = data.get('reason', 'manual_skip')
     
     active_session_id = session.get('active_session_id') or data.get('session_id')
@@ -770,7 +770,7 @@ def place_hidden_bid():
     data = request.get_json()
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
-    team_id = data.get('team_id')
+    team_id = int(data.get('team_id'))
     max_amount = float(data.get('max_amount', 0))
     
     active_session_id = session.get('active_session_id') or data.get('session_id')

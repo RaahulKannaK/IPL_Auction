@@ -58,7 +58,7 @@ def save_playing11():
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
-    team_id = data.get('team_id')
+    team_id = int(data.get('team_id'))
     players = data.get('players', [])
     
     db = get_db()

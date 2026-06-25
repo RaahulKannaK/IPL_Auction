@@ -6,7 +6,7 @@ import time
 # Only use arguments supported by mysql-connector-python 8.2.0
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
-    pool_size=3,
+    pool_size=30,
     pool_reset_session=False,
     host=Config.DB_HOST,
     port=Config.DB_PORT,
