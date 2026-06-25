@@ -1194,33 +1194,4 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
-
-@bp.route('/auction/skip', methods=['POST'])
-def skip_player():
-    """Team owner skips a player"""
-    if session.get('role') != 'team_owner':
-        return jsonify({'error': 'Unauthorized'}), 403
     
-    data = request.get_json()
-    auction_id = data.get('auction_id')
-    session_player_id = data.get('session_player_id')
-    team_id = data.get('team_id')
-    active_session_id = session.get('active_session_id') or data.get('session_id')
-    
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-    
-    try:
-        cursor.execute("""
-            INSERT INTO session_skips (session_id, session_player_id, team_id, skipped_by)
-            VALUES (%s, %s, %s, %s)
-        """, (active_session_id, session_player_id, team_id, session['user_id']))
-        
-        db.commit()
-    finally:
-        cursor.close()
-        db.close()
-    
-    clear_cache(f'auction:status:{auction_id}')
-    
-    return jsonify({'success': True})
