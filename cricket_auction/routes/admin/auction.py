@@ -2,6 +2,9 @@ from flask import Blueprint, render_template, request, redirect, session, flash,
 from database.db import get_db, get_cached, clear_cache
 import json
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('admin_auction', __name__, url_prefix='/admin')
 
@@ -23,10 +26,6 @@ def get_min_bid_increment(current_bid):
         return 0.25
     else:
         return 0.25
-
-
-# ==================== SESSION ENTRY (Redirects to auction room) ====================
-
 
 
 # ==================== MAIN AUCTION ROOM (SESSION-SCOPED) ====================
@@ -241,6 +240,7 @@ def auction_room():
         all_skipped=all_skipped
     )
 
+
 # ==================== PLAYER SELECTION ====================
 
 @bp.route('/auction/select_player', methods=['POST'])
@@ -252,6 +252,10 @@ def select_player():
     data = request.get_json()
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
+    req_session_id = data.get('session_id')
+    
+    # DEBUG LOG
+    logger.info(f"SELECT_PLAYER: req_session={req_session_id}, flask_session={session.get('active_session_id')}, player={session_player_id}")
     
     if not auction_id or not session_player_id:
         return jsonify({'error': 'Missing auction_id or session_player_id'}), 400
@@ -847,118 +851,121 @@ def deselect_player():
     })
 
 
-# ==================== STATUS POLLING ====================
+# ==================== STATUS POLLING — CACHE BYPASSED ====================
+
+def _do_fetch_status(auction_id, active_session_id):
+    """Fetch fresh status directly from database — NO CACHE"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        if auction_id:
+            cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
+        else:
+            cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
+        
+        auction = cursor.fetchone()
+        
+        if not auction:
+            return {'status': 'none'}
+        
+        result = {
+            'status': auction['status'],
+            'league_name': auction.get('league_name'),
+            'auction_id': auction['id'],
+            'session_id': active_session_id
+        }
+        
+        # Get session-specific state
+        if active_session_id:
+            cursor.execute("""
+                SELECT current_player_id, current_bid, current_bidder_id
+                FROM auction_sessions WHERE id = %s
+            """, (active_session_id,))
+            sess = cursor.fetchone()
+            
+            if sess:
+                result['current_bid'] = float(sess.get('current_bid') or 0)
+                result['current_bidder_id'] = sess.get('current_bidder_id')
+                result['current_bidder'] = None
+                result['current_player'] = None
+                result['player_category'] = None
+                result['base_price'] = 0
+                result['session_player_id'] = None
+                result['overseas'] = False
+                result['has_bids'] = False
+                result['skip_count'] = 0
+                result['total_teams'] = 0
+                result['all_skipped'] = False
+                
+                if sess.get('current_bidder_id'):
+                    cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sess['current_bidder_id'],))
+                    bidder = cursor.fetchone()
+                    if bidder:
+                        result['current_bidder'] = bidder['team_name']
+                
+                session_player_id = sess.get('current_player_id')
+                if session_player_id:
+                    cursor.execute("""
+                        SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
+                        FROM session_players sp
+                        JOIN players p ON sp.player_id = p.id
+                        WHERE sp.id = %s
+                    """, (session_player_id,))
+                    player = cursor.fetchone()
+                    if player:
+                        result['current_player'] = player['player_name']
+                        result['player_category'] = player['category']
+                        result['base_price'] = float(player['base_price'])
+                        result['session_player_id'] = player['session_player_id']
+                        result['overseas'] = player.get('overseas', False)
+                    
+                    cursor.execute("""
+                        SELECT COUNT(*) as bid_count FROM session_bids 
+                        WHERE session_id = %s AND session_player_id = %s
+                    """, (active_session_id, session_player_id))
+                    bid_result = cursor.fetchone()
+                    result['has_bids'] = bid_result['bid_count'] > 0 if bid_result else False
+                    
+                    cursor.execute("""
+                        SELECT COUNT(DISTINCT team_id) as skip_count
+                        FROM session_skips
+                        WHERE session_id = %s AND session_player_id = %s
+                    """, (active_session_id, session_player_id))
+                    skip_result = cursor.fetchone()
+                    result['skip_count'] = skip_result['skip_count'] if skip_result else 0
+                    
+                    # Count teams in session
+                    cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
+                    team_data = cursor.fetchone()
+                    if team_data and team_data['team_ids']:
+                        try:
+                            team_ids = json.loads(team_data['team_ids']) if isinstance(team_data['team_ids'], str) else team_data['team_ids']
+                            result['total_teams'] = len(team_ids)
+                        except:
+                            result['total_teams'] = 0
+                    
+                    result['all_skipped'] = result['skip_count'] >= result['total_teams'] and result['total_teams'] > 0
+        
+        # DEBUG LOG
+        logger.info(f"STATUS: session={active_session_id}, player={result.get('current_player')}, player_id={result.get('session_player_id')}, bid={result.get('current_bid')}")
+        
+        return result
+        
+    finally:
+        cursor.close()
+        db.close()
+
 
 @bp.route('/auction/status')
 def get_status():
-    """Get auction status — session-scoped from auction_sessions table"""
+    """Get auction status — CACHE COMPLETELY BYPASSED"""
     auction_id = request.args.get('auction_id')
     team_id = request.args.get('team_id', type=int)
     active_session_id = request.args.get('session_id') or session.get('active_session_id')
     
-    cache_key = f'auction:status:{auction_id or "active"}:{active_session_id or "no_session"}'
-    
-    def fetch_status():
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
-        
-        try:
-            if auction_id:
-                cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
-            else:
-                cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
-            
-            auction = cursor.fetchone()
-            
-            if not auction:
-                return {'status': 'none'}
-            
-            result = {
-                'status': auction['status'],
-                'league_name': auction.get('league_name'),
-                'auction_id': auction['id'],
-                'session_id': active_session_id
-            }
-            
-            # Get session-specific state
-            if active_session_id:
-                cursor.execute("""
-                    SELECT current_player_id, current_bid, current_bidder_id
-                    FROM auction_sessions WHERE id = %s
-                """, (active_session_id,))
-                sess = cursor.fetchone()
-                
-                if sess:
-                    result['current_bid'] = float(sess.get('current_bid') or 0)
-                    result['current_bidder_id'] = sess.get('current_bidder_id')
-                    result['current_bidder'] = None
-                    result['current_player'] = None
-                    result['player_category'] = None
-                    result['base_price'] = 0
-                    result['session_player_id'] = None
-                    result['overseas'] = False
-                    result['has_bids'] = False
-                    result['skip_count'] = 0
-                    result['total_teams'] = 0
-                    result['all_skipped'] = False
-                    
-                    if sess.get('current_bidder_id'):
-                        cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sess['current_bidder_id'],))
-                        bidder = cursor.fetchone()
-                        if bidder:
-                            result['current_bidder'] = bidder['team_name']
-                    
-                    session_player_id = sess.get('current_player_id')
-                    if session_player_id:
-                        cursor.execute("""
-                            SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
-                            FROM session_players sp
-                            JOIN players p ON sp.player_id = p.id
-                            WHERE sp.id = %s
-                        """, (session_player_id,))
-                        player = cursor.fetchone()
-                        if player:
-                            result['current_player'] = player['player_name']
-                            result['player_category'] = player['category']
-                            result['base_price'] = float(player['base_price'])
-                            result['session_player_id'] = player['session_player_id']
-                            result['overseas'] = player.get('overseas', False)
-                        
-                        cursor.execute("""
-                            SELECT COUNT(*) as bid_count FROM session_bids 
-                            WHERE session_id = %s AND session_player_id = %s
-                        """, (active_session_id, session_player_id))
-                        bid_result = cursor.fetchone()
-                        result['has_bids'] = bid_result['bid_count'] > 0 if bid_result else False
-                        
-                        cursor.execute("""
-                            SELECT COUNT(DISTINCT team_id) as skip_count
-                            FROM session_skips
-                            WHERE session_id = %s AND session_player_id = %s
-                        """, (active_session_id, session_player_id))
-                        skip_result = cursor.fetchone()
-                        result['skip_count'] = skip_result['skip_count'] if skip_result else 0
-                        
-                        # Count teams in session
-                        cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
-                        team_data = cursor.fetchone()
-                        if team_data and team_data['team_ids']:
-                            try:
-                                team_ids = json.loads(team_data['team_ids']) if isinstance(team_data['team_ids'], str) else team_data['team_ids']
-                                result['total_teams'] = len(team_ids)
-                            except:
-                                result['total_teams'] = 0
-                        
-                        result['all_skipped'] = result['skip_count'] >= result['total_teams'] and result['total_teams'] > 0
-            
-            return result
-            
-        finally:
-            cursor.close()
-            db.close()
-    
-    result = get_cached(cache_key, fetch_status, ttl_seconds=0)
-    return jsonify(result)
+    # BYPASS CACHE — fetch fresh every time
+    return jsonify(_do_fetch_status(auction_id, active_session_id))
 
 
 # ==================== PAUSE / RESUME ====================
@@ -1170,4 +1177,3 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
-
