@@ -595,6 +595,7 @@
             </div>
         </div>
         
+        <!-- NO INLINE onclick — uses event delegation in JS -->
         <div class="players-grid" id="playersGrid">
             {% for player in players %}
             {% if player.session_player_id %}
@@ -606,8 +607,7 @@
                  data-name="{{ player.player_name }}" 
                  data-base="{{ bp }}"
                  data-overseas="{{ 'true' if player.overseas else 'false' }}"
-                 data-status="{{ player.status or 'available' }}"
-                 onclick="adminSelectPlayer({{ player.session_player_id }}, '{{ player.player_name|replace("'", "\\'") }}', '{{ player.category }}', {{ bp }}, {{ 'true' if player.overseas else 'false' }}, event)">
+                 data-status="{{ player.status or 'available' }}">
                 
                 <div class="player-avatar">🏏</div>
                 <div class="player-name">{{ player.player_name }}</div>
@@ -656,6 +656,23 @@ let isBroadcasting = false;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
+    // Attach event delegation for player card clicks
+    const playersGrid = document.getElementById('playersGrid');
+    if (playersGrid) {
+        playersGrid.addEventListener('click', function(e) {
+            const card = e.target.closest('.player-card');
+            if (!card) return;
+            
+            const sessionPlayerId = parseInt(card.dataset.sessionPlayerId);
+            const name = card.dataset.name || '';
+            const category = card.dataset.category || '';
+            const basePrice = parseFloat(card.dataset.base) || 2.0;
+            const overseas = card.dataset.overseas === 'true';
+            
+            adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, { currentTarget: card });
+        });
+    }
+    
     {% if current_player %}
     currentSessionPlayerId = {{ current_player.session_player_id }};
     lastPlayerId = {{ current_player.session_player_id }};
@@ -1423,8 +1440,7 @@ function updatePlayersGrid(players) {
              data-name="${player.player_name}"
              data-base="${bp}"
              data-overseas="${player.overseas ? 'true' : 'false'}"
-             data-status="${player.status || 'available'}"
-             onclick="adminSelectPlayer(${player.session_player_id}, '${player.player_name.replace(/'/g, "\\'")}', '${player.category}', ${bp}, ${player.overseas ? 'true' : 'false'}, event)">
+             data-status="${player.status || 'available'}">
             <div class="player-avatar">🏏</div>
             <div class="player-name">${player.player_name}</div>
             <div class="player-meta">
