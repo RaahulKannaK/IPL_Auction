@@ -800,7 +800,7 @@ function clearDisplay() {
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 20px;">No bids yet</p>';
     
     currentSessionPlayerId = null; 
-    lastPlayerId = null;  // <-- ADD THIS LINE
+    lastPlayerId = null; 
     bidHistory = []; 
     currentBasePrice = 2.0;
     currentBidAmount = 0;
@@ -898,8 +898,6 @@ function updateSkipButton(playerActive) {
 }
 
 // ==================== POLLING ====================
-// Replace the startFastPolling() function with this:
-
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
@@ -911,27 +909,25 @@ function startFastPolling() {
         fetch(url)
         .then(r => r.json())
         .then(data => {
-            // === SOLD PLAYER DETECTION ===
-            if (data.sold_player && data.sold_to_team_id !== myTeamId && !data.willing_price_shown) {
-                // Show willing price popup for non-buyer teams
-                openWillingPriceModal(
-                    data.sold_player_name,
-                    data.sold_player_category,
-                    data.sold_price,
-                    data.sold_to_team,
-                    data.sold_session_player_id,
-                    data.sold_overseas
-                );
-                // Don't clear display yet - let user handle popup first
-                // The next poll will show the new player
+            // Check if a player was just sold (and we haven't shown popup yet)
+            if (data.sold_player && data.sold_to_team && data.sold_price) {
+                // Only show popup if this is NOT the buyer team (buyer doesn't need willing price)
+                if (data.sold_to_team_id !== myTeamId && !data.willing_price_shown) {
+                    openWillingPriceModal(
+                        data.sold_player_name,
+                        data.sold_player_category,
+                        data.sold_price,
+                        data.sold_to_team,
+                        data.sold_session_player_id,
+                        data.sold_overseas
+                    );
+                }
+                clearDisplay();
                 return;
             }
             
-            // If we showed popup and it's closed, or no sold player, proceed normally
             if (data.status === 'live' || data.status === 'paused') {
                 const playerId = data.session_player_id;
-                
-                // New player on board
                 if (playerId && playerId !== lastPlayerId) {
                     lastPlayerId = playerId; 
                     currentSessionPlayerId = playerId;
@@ -940,42 +936,37 @@ function startFastPolling() {
                     updateSkipButton(true);
                 }
                 
-                // No player currently
-                if (!playerId && currentSessionPlayerId) {
+                if (!playerId && currentSessionPlayerId && !data.sold_player) {
                     clearDisplay();
                 }
                 
-                // Update display with current player data
-                if (playerId) {
-                    updateDisplay(
-                        data.current_player, 
-                        data.current_bid, 
-                        data.current_bidder, 
-                        data.player_category, 
-                        data.base_price,
-                        data.overseas
-                    );
-                    
-                    if (data.base_price) currentBasePrice = parseFloat(data.base_price);
-                    
-                    // Update remaining purse from server
-                    if (data.remaining_purse !== undefined) {
-                        remainingPurse = parseFloat(data.remaining_purse);
-                        // Update stats bar
-                        const purseEl = document.querySelector('.team-stat-card.available .val');
-                        if (purseEl) purseEl.textContent = '₹' + remainingPurse.toFixed(2) + 'Cr';
-                    }
-                    
-                    // Update skip counter
-                    const skipCounter = document.getElementById('skipCounter');
-                    if (skipCounter && data.skip_count !== undefined) {
-                        skipCounter.innerHTML = `<span>${data.skip_count}</span>/${data.total_teams || totalTeams}`;
-                    }
-                    
-                    isCurrentBidder = data.is_current_bidder || false;
-                    updateSkipButton(true);
-                    highlightInAuctionPlayer(playerId);
+                updateDisplay(
+                    data.current_player, 
+                    data.current_bid, 
+                    data.current_bidder, 
+                    data.player_category, 
+                    data.base_price,
+                    data.overseas
+                );
+                
+                if (data.base_price) currentBasePrice = parseFloat(data.base_price);
+                
+                // Update remaining purse from server
+                if (data.remaining_purse !== undefined) {
+                    remainingPurse = parseFloat(data.remaining_purse);
                 }
+                
+                // Update skip counter from polling
+                const skipCounter = document.getElementById('skipCounter');
+                if (skipCounter && data.skip_count !== undefined) {
+                    skipCounter.textContent = data.skip_count + '/' + (data.total_teams || totalTeams);
+                }
+                
+                // Update isCurrentBidder from polling
+                isCurrentBidder = data.is_current_bidder || false;
+                updateSkipButton(!!playerId);
+                
+                highlightInAuctionPlayer(playerId);
             }
         })
         .catch(() => {});
