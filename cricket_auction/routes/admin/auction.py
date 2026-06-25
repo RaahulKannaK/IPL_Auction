@@ -87,6 +87,12 @@ def auction_room():
         """, (active_session_id,))
         auction_session = cursor.fetchone()
         
+        # ← ADD DEBUG
+        if auction_session:
+            print(f"DEBUG auction_room: session={active_session_id}, current_player_id={auction_session.get('current_player_id')}, current_bid={auction_session.get('current_bid')}")
+        else:
+            print(f"DEBUG auction_room: session={active_session_id} NOT FOUND")
+        
         if not auction_session:
             session.pop('active_session_id', None)
             flash('Session expired. Please select again.')
@@ -261,17 +267,87 @@ def select_player():
     if not active_session_id:
         return jsonify({'error': 'No active session'}), 400
     
-    # ADD: Convert to int and validate
     try:
-        active_session_id = int(active_session_id)
+        session_player_id = int(session_player_id)
+        auction_id = int(auction_id)
+        active_session_id = int(active_session_id)  # ← ADD: Ensure it's an integer
     except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid session ID'}), 400
+        return jsonify({'error': 'Invalid IDs'}), 400
     
-    # ADD: Verify session exists
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    # ← ADD: Verify session exists before doing anything
     cursor.execute("SELECT id FROM auction_sessions WHERE id = %s", (active_session_id,))
     if not cursor.fetchone():
+        cursor.close()
+        db.close()
         return jsonify({'error': f'Session {active_session_id} not found'}), 404
-
+    
+    try:
+        cursor.execute("""
+            SELECT sp.*, p.player_name, p.category, p.overseas, p.base_price as player_base_price
+            FROM session_players sp
+            JOIN players p ON sp.player_id = p.id
+            WHERE sp.id = %s AND sp.session_id = %s
+        """, (session_player_id, active_session_id))
+        player = cursor.fetchone()
+        
+        if not player:
+            return jsonify({'error': 'Player not found in this session'}), 404
+        
+        # Clear previous state for this session
+        cursor.execute("""
+            DELETE FROM session_skips WHERE session_id = %s
+        """, (active_session_id,))
+        
+        cursor.execute("""
+            DELETE FROM session_bids WHERE session_id = %s AND session_player_id = %s
+        """, (active_session_id, session_player_id))
+        
+        # Update session player status
+        cursor.execute("""
+            UPDATE session_players 
+            SET skip_reason = NULL, skip_notes = NULL, status = 'in_auction'
+            WHERE id = %s
+        """, (session_player_id,))
+        
+        # Update auction_sessions with current player, bid = 0 (no bids yet)
+        cursor.execute("""
+            UPDATE auction_sessions
+            SET current_player_id = %s,
+                current_bid = 0,
+                current_bidder_id = NULL
+            WHERE id = %s
+        """, (session_player_id, active_session_id))
+        
+        # ← ADD: Check if UPDATE actually happened
+        if cursor.rowcount == 0:
+            db.rollback()
+            return jsonify({'error': f'Failed to update session {active_session_id}'}), 500
+        
+        db.commit()
+        
+        # ← ADD: Verify the update persisted
+        cursor.execute("SELECT current_player_id, current_bid FROM auction_sessions WHERE id = %s", (active_session_id,))
+        verify = cursor.fetchone()
+        print(f"DEBUG select_player: AFTER COMMIT session={active_session_id}, current_player_id={verify['current_player_id']}, current_bid={verify['current_bid']}")
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    clear_cache(f'auction:status:{auction_id}')
+    clear_cache('auction:status:active')
+    
+    return jsonify({
+        'success': True,
+        'player_name': player['player_name'],
+        'category': player['category'],
+        'base_price': float(player['base_price']),
+        'session_player_id': session_player_id,
+        'overseas': player.get('overseas', False)
+    })
 # ==================== BIDDING ====================
 
 @bp.route('/auction/bid', methods=['POST'])
