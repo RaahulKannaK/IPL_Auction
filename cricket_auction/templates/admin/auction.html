@@ -109,6 +109,33 @@
     .btn-deselect { background: rgba(139, 92, 246, 0.1); color: var(--cosmic-purple-light); border: 1px solid rgba(139, 92, 246, 0.2); }
     .btn-deselect:hover { background: rgba(139, 92, 246, 0.2); box-shadow: 0 0 20px rgba(139, 92, 246, 0.15); }
 
+    .quick-bid-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+    .quick-bid-btn {
+        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-secondary); padding: 12px; border-radius: 12px;
+        cursor: pointer; font-weight: 600; font-size: 0.85rem;
+        transition: all 0.3s; font-family: 'JetBrains Mono', monospace;
+    }
+    .quick-bid-btn:hover {
+        border-color: var(--ice-blue); color: var(--ice-blue-light);
+        background: rgba(0, 212, 255, 0.05); box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+    }
+
+    .bid-action-btn {
+        width: 100%; padding: 18px; border-radius: 16px; border: none;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer;
+        transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
+        letter-spacing: 1px; position: relative; overflow: hidden;
+    }
+    .bid-action-btn::before {
+        content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.6s;
+    }
+    .bid-action-btn:hover::before { left: 100%; }
+    .bid-action-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3); }
+
     .players-section { margin-top: 30px; }
     .players-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
     .players-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; color: var(--text-primary); }
@@ -415,6 +442,22 @@
         text-align: center;
         font-weight: 600;
     }
+
+    .input-group { margin-bottom: 18px; }
+    .input-group label {
+        display: block; color: var(--text-dim); font-size: 0.8rem;
+        margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+    }
+    .input-group input, .input-group select {
+        width: 100%; background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        color: var(--text-primary); padding: 14px 18px;
+        border-radius: 14px; font-size: 1rem; outline: none; transition: all 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
+    }
 </style>
 
 <div class="auction-wrapper">
@@ -423,7 +466,9 @@
         <a href="/admin/" class="nav-link secondary">← Dashboard</a>
         <a href="/admin/sessions?auction={{ auction.id }}" class="nav-link secondary">📅 Sessions</a>
         <a href="/admin/teams" class="nav-link secondary">👥 Teams</a>
+        {% if session.role in ['admin', 'auctioneer'] %}
         <a href="/admin/players" class="nav-link secondary">🏏 Players</a>
+        {% endif %}
     </div>
 
     <!-- Session Warning if no active session -->
@@ -475,6 +520,7 @@
     {% endif %}
 
     <!-- Admin Player Selection Bar -->
+    {% if session.role in ['admin', 'auctioneer'] %}
     <div id="adminPlayerPanel">
         <div class="selected-player-bar" id="selectedPlayerBar" style="display: none;">
             <div class="info">
@@ -493,6 +539,7 @@
             </button>
         </div>
     </div>
+    {% endif %}
 
     <!-- Main Display -->
     <div class="glass-panel" style="margin-bottom: 25px;">
@@ -563,6 +610,7 @@
         </div>
 
         <!-- Admin Controls -->
+        {% if session.role in ['admin', 'auctioneer'] %}
         <div class="controls-bar" style="margin-top: 25px;">
             <button onclick="pauseAuction()" class="ctrl-btn btn-pause">⏸ Pause</button>
             <button onclick="resumeAuction()" class="ctrl-btn btn-resume">▶ Resume</button>
@@ -572,7 +620,48 @@
             <button onclick="deselectPlayer()" class="ctrl-btn btn-deselect" id="deselectBtn" disabled>↩ Deselect</button>
             <button onclick="nextPlayer()" class="ctrl-btn btn-next">⏭ Next</button>
         </div>
+        {% endif %}
     </div>
+
+    <!-- Team Owner Bid Section -->
+    {% if session.role == 'team_owner' %}
+    <div class="bid-section" style="display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 25px;">
+        <div class="glass-panel">
+            <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+            <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+            
+            <div class="section-title">💰 Place Bid</div>
+            
+            <div class="input-group">
+                <label>Select Your Team</label>
+                <select id="teamSelect">
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" data-purse="{{ team.purse_limit }}" data-spent="{{ team.spent }}" data-reserved="{{ team.reserved }}">
+                        {{ team.team_name }} (₹{{ "%.2f"|format((team.purse_limit or 0) - (team.spent or 0) - (team.reserved or 0)) }}Cr)
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Bid Amount (Cr)</label>
+                <input type="number" id="bidAmount" placeholder="Enter amount" step="0.5" min="0.5">
+            </div>
+            
+            <div class="quick-bid-grid">
+                <button class="quick-bid-btn" onclick="quickBid(0.5)">+0.5</button>
+                <button class="quick-bid-btn" onclick="quickBid(1.0)">+1.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(2.0)">+2.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(5.0)">+5.0</button>
+                <button class="quick-bid-btn" onclick="quickBid(10.0)">+10</button>
+                <button class="quick-bid-btn" onclick="quickBid(25.0)">+25</button>
+            </div>
+            
+            <button onclick="placeBid()" class="bid-action-btn">🚀 PLACE BID</button>
+            <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px;"></div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Players Section -->
     <div class="players-section">
@@ -597,7 +686,6 @@
         
         <div class="players-grid" id="playersGrid">
             {% for player in players %}
-            {% if player.session_player_id %}
             <div class="player-card" 
                  data-category="{{ player.category }}" 
                  data-id="{{ player.player_id }}" 
@@ -606,7 +694,9 @@
                  data-base="{{ player.base_price or 2.00 }}"
                  data-overseas="{{ 'true' if player.overseas else 'false' }}"
                  data-status="{{ player.status or 'available' }}"
-                 onclick="adminSelectPlayer({{ player.session_player_id }}, '{{ player.player_name|replace("'", "\\'") }}', '{{ player.category }}', {{ player.base_price or 2.00 }}, {{ 'true' if player.overseas else 'false' }}, event)">
+                 {% if session.role in ['admin', 'auctioneer'] %}
+                 onclick="adminSelectPlayer({{ player.session_player_id|default(0) }}, '{{ player.player_name }}', '{{ player.category }}', {{ player.base_price or 2.00 }}, {{ 'true' if player.overseas else 'false' }})"
+                 {% endif %}>
                 
                 <div class="player-avatar">🏏</div>
                 <div class="player-name">{{ player.player_name }}</div>
@@ -617,11 +707,8 @@
                     {% endif %}
                 </div>
                 <div class="player-price">Base: ₹{{ player.base_price or 2.00 }}Cr</div>
-                <div class="player-status status-{{ player.session_status or player.sp_status or player.status }}">
-    {{ (player.session_status or player.sp_status or player.status).upper() }}
-</div>
+                <div class="player-status status-{{ player.status or 'available' }}">{{ (player.status or 'available').upper() }}</div>
             </div>
-            {% endif %}
             {% endfor %}
         </div>
     </div>
@@ -636,13 +723,14 @@
 <script>
 // ==================== GLOBAL STATE ====================
 let currentAuctionId = {{ auction.id }};
-let currentSessionId = {% if session_id %}{{ session_id }}{% else %}null{% endif %};
+let currentSessionId = {{ session_id or 'null' }};
 let pollInterval = null;
 let lastPlayerId = null;
-let currentSessionPlayerId = null;
+let currentSessionPlayerId = null;  // KEY CHANGE: session_player_id, not auction_player_id
 let bidHistory = [];
 let countdownTimer = null;
 let adminSelectedPlayer = null;
+let broadcastLockUntil = 0;
 let skipCountdownTimer = null;
 let isAllSkipped = false;
 let finalCallTimer = null;
@@ -654,12 +742,12 @@ let currentBasePrice = 2.0;
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize from server-rendered data
     {% if current_player %}
     currentSessionPlayerId = {{ current_player.session_player_id }};
     lastPlayerId = {{ current_player.session_player_id }};
     hasBids = {{ 'true' if has_bids else 'false' }};
     currentBasePrice = {{ current_player.base_price or 2.0 }};
-    
     updateCurrentPlayerDisplay(
         '{{ current_player.player_name }}', 
         {{ current_bid }}, 
@@ -668,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {{ current_player.base_price or 2.0 }}, 
         {{ current_player.session_player_id }}
     );
-    updateAdminControls({{ 'true' if has_bids else 'false' }});
+    updateAdminControls(hasBids);
     {% endif %}
     
     startFastPolling();
@@ -685,6 +773,7 @@ function startFastPolling() {
         fetch(url)
         .then(r => r.json())
         .then(data => {
+            if (Date.now() < broadcastLockUntil) return;
             if (data.status === 'live' || data.status === 'paused') {
                 const statusEl = document.getElementById('roomStatus');
                 if (statusEl) {
@@ -697,46 +786,31 @@ function startFastPolling() {
                     }
                 }
                 
-                // CRITICAL FIX: Handle server player state properly
-                const serverPlayerId = data.session_player_id;
-                const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
-                
-                if (hasServerPlayer) {
-                    // Server has a player active
-                    if (serverPlayerId !== lastPlayerId) {
-                        lastPlayerId = serverPlayerId;
-                        currentSessionPlayerId = serverPlayerId;
-                        isAllSkipped = false;
-                        stopSkipCountdown();
-                        stopFinalCall();
-                        resetSkipUI();
-                        flashPlayerUpdate();
-                    }
-                    
-                    // Update display from server, but PRESERVE base_price if server sends 0
-                    const effectiveBasePrice = (data.base_price > 0) ? data.base_price : currentBasePrice;
-                    const effectiveCurrentBid = (data.current_bid > 0) ? data.current_bid : effectiveBasePrice;
-                    
-                    updateCurrentPlayerDisplay(
-                        data.current_player,
-                        effectiveCurrentBid,
-                        data.current_bidder,
-                        data.player_category,
-                        effectiveBasePrice,
-                        serverPlayerId
-                    );
-                } 
-                else if (serverPlayerId === null || serverPlayerId === 0) {
-                    // Server explicitly has no player
-                    // ONLY clear if we don't have a locally selected player pending
-                    if (!adminSelectedPlayer && !currentSessionPlayerId) {
-                        clearAuctionDisplay();
-                    }
-                    // If we DO have currentSessionPlayerId set locally, keep it
-                    // (the server will catch up on next poll after broadcast)
+                const playerId = data.session_player_id;
+                if (playerId && playerId !== lastPlayerId) {
+                    lastPlayerId = playerId; 
+                    currentSessionPlayerId = playerId;
+                    isAllSkipped = false; 
+                    stopSkipCountdown(); 
+                    stopFinalCall(); 
+                    resetSkipUI(); 
+                    flashPlayerUpdate();
                 }
                 
-                if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
+                if (!playerId && currentSessionPlayerId) {
+                    clearAuctionDisplay();
+                }
+                
+                updateCurrentPlayerDisplay(
+                    data.current_player, 
+                    data.current_bid, 
+                    data.current_bidder, 
+                    data.player_category, 
+                    data.base_price, 
+                    playerId
+                );
+                
+                if (data.base_price) currentBasePrice = parseFloat(data.base_price);
                 
                 const bidsExist = data.has_bids || (data.current_bid > 0 && data.current_bidder && data.current_bidder !== 'No bids yet');
                 if (bidsExist !== hasBids) updateAdminControls(bidsExist);
@@ -764,22 +838,16 @@ function startFastPolling() {
                 indicator.innerHTML = '<span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; display: inline-block; animation: livePulse 1s infinite;"></span> Reconnecting...';
             }
         });
-    }, 1000);
+    }, 300);
 }
 
-function stopPolling() { 
-    if (pollInterval) clearInterval(pollInterval); 
-    pollInterval = null; 
-}
+function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
 
 function flashPlayerUpdate() {
     document.querySelectorAll('.display-card').forEach(card => {
         card.style.transition = 'none';
         card.style.boxShadow = '0 0 40px rgba(124, 77, 255, 0.3)';
-        setTimeout(() => { 
-            card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; 
-            card.style.boxShadow = ''; 
-        }, 1000);
+        setTimeout(() => { card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'; card.style.boxShadow = ''; }, 300);
     });
 }
 
@@ -799,67 +867,44 @@ function updateAdminControls(bidsExist) {
 }
 
 // ==================== ADMIN PLAYER SELECTION ====================
-function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, event) {
-    const parsedId = parseInt(sessionPlayerId);
-    if (!parsedId || parsedId <= 0 || isNaN(parsedId)) {
-        alert('ERROR: Invalid player ID (' + sessionPlayerId + '). Please check the database.');
+function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas) {
+    if (!sessionPlayerId || sessionPlayerId === 0 || sessionPlayerId === '0') {
+        alert('ERROR: Invalid player ID (0). Please check the database.');
         return;
     }
+    const target = event.currentTarget;
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+    target.classList.add('selected');
     
-    // Handle event properly
-    let target = null;
-    if (event && event.currentTarget) {
-        target = event.currentTarget;
-    } else {
-        target = document.querySelector('.player-card[data-session-player-id="' + parsedId + '"]');
-    }
-    
-    if (target) {
-        document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-        target.classList.add('selected');
-    }
-    
-    // Store as object with guaranteed numeric ID
     adminSelectedPlayer = { 
-        sessionPlayerId: parsedId, 
-        name: name || '', 
-        category: category || '', 
-        basePrice: parseFloat(basePrice) || 2.0, 
-        overseas: !!overseas 
+        sessionPlayerId: parseInt(sessionPlayerId), 
+        name, 
+        category, 
+        basePrice: parseFloat(basePrice), 
+        overseas 
     };
-    currentBasePrice = parseFloat(basePrice) || 2.0;
+    currentBasePrice = parseFloat(basePrice);
     
     const bar = document.getElementById('selectedPlayerBar');
     if (bar) {
         bar.style.display = 'flex';
-        document.getElementById('selectedPlayerBarName').textContent = name || 'Unknown';
+        document.getElementById('selectedPlayerBarName').textContent = name;
         document.getElementById('selectedPlayerBarMeta').textContent = 
-            (category || '').replace(/_/g, ' ').toUpperCase() + 
+            category.replace(/_/g, ' ').toUpperCase() + 
             (overseas ? ' | 🌍 Overseas' : '') + 
-            ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
-        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + parsedId + ')';
+            ' | Base: ₹' + parseFloat(basePrice).toFixed(2) + 'Cr';
+        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + sessionPlayerId + ')';
     }
-    
     const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) broadcastBtn.style.display = 'inline-block';
 }
 
 function broadcastPlayer() {
-    const selected = adminSelectedPlayer;
-    
-    if (!selected || !selected.sessionPlayerId) { 
-        alert('No player selected!'); 
-        return; 
-    }
-    
-    // PRE-SET IDs and base price BEFORE fetch so polling doesn't overwrite
-    currentSessionPlayerId = selected.sessionPlayerId;
-    lastPlayerId = selected.sessionPlayerId;
-    currentBasePrice = selected.basePrice;
+    if (!adminSelectedPlayer) { alert('No player selected!'); return; }
     
     let body = { 
         auction_id: currentAuctionId, 
-        session_player_id: selected.sessionPlayerId,
+        session_player_id: adminSelectedPlayer.sessionPlayerId,
         session_id: currentSessionId
     };
     
@@ -871,80 +916,51 @@ function broadcastPlayer() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Server confirmed, update with server data if provided
-            if (data.base_price) currentBasePrice = parseFloat(data.base_price);
-            
-            isAllSkipped = false;
-            resetSkipUI();
-            
+            broadcastLockUntil = Date.now() + 2000;
+            currentSessionPlayerId = adminSelectedPlayer.sessionPlayerId;
+            lastPlayerId = adminSelectedPlayer.sessionPlayerId;
+            isAllSkipped = false; resetSkipUI();
             updateCurrentPlayerDisplay(
-                data.player_name || selected.name, 
-                data.base_price || selected.basePrice,  // Show base price as initial bid
+                adminSelectedPlayer.name, 
+                adminSelectedPlayer.basePrice, 
                 null, 
-                data.category || selected.category, 
-                data.base_price || selected.basePrice, 
-                selected.sessionPlayerId
+                adminSelectedPlayer.category, 
+                adminSelectedPlayer.basePrice, 
+                adminSelectedPlayer.sessionPlayerId
             );
-            
-            const barAction = document.getElementById('selectedPlayerBarAction');
-            if (barAction) barAction.textContent = '✅ Now live in auction!';
-            
-            const broadcastBtn = document.getElementById('broadcastBtn');
-            if (broadcastBtn) broadcastBtn.style.display = 'none';
-            
+            document.getElementById('selectedPlayerBarAction').textContent = '✅ Sent to auction!';
+            document.getElementById('broadcastBtn').style.display = 'none';
             updateAdminControls(false);
-            adminSelectedPlayer = null;
+            setTimeout(() => {
+                document.getElementById('selectedPlayerBar').style.display = 'none';
+                document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+                adminSelectedPlayer = null;
+            }, 3000);
         } else {
-            // Revert on failure
-            currentSessionPlayerId = null;
-            lastPlayerId = null;
             alert(data.error || 'Failed to select player');
         }
     })
-    .catch(err => { 
-        // On network error, DON'T revert — keep the player active
-        // The next poll will either confirm or we can manually deselect
-        console.error('Network error during broadcast:', err);
-        showStatus('bidStatus', '⚠️ Network hiccup — player should still be active. Check Live Sync.', '#f59e0b');
-    });
+    .catch(err => { alert('Network error: ' + err.message); });
 }
 
 // ==================== UPDATE DISPLAY ====================
 function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, basePrice, sessionPlayerId) {
     const cp = document.getElementById('currentPlayer');
     if (cp) cp.textContent = playerName || 'Waiting...';
-    
     const pc = document.getElementById('playerCategory');
     if (pc) pc.textContent = category ? category.replace(/_/g, ' ').toUpperCase() : '--';
-    
-    // CRITICAL FIX: Never show 0.00 for base price if we know the real one
     const bp = document.getElementById('basePrice');
-    const cleanBase = (basePrice && parseFloat(basePrice) > 0) 
-        ? parseFloat(basePrice).toFixed(2) 
-        : (currentBasePrice > 0 ? currentBasePrice.toFixed(2) : '0.00');
+    const cleanBase = basePrice ? parseFloat(basePrice).toFixed(2) : '0.00';
     if (bp) bp.textContent = cleanBase;
-    
-    // CRITICAL FIX: Current bid should show base price when no bids yet
     const cb = document.getElementById('currentBid');
-    const effectiveBid = (currentBid && parseFloat(currentBid) > 0) 
-        ? parseFloat(currentBid) 
-        : (parseFloat(cleanBase) > 0 ? parseFloat(cleanBase) : 0);
-    if (cb) cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
-    
+    if (cb && currentBid !== undefined) cb.textContent = '₹' + parseFloat(currentBid).toFixed(2) + 'Cr';
     const cbd = document.getElementById('currentBidder');
     if (cbd) cbd.textContent = bidder || 'No bids yet';
-    
-    // Only update currentSessionPlayerId if server gives us a valid one
-    if (sessionPlayerId && sessionPlayerId > 0) {
-        currentSessionPlayerId = sessionPlayerId;
-    }
 }
+
 // ==================== DESELECT PLAYER ====================
 function deselectPlayer() {
-    if (!currentSessionPlayerId) { 
-        alert('No player currently selected'); 
-        return; 
-    }
+    if (!currentSessionPlayerId) { alert('No player currently selected'); return; }
     if (!confirm('Deselect current player? This will clear the auction display.')) return;
     
     let body = { 
@@ -984,33 +1000,20 @@ function clearAuctionDisplay() {
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">No bids yet. Waiting for auctioneer to select a player.</p>';
     document.getElementById('bidCount').textContent = '0 bids placed';
     
-    currentSessionPlayerId = null;
-    lastPlayerId = null;
-    bidHistory = [];
-    hasBids = false;
-    currentBasePrice = 2.0;
-    stopCountdown();
-    stopSkipCountdown();
-    stopFinalCall();
-    resetSkipUI();
-    updateAdminControls(false);
+    currentSessionPlayerId = null; lastPlayerId = null; bidHistory = []; hasBids = false; currentBasePrice = 2.0;
+    stopCountdown(); stopSkipCountdown(); stopFinalCall(); resetSkipUI(); updateAdminControls(false);
     
     const bar = document.getElementById('selectedPlayerBar');
     if (bar) bar.style.display = 'none';
-    
     const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) broadcastBtn.style.display = 'none';
-    
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
     adminSelectedPlayer = null;
 }
 
 // ==================== RE-BID PLAYER ====================
 function rebidPlayer() {
-    if (!currentSessionPlayerId) { 
-        alert('No player in auction'); 
-        return; 
-    }
+    if (!currentSessionPlayerId) { alert('No player in auction'); return; }
     if (!confirm('Reset bidding to base price? All current bids will be cleared.')) return;
     
     let body = { 
@@ -1047,20 +1050,12 @@ function resetBidDisplay() {
     bidHistory = [];
     document.getElementById('bidHistory').innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 30px;">Bidding reset. Waiting for new bids.</p>';
     document.getElementById('bidCount').textContent = '0 bids placed';
-    hasBids = false;
-    stopCountdown();
-    stopSkipCountdown();
-    stopFinalCall();
-    resetSkipUI();
-    updateAdminControls(false);
+    hasBids = false; stopCountdown(); stopSkipCountdown(); stopFinalCall(); resetSkipUI(); updateAdminControls(false);
 }
 
 // ==================== FINAL CALL / UNSOLD ====================
 function initiateUnsold() {
-    if (!currentSessionPlayerId) { 
-        alert('No player selected for auction'); 
-        return; 
-    }
+    if (!currentSessionPlayerId) { alert('No player selected for auction'); return; }
     
     const cbText = document.getElementById('currentBid').textContent;
     lastBidAmount = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
@@ -1069,22 +1064,15 @@ function initiateUnsold() {
     const panel = document.getElementById('finalCallPanel');
     const timerEl = document.getElementById('finalCallTimer');
     panel.classList.add('active');
-    finalCallSeconds = 15;
-    timerEl.textContent = finalCallSeconds;
-    
+    finalCallSeconds = 15; timerEl.textContent = finalCallSeconds;
     const unsoldBtn = document.getElementById('unsoldBtn');
-    if (unsoldBtn) { 
-        unsoldBtn.disabled = true; 
-        unsoldBtn.style.opacity = '0.5'; 
-    }
+    if (unsoldBtn) { unsoldBtn.disabled = true; unsoldBtn.style.opacity = '0.5'; }
     
     if (finalCallTimer) clearInterval(finalCallTimer);
     finalCallTimer = setInterval(() => {
-        finalCallSeconds--;
-        timerEl.textContent = finalCallSeconds;
+        finalCallSeconds--; timerEl.textContent = finalCallSeconds;
         if (finalCallSeconds <= 0) {
-            clearInterval(finalCallTimer);
-            finalCallTimer = null;
+            clearInterval(finalCallTimer); finalCallTimer = null;
             timerEl.textContent = '0';
             document.getElementById('finalCallPanel').querySelector('p').textContent = 'Grace period over. Confirm unsold or wait for more bids.';
         }
@@ -1092,20 +1080,13 @@ function initiateUnsold() {
 }
 
 function stopFinalCall() {
-    if (finalCallTimer) { 
-        clearInterval(finalCallTimer); 
-        finalCallTimer = null; 
-    }
+    if (finalCallTimer) { clearInterval(finalCallTimer); finalCallTimer = null; }
     isFinalCallActive = false;
     document.getElementById('finalCallPanel').classList.remove('active');
     document.getElementById('finalCallTimer').textContent = '15';
     document.getElementById('finalCallPanel').querySelector('p').textContent = 'Auctioneer initiated unsold. New bids can still come in!';
-    
     const unsoldBtn = document.getElementById('unsoldBtn');
-    if (unsoldBtn) { 
-        unsoldBtn.disabled = false; 
-        unsoldBtn.style.opacity = '1'; 
-    }
+    if (unsoldBtn) { unsoldBtn.disabled = false; unsoldBtn.style.opacity = '1'; }
 }
 
 function confirmUnsold() {
@@ -1143,10 +1124,8 @@ function updateSkipVotes(skipCount, totalTeams, allSkipped) {
         panel.style.display = 'block'; 
         document.getElementById('skipVoteCount').textContent = skipCount; 
         document.getElementById('skipVoteTotal').textContent = totalTeams; 
-    } else {
-        panel.style.display = 'none';
     }
-    
+    else panel.style.display = 'none';
     if (allSkipped && !isAllSkipped && currentSessionPlayerId) { 
         isAllSkipped = true; 
         startSkipCountdown(); 
@@ -1157,41 +1136,151 @@ function startSkipCountdown() {
     const display = document.getElementById('countdownDisplay');
     const value = document.getElementById('countdownValue');
     const forcePanel = document.getElementById('forceUnsoldPanel');
-    let s = 3;
-    display.classList.add('active');
-    value.textContent = s;
-    
+    let s = 3; display.classList.add('active'); value.textContent = s;
     if (skipCountdownTimer) clearInterval(skipCountdownTimer);
     skipCountdownTimer = setInterval(() => {
-        s--;
-        value.textContent = s;
+        s--; value.textContent = s;
         if (s <= 0) { 
             clearInterval(skipCountdownTimer); 
             display.classList.remove('active'); 
             forcePanel.classList.add('active'); 
-            setTimeout(() => { 
-                if (isAllSkipped && currentSessionPlayerId) forceUnsold(); 
-            }, 2000); 
+            setTimeout(() => { if (isAllSkipped && currentSessionPlayerId) forceUnsold(); }, 2000); 
         }
     }, 1000);
 }
 
 function stopSkipCountdown() {
-    if (skipCountdownTimer) { 
-        clearInterval(skipCountdownTimer); 
-        skipCountdownTimer = null; 
-    }
+    if (skipCountdownTimer) { clearInterval(skipCountdownTimer); skipCountdownTimer = null; }
     document.getElementById('countdownDisplay').classList.remove('active');
     document.getElementById('forceUnsoldPanel').classList.remove('active');
 }
 
-function resetSkipUI() { 
-    stopSkipCountdown(); 
-    isAllSkipped = false; 
-    document.getElementById('skipVotesPanel').style.display = 'none'; 
+function resetSkipUI() { stopSkipCountdown(); isAllSkipped = false; document.getElementById('skipVotesPanel').style.display = 'none'; }
+
+// ==================== BIDDING ====================
+function quickBid(increment) {
+    const cbText = document.getElementById('currentBid').textContent;
+    const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
+    const base = currentBasePrice;
+    const current = cb > 0 ? cb : base;
+    document.getElementById('bidAmount').value = (current + increment).toFixed(2);
+    placeBid();
 }
 
-// ==================== PAUSE / RESUME ====================
+function placeBid() {
+    if (!currentAuctionId) { showStatus('bidStatus', '❌ Join an auction first!', '#ef4444'); return; }
+    if (!currentSessionId) { showStatus('bidStatus', '❌ No active session!', '#ef4444'); return; }
+    if (!currentSessionPlayerId) { showStatus('bidStatus', '❌ Wait for auctioneer to select a player!', '#ef4444'); return; }
+    
+    const teamId = document.getElementById('teamSelect').value;
+    const amount = parseFloat(document.getElementById('bidAmount').value);
+    const cbText = document.getElementById('currentBid').textContent;
+    const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
+    const base = currentBasePrice;
+    const current = cb > 0 ? cb : base;
+    
+    if (!amount || amount <= 0) { showStatus('bidStatus', '❌ Enter valid amount', '#ef4444'); return; }
+    if (amount <= current) { showStatus('bidStatus', `❌ Must be > ₹${current.toFixed(2)}Cr`, '#ef4444'); return; }
+    if (amount < current + 0.5 && current > 0) { showStatus('bidStatus', '❌ Min increment 0.5 Cr', '#ef4444'); return; }
+    
+    let body = { 
+        auction_id: currentAuctionId        session_player_id: currentSessionPlayerId,
+        amount: amount,
+        team_id: teamId,
+        session_id: currentSessionId
+    };
+    
+    fetch('/admin/auction/bid', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
+        } else {
+            document.getElementById('currentBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
+            document.getElementById('currentBidder').textContent = data.bidder;
+            addHistory(data.bidder, data.current_bid, false);
+            showStatus('bidStatus', `✅ Bid: ₹${data.current_bid.toFixed(2)}Cr`, '#22c55e');
+            startCountdown();
+            if (data.check_auto) setTimeout(() => checkAutoBid(data.current_bid), 1500);
+        }
+    })
+    .catch(err => {
+        showStatus('bidStatus', '❌ Network error: ' + err.message, '#ef4444');
+    });
+}
+
+function checkAutoBid(currentBid) {
+    if (!currentSessionPlayerId || !currentSessionId) return;
+    
+    let body = {
+        auction_id: currentAuctionId,
+        session_player_id: currentSessionPlayerId,
+        current_bid: currentBid,
+        session_id: currentSessionId
+    };
+    
+    fetch('/admin/auction/auto_bid', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.auto_bid) {
+            document.getElementById('currentBid').textContent = '₹' + data.amount.toFixed(2) + 'Cr';
+            document.getElementById('currentBidder').textContent = data.team + ' (Auto)';
+            addHistory(data.team, data.amount, true);
+            showStatus('bidStatus', `🤖 Auto: ${data.team} → ₹${data.amount.toFixed(2)}Cr`, 'var(--cosmic-purple-light)');
+            setTimeout(() => checkAutoBid(data.amount), 1500);
+        }
+    });
+}
+
+function addHistory(team, amount, isAuto) {
+    bidHistory.unshift({team, amount, isAuto, time: new Date().toLocaleTimeString()});
+    const h = document.getElementById('bidHistory');
+    h.innerHTML = bidHistory.map(b => `
+        <div class="history-item">
+            <span class="history-bidder">${b.isAuto ? '🤖 ' : ''}${b.team}${b.isAuto ? '<span class="history-auto">AUTO</span>' : ''}</span>
+            <span class="history-amount">₹${b.amount.toFixed(2)}Cr</span>
+        </div>
+    `).join('');
+    document.getElementById('bidCount').textContent = bidHistory.length + ' bid' + (bidHistory.length > 1 ? 's' : '');
+}
+
+function startCountdown() {
+    const tc = document.getElementById('timerCard');
+    const cd = document.getElementById('countdown');
+    let s = 10;
+    tc.style.display = 'block';
+    cd.textContent = s;
+    cd.style.color = '#ef4444';
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+        s--;
+        cd.textContent = s;
+        if (s <= 3) cd.style.color = '#ef4444';
+        if (s <= 0) {
+            clearInterval(countdownTimer);
+            tc.style.display = 'none';
+            showStatus('bidStatus', '⏰ Time up!', '#f59e0b');
+        }
+    }, 1000);
+}
+
+function stopCountdown() {
+    if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+    }
+    const tc = document.getElementById('timerCard');
+    if (tc) tc.style.display = 'none';
+}
+
 function pauseAuction() {
     fetch('/admin/auction/pause', {
         method: 'POST',
@@ -1230,16 +1319,13 @@ function resumeAuction() {
     });
 }
 
-// ==================== SELL PLAYER ====================
 function sellPlayer() {
     if (!currentSessionPlayerId) {
         alert('No player selected for auction');
         return;
     }
-    
     const currentBid = parseFloat(document.getElementById('currentBid').textContent.replace('₹','').replace('Cr','')) || 0;
     const bidder = document.getElementById('currentBidder').textContent;
-    
     if (currentBid <= 0 || bidder === 'No bids yet') {
         alert('No bids placed! Use "Unsold" button to mark player as unsold.');
         return;
@@ -1272,7 +1358,6 @@ function sellPlayer() {
     });
 }
 
-// ==================== FORCE UNSOLD ====================
 function forceUnsold() {
     if (!currentSessionPlayerId) {
         alert('No player selected for auction');
@@ -1305,29 +1390,7 @@ function forceUnsold() {
     });
 }
 
-// ==================== NEXT PLAYER ====================
-// BUG FIX 7: Next now tells server to deselect first
 function nextPlayer() {
-    if (currentSessionPlayerId) {
-        fetch('/admin/auction/deselect_player', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                auction_id: currentAuctionId,
-                session_player_id: currentSessionPlayerId,
-                session_id: currentSessionId
-            })
-        }).then(() => {
-            clearAuctionDisplayLocal();
-        }).catch(() => {
-            clearAuctionDisplayLocal();
-        });
-    } else {
-        clearAuctionDisplayLocal();
-    }
-}
-
-function clearAuctionDisplayLocal() {
     document.getElementById('currentPlayer').textContent = 'Waiting...';
     document.getElementById('playerCategory').textContent = '--';
     document.getElementById('basePrice').textContent = '0.00';
@@ -1341,10 +1404,8 @@ function clearAuctionDisplayLocal() {
         document.getElementById('selectedPlayerBarName').textContent = 'Select a Player';
         document.getElementById('selectedPlayerBarMeta').textContent = 'Click on a player card below';
     }
-    
     const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) broadcastBtn.style.display = 'none';
-    
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
     adminSelectedPlayer = null;
     
@@ -1370,11 +1431,10 @@ function removePlayerFromGrid(sessionPlayerId) {
             setTimeout(() => card.style.display = 'none', 500);
         }
     });
-    
     const countEl = document.getElementById('playerCount');
     if (countEl) {
         const currentCount = parseInt(countEl.textContent) || 0;
-        countEl.textContent =        Math.max(0, currentCount - 1);
+        countEl.textContent = Math.max(0, currentCount - 1);
     }
 }
 
@@ -1406,13 +1466,16 @@ function updatePlayersGrid(players) {
     const currentFilter = document.querySelector('.filter-btn.active');
     const filterCat = currentFilter ? currentFilter.dataset.category || 'all' : 'all';
     
+    const isAdmin = document.body.dataset.isAdmin === 'true';
+    
     let html = '';
     players.forEach(player => {
-        if (!player.session_player_id) return; // BUG FIX 10: Skip players without session_player_id
-        
         const catClass = 'badge-' + player.category;
         const overseasBadge = player.overseas ? '<span class="cat-badge badge-overseas">🌍 OS</span>' : '';
         const statusClass = 'status-' + (player.status || 'available');
+        const clickAttr = isAdmin
+            ? `onclick="adminSelectPlayer(${player.session_player_id || 0}, '${player.player_name.replace(/'/g, "\\'")}', '${player.category}', ${player.base_price || 2.00}, ${player.overseas ? 'true' : 'false'})"`
+            : '';
         
         html += `
         <div class="player-card"
@@ -1423,7 +1486,7 @@ function updatePlayersGrid(players) {
              data-base="${player.base_price || 2.00}"
              data-overseas="${player.overseas ? 'true' : 'false'}"
              data-status="${player.status || 'available'}"
-             onclick="adminSelectPlayer(${player.session_player_id}, '${player.player_name.replace(/'/g, "\\'")}', '${player.category}', ${player.base_price || 2.00}, ${player.overseas ? 'true' : 'false'}, event)">
+             ${clickAttr}>
             <div class="player-avatar">🏏</div>
             <div class="player-name">${player.player_name}</div>
             <div class="player-meta">
@@ -1436,40 +1499,11 @@ function updatePlayersGrid(players) {
     });
     grid.innerHTML = html;
     
-    // Re-apply current filter
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (filterCat === 'all' || c.dataset.category === filterCat) ? 'block' : 'none';
     });
 }
 
-// ==================== FILTER PLAYERS ====================
-// BUG FIX 8: Fixed filterPlayers() argument handling
-function filterPlayers(cat) {
-    // Remove active from all buttons
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    
-    // Find and activate the correct button by text content
-    const catMap = {
-        'all': 'All',
-        'batsman': 'Batsmen',
-        'bowler': 'Bowlers',
-        'all_rounder': 'All Rounders',
-        'wicket_keeper': 'Keepers'
-    };
-    const targetText = catMap[cat] || cat;
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        if (b.textContent.trim() === targetText) {
-            b.classList.add('active');
-        }
-    });
-    
-    // Apply filter
-    document.querySelectorAll('.player-card').forEach(c => {
-        c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
-    });
-}
-
-// ==================== UTILITY FUNCTIONS ====================
 function showStatus(id, msg, color) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1481,46 +1515,34 @@ function showStatus(id, msg, color) {
     }, 5000);
 }
 
-function startCountdown() {
-    const tc = document.getElementById('timerCard');
-    const cd = document.getElementById('countdown');
-    let s = 10;
-    tc.style.display = 'block';
-    cd.textContent = s;
-    cd.style.color = '#ef4444';
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-        s--;
-        cd.textContent = s;
-        if (s <= 3) cd.style.color = '#ef4444';
-        if (s <= 0) {
-            clearInterval(countdownTimer);
-            tc.style.display = 'none';
-            showStatus('bidStatus', '⏰ Time up!', '#f59e0b');
-        }
-    }, 1000);
-}
-
-function stopCountdown() {
-    if (countdownTimer) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
+function filterPlayers(cat, clickedBtn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    } else {
+        // Find button by text content if clickedBtn not provided
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            const btnCat = b.textContent.toLowerCase().replace(' ', '_');
+            if (btnCat === cat || (cat === 'all' && b.textContent === 'All')) {
+                b.classList.add('active');
+            }
+        });
     }
-    const tc = document.getElementById('timerCard');
-    if (tc) tc.style.display = 'none';
+    document.querySelectorAll('.player-card').forEach(c => {
+        c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
+    });
 }
 
-// ==================== KEYBOARD SHORTCUTS ====================
+// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
-    // Ctrl+B to focus bid amount (if input exists)
+    if (e.key === 'Enter' && document.activeElement.id === 'bidAmount') placeBid();
     if (e.key === 'b' && e.ctrlKey) {
         e.preventDefault();
-        const bidInput = document.getElementById('bidAmount');
-        if (bidInput) bidInput.focus();
+        document.getElementById('bidAmount')?.focus();
     }
 });
 
-// ==================== CLEANUP ====================
+// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     stopPolling();
     stopCountdown();
