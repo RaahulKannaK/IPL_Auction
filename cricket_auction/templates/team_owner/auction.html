@@ -320,7 +320,7 @@
 <div class="auction-wrapper">
     <!-- Navigation -->
     <div class="nav-bar" style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap;">
-        <a href="/team_owner/" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: rgba(0,0,0,0.2); border: 1px solid rgba(100,120,200,0.15); color: var(--text-dim); text-decoration: none; font-weight: 600; transition: all 0.3s;">← Dashboard</a>
+        <a href="/team-owner/dashboard" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: rgba(0,0,0,0.2); border: 1px solid rgba(100,120,200,0.15); color: var(--text-dim); text-decoration: none; font-weight: 600; transition: all 0.3s;">← Dashboard</a>
         <a href="/team_owner/my-team" class="nav-link" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 14px; background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark)); color: white; text-decoration: none; font-weight: 700; font-size: 0.85rem;">👥 My Team</a>
     </div>
 
@@ -362,7 +362,7 @@
             <h1>🏏 {{ auction.league_name }}</h1>
             <p id="roomLeagueName">
                 {% if current_session %}
-                    {{ current_session.session_name }} • {{ teams|length }} teams
+                    {{ current_session.session_name }} • {{ total_teams }} teams
                 {% else %}
                     Live bidding arena
                 {% endif %}
@@ -388,7 +388,7 @@
     {% if all_sessions and all_sessions|length > 1 %}
     <div class="session-nav">
         {% for sess in all_sessions %}
-        <a href="/team_owner/auction?session={{ sess.id }}" 
+        <a href="/team-owner/auction?session={{ sess.id }}" 
            class="session-chip {% if session_id == sess.id %}active{% endif %}">
             {{ sess.session_name }}
             <span class="time">{{ sess.start_time }}</span>

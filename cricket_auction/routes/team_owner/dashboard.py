@@ -143,7 +143,8 @@ def auction_page():
     try:
         # Verify user still owns team in this auction
         cursor.execute("""
-            SELECT t.*, a.league_name, a.status as auction_status
+            SELECT t.*, a.league_name, a.status as auction_status, 
+                   a.squad_size, a.overseas_limit, a.purse_limit
             FROM teams t
             JOIN auctions a ON t.auction_id = a.id
             WHERE t.auction_id = %s AND t.owner_id = %s
@@ -259,15 +260,85 @@ def auction_page():
                 except:
                     pass
         
-        # Get players for this auction
-        cursor.execute("""
-            SELECT p.*, ap.id as auction_player_id, ap.base_price, ap.status, ap.sold_price
-            FROM players p
-            JOIN auction_players ap ON p.id = ap.player_id
-            WHERE ap.auction_id = %s AND ap.status IN ('available', 'unsold')
-            ORDER BY RAND()
-        """, (active_auction_id,))
-        players = cursor.fetchall()
+        # ============================================
+        # GET SESSION PLAYERS (if in active session)
+        # ============================================
+        players = []
+        if has_active_session and active_session_id:
+            cursor.execute("""
+                SELECT sp.id as session_player_id, sp.base_price, sp.status,
+                       p.id as player_id, p.player_name, p.category, p.overseas
+                FROM session_players sp
+                JOIN players p ON sp.player_id = p.id
+                WHERE sp.session_id = %s AND sp.status IN ('available', 'unsold', 'in_auction')
+                ORDER BY 
+                    CASE sp.status WHEN 'in_auction' THEN 1 WHEN 'available' THEN 2 ELSE 3 END,
+                    p.player_name
+            """, (active_session_id,))
+            players = cursor.fetchall()
+        
+        # ============================================
+        # GET CURRENT AUCTION STATE (if in active session)
+        # ============================================
+        current_player = None
+        current_bid = 0
+        has_bids = False
+        
+        if has_active_session and current_session and current_session.get('current_player_id'):
+            cursor.execute("""
+                SELECT sp.*, p.player_name, p.category, p.overseas, p.id as player_id
+                FROM session_players sp
+                JOIN players p ON sp.player_id = p.id
+                WHERE sp.id = %s AND sp.session_id = %s
+            """, (current_session['current_player_id'], active_session_id))
+            current_player = cursor.fetchone()
+            current_bid = float(current_session.get('current_bid') or 0)
+            
+            cursor.execute("""
+                SELECT COUNT(*) as bid_count FROM session_bids 
+                WHERE session_id = %s AND session_player_id = %s
+            """, (active_session_id, current_session['current_player_id']))
+            bid_result = cursor.fetchone()
+            has_bids = bid_result['bid_count'] > 0 if bid_result else False
+        
+        # Format current_session times for template
+        if current_session:
+            current_session['start_time'] = str(current_session['start_time'])[:16] if current_session['start_time'] else None
+            current_session['end_time'] = str(current_session['end_time'])[:16] if current_session['end_time'] else None
+        
+        # Build auction dict (template expects this)
+        auction_dict = {
+            'id': active_auction_id,
+            'league_name': team['league_name'],
+            'status': team['auction_status'],
+            'squad_size': team.get('squad_size', 18),
+            'purse_limit': team.get('purse_limit', 100),
+            'overseas_limit': team.get('overseas_limit', 8)
+        }
+        
+        # Calculate team stats for display
+        squad_count = 0
+        overseas_count = 0
+        if has_active_session and active_session_id:
+            cursor.execute("""
+                SELECT COUNT(*) as cnt FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                WHERE stp.team_id = %s AND sp.session_id = %s
+            """, (team['id'], active_session_id))
+            result = cursor.fetchone()
+            squad_count = result['cnt'] if result else 0
+            
+            cursor.execute("""
+                SELECT COUNT(*) as cnt FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                JOIN players p ON sp.player_id = p.id
+                WHERE stp.team_id = %s AND p.overseas = TRUE AND sp.session_id = %s
+            """, (team['id'], active_session_id))
+            result = cursor.fetchone()
+            overseas_count = result['cnt'] if result else 0
+        
+        team['squad_count'] = squad_count
+        team['overseas_count'] = overseas_count
         
     finally:
         cursor.close()
@@ -275,14 +346,21 @@ def auction_page():
     
     return render_template('team_owner/auction.html',
         team=team,
+        user_team=team,
+        auction=auction_dict,
         auction_id=active_auction_id,
         auction_sessions=auction_sessions,
         has_active_session=has_active_session,
         active_session_id=active_session_id,
+        session_id=active_session_id,
         current_session=current_session,
+        all_sessions=auction_sessions,
         all_teams=all_teams,
         players=players,
-        total_teams=total_teams
+        total_teams=total_teams,
+        current_player=current_player,
+        current_bid=current_bid,
+        has_bids=has_bids
     )
 
 @bp.route('/select-session', methods=['POST'])
