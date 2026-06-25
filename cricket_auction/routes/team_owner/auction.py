@@ -557,9 +557,14 @@ def place_bid():
     print("=" * 50)
     auction_id = data.get('auction_id')
     session_player_id = data.get('session_player_id')
+    session_id = data.get('session_id')
     team_id = int(data.get('team_id'))
     amount = float(data.get('amount', 0))
-    
+    print("auction_id =", auction_id)
+    print("session_player_id =", session_player_id)
+    print("session_id =", session_id)
+    print("team_id =", team_id)
+    print("amount =", amount)
     active_session_id = session.get('active_session_id') or data.get('session_id')
     if not active_session_id:
         return jsonify({'error': 'No active session'}), 400
@@ -626,13 +631,12 @@ def place_bid():
                 return jsonify({'error': f'First bid must be at least base price ₹{base_price:.2f}Cr'}), 400
         else:
             current_bid = highest_bid
+
             if amount <= current_bid:
-                return jsonify({'error': f'Bid must be higher than current bid ₹{current_bid:.2f}Cr'}), 400
-            
-            min_increment = get_min_bid_increment(current_bid)
-            if amount < current_bid + min_increment:
-                return jsonify({'error': f'Bid must be at least ₹{min_increment:.2f}Cr higher than ₹{current_bid:.2f}Cr'}), 400
-        
+                print(f"BID FAILED: amount={amount} current_bid={current_bid}")
+                return jsonify({
+                    'error': f'Bid must be higher than current bid ₹{current_bid:.2f}Cr'
+                }), 400
         # Check if already highest bidder
         cursor.execute("""
             SELECT team_id FROM session_bids 
