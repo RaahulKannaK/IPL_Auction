@@ -442,3 +442,6 @@ CREATE TABLE session_purse_reservations (
     INDEX idx_purse_team (team_id, session_player_id)
 );
 
+-- Add willing_price column to session_team_players
+ALTER TABLE session_team_players 
+ADD COLUMN willing_price DECIMAL(10,2) NULL AFTER purchase_price;
