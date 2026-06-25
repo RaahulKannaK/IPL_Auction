@@ -636,7 +636,7 @@
 
 <script>
 // ==================== GLOBAL STATE ====================
-let currentAuctionId = {{ auction.id }};
+let currentAuctionId = {{ auction.id|default(2) }};
 let currentSessionId = {% if session_id is not none and session_id != '' %}{{ session_id }}{% else %}null{% endif %};
 let pollInterval = null;
 let lastPlayerId = null;
@@ -676,8 +676,8 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if current_player %}
     currentSessionPlayerId = {{ current_player.session_player_id }};
     lastPlayerId = {{ current_player.session_player_id }};
-    hasBids = {{ 'true' if has_bids else 'false' }};
-    currentBasePrice = {{ current_player.base_price or 2.0 }};
+    hasBids = {{ has_bids|tojson }};
+    currentBasePrice = {{ (current_player.base_price or 2.0)|tojson }};
     
     updateCurrentPlayerDisplay(
         '{{ current_player.player_name }}', 
