@@ -317,7 +317,10 @@ def select_player():
                     current_bidder_id = NULL
                 WHERE id = %s
             """, (session_player_id, active_session_id))
-            
+            print("BEFORE COMMIT")
+            print("session_player_id =", session_player_id)
+            print("player status =", player.get('status'))
+            print("current_player_id =", session_player_id)
             db.commit()
             
             # Verify it stuck
