@@ -724,8 +724,7 @@ function startTeamOwnerPolling() {
     pollInterval = setInterval(() => {
         if (!currentSessionId) return;
 
-        let url = '/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
-
+        let url = '/team_owner/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
         fetch(url)
         .then(r => r.json())
         .then(data => {
