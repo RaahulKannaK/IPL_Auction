@@ -791,36 +791,44 @@ function updateAdminControls(bidsExist) {
 
 // ==================== ADMIN PLAYER SELECTION ====================
 function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, event) {
-    sessionPlayerId = parseInt(sessionPlayerId);
-    if (!sessionPlayerId || sessionPlayerId <= 0) {
+    const parsedId = parseInt(sessionPlayerId);
+    if (!parsedId || parsedId <= 0 || isNaN(parsedId)) {
         alert('ERROR: Invalid player ID (' + sessionPlayerId + '). Please check the database.');
         return;
     }
     
-    const target = event ? event.currentTarget : document.querySelector('.player-card[data-session-player-id="' + sessionPlayerId + '"]');
+    // Handle event properly
+    let target = null;
+    if (event && event.currentTarget) {
+        target = event.currentTarget;
+    } else {
+        target = document.querySelector('.player-card[data-session-player-id="' + parsedId + '"]');
+    }
+    
     if (target) {
         document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
         target.classList.add('selected');
     }
     
+    // Store as object with guaranteed numeric ID
     adminSelectedPlayer = { 
-        sessionPlayerId: parseInt(sessionPlayerId), 
-        name, 
-        category, 
-        basePrice: parseFloat(basePrice), 
-        overseas 
+        sessionPlayerId: parsedId, 
+        name: name || '', 
+        category: category || '', 
+        basePrice: parseFloat(basePrice) || 2.0, 
+        overseas: !!overseas 
     };
-    currentBasePrice = parseFloat(basePrice);
+    currentBasePrice = parseFloat(basePrice) || 2.0;
     
     const bar = document.getElementById('selectedPlayerBar');
     if (bar) {
         bar.style.display = 'flex';
-        document.getElementById('selectedPlayerBarName').textContent = name;
+        document.getElementById('selectedPlayerBarName').textContent = name || 'Unknown';
         document.getElementById('selectedPlayerBarMeta').textContent = 
-            category.replace(/_/g, ' ').toUpperCase() + 
+            (category || '').replace(/_/g, ' ').toUpperCase() + 
             (overseas ? ' | 🌍 Overseas' : '') + 
-            ' | Base: ₹' + parseFloat(basePrice).toFixed(2) + 'Cr';
-        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + sessionPlayerId + ')';
+            ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
+        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + parsedId + ')';
     }
     
     const broadcastBtn = document.getElementById('broadcastBtn');
@@ -828,14 +836,17 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
 }
 
 function broadcastPlayer() {
-    if (!adminSelectedPlayer) { 
+    // BUG FIX: Create local copy immediately so it can't become null
+    const selected = adminSelectedPlayer;
+    
+    if (!selected || !selected.sessionPlayerId) { 
         alert('No player selected!'); 
         return; 
     }
     
     let body = { 
         auction_id: currentAuctionId, 
-        session_player_id: adminSelectedPlayer.sessionPlayerId,
+        session_player_id: selected.sessionPlayerId,
         session_id: currentSessionId
     };
     
@@ -847,19 +858,18 @@ function broadcastPlayer() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // BUG FIX 1: Removed broadcastLockUntil — always trust server state
-            currentSessionPlayerId = adminSelectedPlayer.sessionPlayerId;
-            lastPlayerId = adminSelectedPlayer.sessionPlayerId;
+            currentSessionPlayerId = selected.sessionPlayerId;
+            lastPlayerId = selected.sessionPlayerId;
             isAllSkipped = false;
             resetSkipUI();
             
             updateCurrentPlayerDisplay(
-                adminSelectedPlayer.name, 
-                adminSelectedPlayer.basePrice, 
+                selected.name, 
+                selected.basePrice, 
                 null, 
-                adminSelectedPlayer.category, 
-                adminSelectedPlayer.basePrice, 
-                adminSelectedPlayer.sessionPlayerId
+                selected.category, 
+                selected.basePrice, 
+                selected.sessionPlayerId
             );
             
             const barAction = document.getElementById('selectedPlayerBarAction');
@@ -869,7 +879,7 @@ function broadcastPlayer() {
             if (broadcastBtn) broadcastBtn.style.display = 'none';
             
             updateAdminControls(false);
-            adminSelectedPlayer = null;
+            adminSelectedPlayer = null; // Clear AFTER successful response
         } else {
             alert(data.error || 'Failed to select player');
         }
