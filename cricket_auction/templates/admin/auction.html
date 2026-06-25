@@ -656,6 +656,7 @@ let lastBidAmount = 0;
 let isFinalCallActive = false;
 let hasBids = false;
 let currentBasePrice = 2.0;
+let isBroadcasting = false; // NEW: prevent polling from clearing during broadcast
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -685,6 +686,9 @@ function startFastPolling() {
     pollInterval = setInterval(() => {
         if (!currentSessionId) return;
         
+        // NEW: Don't poll while broadcasting to avoid race condition
+        if (isBroadcasting) return;
+        
         let url = '/admin/auction/status?auction_id=' + currentAuctionId + '&session_id=' + currentSessionId;
         
         fetch(url)
@@ -702,7 +706,7 @@ function startFastPolling() {
                     }
                 }
                 
-                // CRITICAL FIX: Handle server player state properly
+                // Handle server player state
                 const serverPlayerId = data.session_player_id;
                 const hasServerPlayer = serverPlayerId && serverPlayerId > 0;
                 
@@ -731,14 +735,11 @@ function startFastPolling() {
                         serverPlayerId
                     );
                 } 
-                else if (serverPlayerId === null || serverPlayerId === 0) {
-                    // Server explicitly has no player
-                    // ONLY clear if we don't have a locally selected player pending
-                    if (!adminSelectedPlayer && !currentSessionPlayerId) {
+                else if ((serverPlayerId === null || serverPlayerId === 0) && !isBroadcasting) {
+                    // Server has no player AND we're not in the middle of broadcasting
+                    if (!currentSessionPlayerId) {
                         clearAuctionDisplay();
                     }
-                    // If we DO have currentSessionPlayerId set locally, keep it
-                    // (the server will catch up on next poll after broadcast)
                 }
                 
                 if (data.base_price > 0) currentBasePrice = parseFloat(data.base_price);
@@ -805,13 +806,14 @@ function updateAdminControls(bidsExist) {
 
 // ==================== ADMIN PLAYER SELECTION ====================
 function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, event) {
+    // Parse and validate ID
     const parsedId = parseInt(sessionPlayerId);
-    if (!parsedId || parsedId <= 0 || isNaN(parsedId)) {
+    if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
         alert('ERROR: Invalid player ID (' + sessionPlayerId + '). Please check the database.');
         return;
     }
     
-    // Handle event properly
+    // Get the clicked card element
     let target = null;
     if (event && event.currentTarget) {
         target = event.currentTarget;
@@ -819,45 +821,51 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
         target = document.querySelector('.player-card[data-session-player-id="' + parsedId + '"]');
     }
     
-    if (target) {
-        document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-        target.classList.add('selected');
-    }
+    // Visual selection
+    document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+    if (target) target.classList.add('selected');
     
-    // Store as object with guaranteed numeric ID
+    // Store selection
     adminSelectedPlayer = { 
         sessionPlayerId: parsedId, 
         name: name || '', 
         category: category || '', 
         basePrice: parseFloat(basePrice) || 2.0, 
-        overseas: !!overseas 
+        overseas: overseas === true || overseas === 'true' 
     };
     currentBasePrice = parseFloat(basePrice) || 2.0;
     
+    // Show the selected player bar
     const bar = document.getElementById('selectedPlayerBar');
     if (bar) {
         bar.style.display = 'flex';
         document.getElementById('selectedPlayerBarName').textContent = name || 'Unknown';
         document.getElementById('selectedPlayerBarMeta').textContent = 
             (category || '').replace(/_/g, ' ').toUpperCase() + 
-            (overseas ? ' | 🌍 Overseas' : '') + 
+            (adminSelectedPlayer.overseas ? ' | 🌍 Overseas' : '') + 
             ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
         document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + parsedId + ')';
     }
     
+    // Show broadcast button
     const broadcastBtn = document.getElementById('broadcastBtn');
     if (broadcastBtn) broadcastBtn.style.display = 'inline-block';
+    
+    console.log('Selected player:', adminSelectedPlayer);
 }
 
 function broadcastPlayer() {
     const selected = adminSelectedPlayer;
     
     if (!selected || !selected.sessionPlayerId) { 
-        alert('No player selected!'); 
+        alert('No player selected! Click a player card first.'); 
         return; 
     }
     
-    // PRE-SET IDs and base price BEFORE fetch so polling doesn't overwrite
+    // Set flag to prevent polling from interfering
+    isBroadcasting = true;
+    
+    // Pre-set local state so display shows immediately
     currentSessionPlayerId = selected.sessionPlayerId;
     lastPlayerId = selected.sessionPlayerId;
     currentBasePrice = selected.basePrice;
@@ -875,8 +883,10 @@ function broadcastPlayer() {
     })
     .then(r => r.json())
     .then(data => {
+        isBroadcasting = false; // Allow polling again
+        
         if (data.success) {
-            // Server confirmed, update with server data if provided
+            // Update from server response
             if (data.base_price) currentBasePrice = parseFloat(data.base_price);
             
             isAllSkipped = false;
@@ -884,7 +894,7 @@ function broadcastPlayer() {
             
             updateCurrentPlayerDisplay(
                 data.player_name || selected.name, 
-                data.base_price || selected.basePrice,  // Show base price as initial bid
+                data.base_price || selected.basePrice, 
                 null, 
                 data.category || selected.category, 
                 data.base_price || selected.basePrice, 
@@ -900,17 +910,17 @@ function broadcastPlayer() {
             updateAdminControls(false);
             adminSelectedPlayer = null;
         } else {
+            alert(data.error || 'Failed to select player');
             // Revert on failure
             currentSessionPlayerId = null;
             lastPlayerId = null;
-            alert(data.error || 'Failed to select player');
         }
     })
     .catch(err => { 
-        // On network error, DON'T revert — keep the player active
-        // The next poll will either confirm or we can manually deselect
-        console.error('Network error during broadcast:', err);
-        showStatus('bidStatus', '⚠️ Network hiccup — player should still be active. Check Live Sync.', '#f59e0b');
+        isBroadcasting = false; // Allow polling again
+        console.error('Broadcast error:', err);
+        // Keep the player active — polling will confirm or we can manually fix
+        showStatus('bidStatus', '⚠️ Network hiccup — check Live Sync indicator', '#f59e0b');
     });
 }
 
@@ -922,28 +932,29 @@ function updateCurrentPlayerDisplay(playerName, currentBid, bidder, category, ba
     const pc = document.getElementById('playerCategory');
     if (pc) pc.textContent = category ? category.replace(/_/g, ' ').toUpperCase() : '--';
     
-    // CRITICAL FIX: Never show 0.00 for base price if we know the real one
+    // Never show 0.00 for base price if we know the real one
     const bp = document.getElementById('basePrice');
-    const cleanBase = (basePrice && parseFloat(basePrice) > 0) 
-        ? parseFloat(basePrice).toFixed(2) 
-        : (currentBasePrice > 0 ? currentBasePrice.toFixed(2) : '0.00');
-    if (bp) bp.textContent = cleanBase;
+    const effectiveBase = (basePrice && parseFloat(basePrice) > 0) 
+        ? parseFloat(basePrice) 
+        : (currentBasePrice > 0 ? currentBasePrice : 2.0);
+    if (bp) bp.textContent = effectiveBase.toFixed(2);
     
-    // CRITICAL FIX: Current bid should show base price when no bids yet
+    // Current bid should show base price when no bids yet
     const cb = document.getElementById('currentBid');
     const effectiveBid = (currentBid && parseFloat(currentBid) > 0) 
         ? parseFloat(currentBid) 
-        : (parseFloat(cleanBase) > 0 ? parseFloat(cleanBase) : 0);
+        : effectiveBase;
     if (cb) cb.textContent = '₹' + effectiveBid.toFixed(2) + 'Cr';
     
     const cbd = document.getElementById('currentBidder');
     if (cbd) cbd.textContent = bidder || 'No bids yet';
     
-    // Only update currentSessionPlayerId if server gives us a valid one
+    // Only update currentSessionPlayerId if valid
     if (sessionPlayerId && sessionPlayerId > 0) {
         currentSessionPlayerId = sessionPlayerId;
     }
 }
+
 // ==================== DESELECT PLAYER ====================
 function deselectPlayer() {
     if (!currentSessionPlayerId) { 
@@ -1311,7 +1322,6 @@ function forceUnsold() {
 }
 
 // ==================== NEXT PLAYER ====================
-// BUG FIX 7: Next now tells server to deselect first
 function nextPlayer() {
     if (currentSessionPlayerId) {
         fetch('/admin/auction/deselect_player', {
@@ -1379,7 +1389,7 @@ function removePlayerFromGrid(sessionPlayerId) {
     const countEl = document.getElementById('playerCount');
     if (countEl) {
         const currentCount = parseInt(countEl.textContent) || 0;
-        countEl.textContent =        Math.max(0, currentCount - 1);
+        countEl.textContent = Math.max(0, currentCount - 1);
     }
 }
 
@@ -1413,7 +1423,7 @@ function updatePlayersGrid(players) {
     
     let html = '';
     players.forEach(player => {
-        if (!player.session_player_id) return; // BUG FIX 10: Skip players without session_player_id
+        if (!player.session_player_id) return;
         
         const catClass = 'badge-' + player.category;
         const overseasBadge = player.overseas ? '<span class="cat-badge badge-overseas">🌍 OS</span>' : '';
@@ -1441,19 +1451,15 @@ function updatePlayersGrid(players) {
     });
     grid.innerHTML = html;
     
-    // Re-apply current filter
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (filterCat === 'all' || c.dataset.category === filterCat) ? 'block' : 'none';
     });
 }
 
 // ==================== FILTER PLAYERS ====================
-// BUG FIX 8: Fixed filterPlayers() argument handling
 function filterPlayers(cat) {
-    // Remove active from all buttons
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     
-    // Find and activate the correct button by text content
     const catMap = {
         'all': 'All',
         'batsman': 'Batsmen',
@@ -1468,7 +1474,6 @@ function filterPlayers(cat) {
         }
     });
     
-    // Apply filter
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
     });
@@ -1517,7 +1522,6 @@ function stopCountdown() {
 
 // ==================== KEYBOARD SHORTCUTS ====================
 document.addEventListener('keydown', (e) => {
-    // Ctrl+B to focus bid amount (if input exists)
     if (e.key === 'b' && e.ctrlKey) {
         e.preventDefault();
         const bidInput = document.getElementById('bidAmount');
