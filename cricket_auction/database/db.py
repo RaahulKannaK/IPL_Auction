@@ -35,7 +35,7 @@ _cache = {}
 _cache_hits = 0
 _cache_misses = 0
 
-def get_cached(key, fetch_fn, ttl_seconds=15):
+def get_cached(key, fetch_fn, ttl_seconds=1):
     """Get from cache or fetch. Shorter TTL for live auction data."""
     global _cache_hits, _cache_misses
     now = time.time()
