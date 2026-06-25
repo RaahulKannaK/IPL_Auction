@@ -694,6 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==================== FAST POLLING ====================
+// ==================== FAST POLLING ====================
 function startFastPolling() {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(() => {
@@ -744,7 +745,9 @@ function startFastPolling() {
                     );
                 } 
                 else if ((serverPlayerId === null || serverPlayerId === 0) && !isBroadcasting) {
-                    if (!currentSessionPlayerId) {
+                    // Server has no player AND we're not in the middle of broadcasting
+                    // FIX: Don't clear if user has locally selected a player but not broadcast yet
+                    if (!currentSessionPlayerId && !adminSelectedPlayer) {
                         clearAuctionDisplay();
                     }
                 }
