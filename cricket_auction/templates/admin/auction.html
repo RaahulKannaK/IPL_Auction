@@ -810,10 +810,19 @@ function updateAdminControls(bidsExist) {
 
 // ==================== ADMIN PLAYER SELECTION ====================
 function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas, event) {
-    // Parse and validate ID
+    console.log('=== adminSelectPlayer CALLED ===');
+    console.log('sessionPlayerId:', sessionPlayerId, 'type:', typeof sessionPlayerId);
+    console.log('name:', name);
+    console.log('category:', category);
+    console.log('basePrice:', basePrice);
+    console.log('overseas:', overseas);
+    console.log('event:', event);
+    
     const parsedId = parseInt(sessionPlayerId);
+    console.log('parsedId:', parsedId);
+    
     if (!parsedId || isNaN(parsedId) || parsedId <= 0) {
-        alert('ERROR: Invalid player ID (' + sessionPlayerId + '). Please check the database.');
+        alert('ERROR: Invalid player ID (' + sessionPlayerId + ').');
         return;
     }
     
@@ -821,13 +830,18 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
     let target = null;
     if (event && event.currentTarget) {
         target = event.currentTarget;
+        console.log('Got target from event.currentTarget');
     } else {
         target = document.querySelector('.player-card[data-session-player-id="' + parsedId + '"]');
+        console.log('Got target from querySelector, found:', !!target);
     }
     
     // Visual selection
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-    if (target) target.classList.add('selected');
+    if (target) {
+        target.classList.add('selected');
+        console.log('Added selected class to target');
+    }
     
     // Store selection
     adminSelectedPlayer = { 
@@ -838,24 +852,45 @@ function adminSelectPlayer(sessionPlayerId, name, category, basePrice, overseas,
         overseas: overseas === true || overseas === 'true' 
     };
     currentBasePrice = parseFloat(basePrice) || 2.0;
+    console.log('adminSelectedPlayer set:', adminSelectedPlayer);
     
     // Show the selected player bar
     const bar = document.getElementById('selectedPlayerBar');
+    console.log('selectedPlayerBar element:', bar);
+    console.log('selectedPlayerBar current display:', bar ? bar.style.display : 'NULL');
+    
     if (bar) {
         bar.style.display = 'flex';
-        document.getElementById('selectedPlayerBarName').textContent = name || 'Unknown';
-        document.getElementById('selectedPlayerBarMeta').textContent = 
-            (category || '').replace(/_/g, ' ').toUpperCase() + 
-            (adminSelectedPlayer.overseas ? ' | 🌍 Overseas' : '') + 
-            ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
-        document.getElementById('selectedPlayerBarAction').textContent = 'Ready to send (ID: ' + parsedId + ')';
+        console.log('Set bar display to flex');
+        
+        const barName = document.getElementById('selectedPlayerBarName');
+        const barMeta = document.getElementById('selectedPlayerBarMeta');
+        const barAction = document.getElementById('selectedPlayerBarAction');
+        
+        console.log('barName:', barName, 'barMeta:', barMeta, 'barAction:', barAction);
+        
+        if (barName) barName.textContent = name || 'Unknown';
+        if (barMeta) {
+            barMeta.textContent = 
+                (category || '').replace(/_/g, ' ').toUpperCase() + 
+                (adminSelectedPlayer.overseas ? ' | 🌍 Overseas' : '') + 
+                ' | Base: ₹' + (parseFloat(basePrice) || 2.0).toFixed(2) + 'Cr';
+        }
+        if (barAction) barAction.textContent = 'Ready to send (ID: ' + parsedId + ')';
+    } else {
+        console.error('ERROR: selectedPlayerBar element NOT FOUND!');
     }
     
     // Show broadcast button
     const broadcastBtn = document.getElementById('broadcastBtn');
-    if (broadcastBtn) broadcastBtn.style.display = 'inline-block';
+    console.log('broadcastBtn element:', broadcastBtn);
     
-    console.log('Selected player:', adminSelectedPlayer);
+    if (broadcastBtn) {
+        broadcastBtn.style.display = 'inline-block';
+        console.log('Set broadcastBtn display to inline-block');
+    } else {
+        console.error('ERROR: broadcastBtn element NOT FOUND!');
+    }
 }
 
 function broadcastPlayer() {
