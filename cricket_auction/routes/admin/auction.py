@@ -916,7 +916,7 @@ def _do_fetch_status(auction_id, active_session_id):
                 
                 if session_player_id:
                     cursor.execute("""
-                        SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
+                        SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id, sp.status
                         FROM session_players sp
                         JOIN players p ON sp.player_id = p.id
                         WHERE sp.id = %s
@@ -927,6 +927,8 @@ def _do_fetch_status(auction_id, active_session_id):
                         result['player_category'] = player['category']
                         result['base_price'] = float(player['base_price'])
                         result['overseas'] = player.get('overseas', False)
+                        # IMPORTANT: Also return status so frontend knows player is in_auction
+                        result['player_status'] = player.get('status', 'available')
                     
                     cursor.execute("""
                         SELECT COUNT(*) as bid_count FROM session_bids 
@@ -959,7 +961,6 @@ def _do_fetch_status(auction_id, active_session_id):
     finally:
         cursor.close()
         db.close()
-
 
 @bp.route('/auction/status')
 def get_status():
@@ -1193,3 +1194,33 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
+
+@bp.route('/auction/skip', methods=['POST'])
+def skip_player():
+    """Team owner skips a player"""
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    auction_id = data.get('auction_id')
+    session_player_id = data.get('session_player_id')
+    team_id = data.get('team_id')
+    active_session_id = session.get('active_session_id') or data.get('session_id')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            INSERT INTO session_skips (session_id, session_player_id, team_id, skipped_by)
+            VALUES (%s, %s, %s, %s)
+        """, (active_session_id, session_player_id, team_id, session['user_id']))
+        
+        db.commit()
+    finally:
+        cursor.close()
+        db.close()
+    
+    clear_cache(f'auction:status:{auction_id}')
+    
+    return jsonify({'success': True})
