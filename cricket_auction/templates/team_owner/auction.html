@@ -131,27 +131,6 @@
     .bid-controls {
         max-width: 600px; margin: 0 auto 30px;
     }
-    .bid-amount-row {
-        display: flex; align-items: center; justify-content: center;
-        gap: 15px; margin-bottom: 20px;
-    }
-    .bid-amount-display {
-        font-family: 'JetBrains Mono'; font-size: 2.5rem; font-weight: 700;
-        color: var(--gold); min-width: 180px; text-align: center;
-        background: rgba(0, 0, 0, 0.3); border-radius: 16px;
-        padding: 15px 25px; border: 1px solid rgba(247, 181, 0, 0.2);
-    }
-    .bid-adjust-btn {
-        width: 50px; height: 50px; border-radius: 50%;
-        background: rgba(100, 120, 200, 0.1); border: 1px solid rgba(100, 120, 200, 0.2);
-        color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;
-        transition: all 0.3s; display: flex; align-items: center; justify-content: center;
-    }
-    .bid-adjust-btn:hover {
-        background: rgba(124, 77, 255, 0.2); border-color: var(--cosmic-purple);
-        color: var(--cosmic-purple-light);
-    }
-
     .quick-bids {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
         margin-bottom: 15px;
@@ -223,48 +202,6 @@
     }
     .skip-counter span {
         color: var(--lava-orange); font-weight: 700;
-    }
-
-    /* ===== HIDDEN BID SECTION ===== */
-    .hidden-bid-panel {
-        max-width: 600px; margin: 0 auto 30px;
-        background: rgba(139, 92, 246, 0.05);
-        border: 1px solid rgba(139, 92, 246, 0.15);
-        border-radius: 20px; padding: 25px;
-    }
-    .hidden-bid-panel .title {
-        font-family: 'Space Grotesk'; font-size: 1rem;
-        color: var(--cosmic-purple-light); margin-bottom: 15px;
-        display: flex; align-items: center; gap: 8px;
-    }
-    .hidden-bid-panel .hint {
-        color: var(--text-dim); font-size: 0.8rem; margin-bottom: 15px;
-    }
-    .hidden-input-row {
-        display: flex; gap: 12px;
-    }
-    .hidden-input-row input {
-        flex: 1; background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(139, 92, 246, 0.2);
-        color: var(--text-primary); padding: 14px 18px;
-        border-radius: 14px; font-size: 1rem; outline: none;
-        font-family: 'JetBrains Mono';
-    }
-    .hidden-input-row input:focus {
-        border-color: var(--cosmic-purple-light);
-        box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
-    }
-    .hidden-input-row input::placeholder { color: var(--text-dim); }
-    .hidden-set-btn {
-        padding: 14px 28px; border-radius: 14px; border: none;
-        background: linear-gradient(135deg, rgba(139,92,246,0.8), rgba(124,77,255,0.8));
-        color: white; font-weight: 700; font-size: 0.9rem; cursor: pointer;
-        transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
-        white-space: nowrap;
-    }
-    .hidden-set-btn:hover {
-        box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3);
-        transform: translateY(-2px);
     }
 
     /* ===== BID HISTORY ===== */
@@ -482,6 +419,33 @@
         background: rgba(124, 77, 255, 0.15);
         border-color: var(--cosmic-purple); color: var(--cosmic-purple-light);
     }
+
+    /* ===== WILLING PRICE POPUP MODAL ===== */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+        z-index: 2000; display: none; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+        background: var(--bg-panel); border: 1px solid rgba(100, 120, 200, 0.2);
+        border-radius: 24px; max-width: 900px; width: 100%; max-height: 85vh;
+        overflow: hidden; display: flex; flex-direction: column;
+    }
+    .modal-header {
+        padding: 25px 30px; border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-header h2 { font-family: 'Space Grotesk'; color: var(--text-primary); font-size: 1.3rem; }
+    .modal-close {
+        background: none; border: none; color: var(--text-dim); font-size: 1.5rem;
+        cursor: pointer; width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.3s;
+    }
+    .modal-close:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .modal-body { padding: 25px 30px; overflow-y: auto; flex: 1; }
 </style>
 
 <div class="auction-wrapper">
@@ -562,20 +526,15 @@
     <!-- ===== BID CONTROLS ===== -->
     {% if mode != 'view' %}
     <div class="bid-controls">
-        <!-- Bid Amount Display (shows proposed bid, not increment controls) -->
-        <div class="bid-amount-row" style="margin-bottom: 20px;">
-            <div class="bid-amount-display" id="bidAmountDisplay" style="min-width: 220px; font-size: 2rem;">₹0.00</div>
-        </div>
-
         <div class="quick-bids">
-            <button class="quick-bid-chip" onclick="setBidAmount(0.10)">+0.10</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(0.25)">+0.25</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(0.5)">+0.5</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(1.0)">+1.0</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(2.0)">+2.0</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(5.0)">+5.0</button>
-            <button class="quick-bid-chip" onclick="setBidAmount(10.0)">+10</button>
-            <button class="quick-bid-chip custom" onclick="enableCustomBid()">CUSTOM</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(0.10, this)">+0.10</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(0.25, this)">+0.25</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(0.5, this)">+0.5</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(1.0, this)">+1.0</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(2.0, this)">+2.0</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(5.0, this)">+5.0</button>
+            <button class="quick-bid-chip" onclick="setBidAmount(10.0, this)">+10</button>
+            <button class="quick-bid-chip custom" onclick="enableCustomBid(this)">CUSTOM</button>
         </div>
 
         <button onclick="placeBid()" class="main-bid-btn" id="placeBidBtn">🚀 PLACE BID</button>
@@ -589,11 +548,13 @@
         <div id="bidStatus" style="margin-top: 15px; text-align: center; color: var(--text-dim); min-height: 20px; font-size: 0.9rem;"></div>
     </div>
     {% endif %}
+
     <!-- ===== WILLING PRICE POPUP MODAL ===== -->
     <div class="modal-overlay" id="willingPriceModal" style="z-index: 3000;">
         <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
                 <h2>💰 Set Willing Price</h2>
+                <button class="modal-close" onclick="closeWillingModal()">✕</button>
             </div>
             <div class="modal-body" style="padding: 30px; text-align: center;">
                 <div style="margin-bottom: 20px;">
@@ -624,6 +585,7 @@
             </div>
         </div>
     </div>
+
     <!-- ===== BID HISTORY ===== -->
     <div class="history-section">
         <div class="history-title">📜 Recent Bids</div>
@@ -646,11 +608,11 @@
         <div class="players-header">
             <h2>🏏 Players (<span id="playerCount">{{ players|length }}</span>)</h2>
             <div class="filter-bar">
-                <button onclick="filterPlayers('all')" class="filter-btn active">All</button>
-                <button onclick="filterPlayers('batsman')" class="filter-btn">Batsmen</button>
-                <button onclick="filterPlayers('bowler')" class="filter-btn">Bowlers</button>
-                <button onclick="filterPlayers('all_rounder')" class="filter-btn">All Rounders</button>
-                <button onclick="filterPlayers('wicket_keeper')" class="filter-btn">Keepers</button>
+                <button onclick="filterPlayers('all', this)" class="filter-btn active">All</button>
+                <button onclick="filterPlayers('batsman', this)" class="filter-btn">Batsmen</button>
+                <button onclick="filterPlayers('bowler', this)" class="filter-btn">Bowlers</button>
+                <button onclick="filterPlayers('all_rounder', this)" class="filter-btn">All Rounders</button>
+                <button onclick="filterPlayers('wicket_keeper', this)" class="filter-btn">Keepers</button>
             </div>
         </div>
         
@@ -761,10 +723,12 @@ let currentSessionPlayerId = null;
 let bidHistory = [];
 let currentBasePrice = 2.0;
 let myTeamId = {{ user_team.id if user_team else 'null' }};
+let myTeamName = '{{ user_team.team_name if user_team else "" }}';
 let isViewMode = {{ 'true' if mode == 'view' else 'false' }};
 let isCurrentBidder = {{ 'true' if is_current_bidder else 'false' }};
 let totalTeams = {{ total_session_teams or 0 }};
 let currentBidAmount = 0;
+let remainingPurse = {{ ((user_team.purse_limit or 0) - (user_team.spent or 0) - (user_team.reserved or 0)) if user_team else 0 }};
 
 // ==================== INIT ====================
 document.addEventListener('DOMContentLoaded', function() {
@@ -814,13 +778,16 @@ function updateDisplay(playerName, currentBid, bidder, category, basePrice, isOv
     const osTag = document.getElementById('overseasTag');
     if (osTag) osTag.style.display = isOverseas ? 'inline-block' : 'none';
     
-    // Update bid amount display for controls
+    // Set proposed bid to base price initially (or current bid + 0.5 if bids exist)
     const cbText = document.getElementById('currentBid').textContent;
     const cbVal = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
     const base = currentBasePrice;
-    const current = cbVal > 0 ? cbVal : base;
-    currentBidAmount = current;
-    updateBidAmountDisplay();
+    // If no bids yet, start at base price. If bids exist, start at current bid + 0.5
+    if (cbVal <= 0 || cbVal === base) {
+        currentBidAmount = base;
+    } else {
+        currentBidAmount = cbVal + 0.5;
+    }
 }
 
 function clearDisplay() {
@@ -837,21 +804,15 @@ function clearDisplay() {
     bidHistory = []; 
     currentBasePrice = 2.0;
     currentBidAmount = 0;
-    updateBidAmountDisplay();
+    isCurrentBidder = false;
     updateSkipButton(false);
     
     document.querySelectorAll('.player-card').forEach(c => c.classList.remove('in-auction'));
+    clearActiveChips();
 }
 
 // ==================== BID AMOUNT CONTROLS ====================
-let remainingPurse = {{ ((user_team.purse_limit or 0) - (user_team.spent or 0) - (user_team.reserved or 0)) if user_team else 0 }};
-
-function updateBidAmountDisplay() {
-    const display = document.getElementById('bidAmountDisplay');
-    if (display) display.textContent = '₹' + currentBidAmount.toFixed(2) + 'Cr';
-}
-
-function setBidAmount(increment) {
+function setBidAmount(increment, btn) {
     if (isViewMode) return;
     
     const cbText = document.getElementById('currentBid').textContent;
@@ -868,21 +829,25 @@ function setBidAmount(increment) {
     }
     
     currentBidAmount = newAmount;
-    updateBidAmountDisplay();
     
     // Highlight active chip
     clearActiveChips();
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
 }
 
 function clearActiveChips() {
     document.querySelectorAll('.quick-bid-chip').forEach(c => c.classList.remove('active'));
 }
 
-function enableCustomBid() {
+function enableCustomBid(btn) {
     if (isViewMode) return;
     
-    const custom = prompt(`Enter custom bid amount (Cr).\nRemaining purse: ₹${remainingPurse.toFixed(2)}Cr\nCurrent bid: ₹${currentBidAmount.toFixed(2)}Cr`);
+    const cbText = document.getElementById('currentBid').textContent;
+    const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
+    const base = currentBasePrice;
+    const current = cb > 0 ? cb : base;
+    
+    const custom = prompt(`Enter custom bid amount (Cr).\nRemaining purse: ₹${remainingPurse.toFixed(2)}Cr\nMinimum bid: ₹${(current + 0.5).toFixed(2)}Cr`);
     if (custom && !isNaN(parseFloat(custom))) {
         const amount = parseFloat(custom);
         
@@ -898,22 +863,17 @@ function enableCustomBid() {
         }
         
         // Check that custom bid is higher than current
-        const cbText = document.getElementById('currentBid').textContent;
-        const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
-        const base = currentBasePrice;
-        const current = cb > 0 ? cb : base;
-        
         if (amount <= current) {
             showStatus('bidStatus', `❌ Must be > ₹${current.toFixed(2)}Cr`, '#ef4444');
             return;
         }
         
         currentBidAmount = amount;
-        updateBidAmountDisplay();
         clearActiveChips();
-        event.target.classList.add('active');
+        if (btn) btn.classList.add('active');
     }
 }
+
 // ==================== SKIP BUTTON ====================
 function updateSkipButton(playerActive) {
     const skipBtn = document.getElementById('skipBtn');
@@ -972,7 +932,6 @@ function startFastPolling() {
                     lastPlayerId = playerId; 
                     currentSessionPlayerId = playerId;
                     isCurrentBidder = data.is_current_bidder || false;
-                    stopCountdown();
                     flashUpdate();
                     updateSkipButton(true);
                 }
@@ -1051,6 +1010,12 @@ function placeBid() {
     if (!currentSessionPlayerId) { showStatus('bidStatus', '❌ Wait for player', '#ef4444'); return; }
     if (!myTeamId) { showStatus('bidStatus', '❌ No team', '#ef4444'); return; }
     
+    // BLOCK: Current bidder cannot bid again
+    if (isCurrentBidder) {
+        showStatus('bidStatus', '❌ You are already the current highest bidder!', '#ef4444');
+        return;
+    }
+    
     const amount = currentBidAmount;
     const cbText = document.getElementById('currentBid').textContent;
     const cb = parseFloat(cbText.replace('₹','').replace('Cr','')) || 0;
@@ -1065,6 +1030,17 @@ function placeBid() {
         showStatus('bidStatus', `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
         return;
     }
+    
+    // INSTANT UI UPDATE - show bid immediately before server confirms
+    const oldBid = cb;
+    const oldBidder = document.getElementById('currentBidder').textContent;
+    
+    document.getElementById('currentBid').textContent = '₹' + amount.toFixed(2) + 'Cr';
+    document.getElementById('currentBidder').textContent = myTeamName || 'Your Team';
+    addHistory(myTeamName || 'Your Team', amount, false);
+    showStatus('bidStatus', `🚀 Bid placed: ₹${amount.toFixed(2)}Cr`, '#22c55e');
+    isCurrentBidder = true;
+    updateSkipButton(true);
     
     let body = { 
         auction_id: currentAuctionId,
@@ -1082,65 +1058,32 @@ function placeBid() {
     .then(r => r.json())
     .then(data => {
         if (data.error) {
+            // REVERT on error
+            document.getElementById('currentBid').textContent = '₹' + oldBid.toFixed(2) + 'Cr';
+            document.getElementById('currentBidder').textContent = oldBidder;
+            // Remove the instant history entry
+            bidHistory.shift();
+            renderHistory();
+            isCurrentBidder = false;
+            updateSkipButton(true);
             showStatus('bidStatus', '❌ ' + data.error, '#ef4444');
         } else {
+            // Confirm with server data
             document.getElementById('currentBid').textContent = '₹' + data.current_bid.toFixed(2) + 'Cr';
             document.getElementById('currentBidder').textContent = data.bidder;
-            addHistory(data.bidder, data.current_bid, false);
-            showStatus('bidStatus', `✅ Bid placed: ₹${data.current_bid.toFixed(2)}Cr`, '#22c55e');
-            isCurrentBidder = true;
-            updateSkipButton(true);
+            showStatus('bidStatus', `✅ Confirmed: ₹${data.current_bid.toFixed(2)}Cr`, '#22c55e');
             if (data.check_auto) setTimeout(() => checkAutoBid(data.current_bid), 1500);
         }
     })
     .catch(err => {
+        // REVERT on network error
+        document.getElementById('currentBid').textContent = '₹' + oldBid.toFixed(2) + 'Cr';
+        document.getElementById('currentBidder').textContent = oldBidder;
+        bidHistory.shift();
+        renderHistory();
+        isCurrentBidder = false;
+        updateSkipButton(true);
         showStatus('bidStatus', '❌ Error: ' + err.message, '#ef4444');
-    });
-}
-
-function setHiddenBid() {
-    if (isViewMode) {
-        showStatus('hiddenBidStatus', '👁 View mode', '#00d4ff');
-        return;
-    }
-    if (!currentSessionPlayerId || !myTeamId) {
-        showStatus('hiddenBidStatus', '❌ No active player', '#ef4444');
-        return;
-    }
-    
-    const maxAmount = parseFloat(document.getElementById('hiddenMaxBid').value);
-    if (!maxAmount || maxAmount <= 0) {
-        showStatus('hiddenBidStatus', '❌ Enter valid amount', '#ef4444');
-        return;
-    }
-    
-    // Check against remaining purse
-    if (maxAmount > remainingPurse) {
-        showStatus('hiddenBidStatus', `❌ Exceeds purse (₹${remainingPurse.toFixed(2)}Cr)`, '#ef4444');
-        return;
-    }
-    
-    let body = {
-        auction_id: currentAuctionId,
-        session_player_id: currentSessionPlayerId,
-        team_id: myTeamId,
-        max_amount: maxAmount,
-        session_id: currentSessionId
-    };
-    
-    fetch('/team_owner/auction/hidden_bid', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showStatus('hiddenBidStatus', `🔒 Max bid: ₹${maxAmount.toFixed(2)}Cr`, 'var(--cosmic-purple-light)');
-            document.getElementById('hiddenMaxBid').value = '';
-        } else {
-            showStatus('hiddenBidStatus', '❌ ' + (data.error || 'Failed'), '#ef4444');
-        }
     });
 }
 
@@ -1304,6 +1247,20 @@ function addHistory(team, amount, isAuto, append = true) {
     else h.appendChild(item);
 }
 
+function renderHistory() {
+    const h = document.getElementById('bidHistory');
+    if (bidHistory.length === 0) {
+        h.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 20px;">No bids yet</p>';
+        return;
+    }
+    h.innerHTML = bidHistory.map(b => `
+        <div class="history-item">
+            <span class="history-team">${b.isAuto ? '🤖 ' : ''}${b.team}${b.isAuto ? '<span class="history-auto-tag">AUTO</span>' : ''}</span>
+            <span class="history-amount">₹${b.amount.toFixed(2)}Cr</span>
+        </div>
+    `).join('');
+}
+
 // ==================== SQUAD MODAL ====================
 function openSquadModal() {
     document.getElementById('squadModal').classList.add('show');
@@ -1320,9 +1277,9 @@ document.getElementById('squadModal').addEventListener('click', function(e) {
 });
 
 // ==================== PLAYERS FILTER ====================
-function filterPlayers(cat) {
+function filterPlayers(cat, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btn) btn.classList.add('active');
     
     document.querySelectorAll('.player-card').forEach(c => {
         c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
@@ -1343,7 +1300,10 @@ function showStatus(id, msg, color) {
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !isViewMode) placeBid();
-    if (e.key === 'Escape') closeSquadModal();
+    if (e.key === 'Escape') {
+        closeSquadModal();
+        closeWillingModal();
+    }
 });
 
 // Cleanup
