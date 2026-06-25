@@ -895,121 +895,186 @@ def auto_counter_bid():
 
 # ==================== STATUS POLLING ====================
 
+# ==================== STATUS POLLING ====================
+
 @bp.route('/auction/status')
 def get_status():
-    """Get auction status"""
+    """Get auction status - with sold player detection for willing price popup"""
     auction_id = request.args.get('auction_id')
     team_id = request.args.get('team_id', type=int)
     active_session_id = request.args.get('session_id') or session.get('active_session_id')
     
-    cache_key = f'auction:status:{auction_id or "active"}:{active_session_id or "no_session"}'
+    # Track last seen player in session to detect transitions
+    last_seen_key = f'last_seen_player:{team_id or "anon"}:{active_session_id}'
+    last_seen_player = session.get(last_seen_key)
     
-    def fetch_status():
-        db = get_db()
-        cursor = db.cursor(dictionary=True)
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        if auction_id:
+            cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
+        else:
+            cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
         
-        try:
-            if auction_id:
-                cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))
-            else:
-                cursor.execute("SELECT * FROM auctions WHERE status IN ('live', 'paused') ORDER BY id DESC LIMIT 1")
+        auction = cursor.fetchone()
+        
+        if not auction:
+            return jsonify({'status': 'none'})
+        
+        result = {
+            'status': auction['status'],
+            'league_name': auction.get('league_name'),
+            'auction_id': auction['id'],
+            'session_id': active_session_id
+        }
+        
+        # === SOLD PLAYER DETECTION ===
+        # Check if a player was sold since last poll
+        result['sold_player'] = None
+        result['sold_to_team'] = None
+        result['sold_to_team_id'] = None
+        result['sold_price'] = None
+        result['sold_player_name'] = None
+        result['sold_player_category'] = None
+        result['sold_session_player_id'] = None
+        result['sold_overseas'] = False
+        result['willing_price_shown'] = False
+        
+        if active_session_id:
+            cursor.execute("""
+                SELECT current_player_id, current_bid, current_bidder_id
+                FROM auction_sessions WHERE id = %s
+            """, (active_session_id,))
+            sess = cursor.fetchone()
             
-            auction = cursor.fetchone()
-            
-            if not auction:
-                return {'status': 'none'}
-            
-            result = {
-                'status': auction['status'],
-                'league_name': auction.get('league_name'),
-                'auction_id': auction['id'],
-                'session_id': active_session_id
-            }
-            
-            if active_session_id:
-                cursor.execute("""
-                    SELECT current_player_id, current_bid, current_bidder_id
-                    FROM auction_sessions WHERE id = %s
-                """, (active_session_id,))
-                sess = cursor.fetchone()
+            if sess:
+                current_player_id = sess.get('current_player_id')
                 
-                if sess:
-                    result['current_bid'] = float(sess.get('current_bid') or 0)
-                    result['current_bidder_id'] = sess.get('current_bidder_id')
-                    result['current_bidder'] = None
-                    result['current_player'] = None
-                    result['player_category'] = None
-                    result['base_price'] = 0
-                    result['session_player_id'] = None
-                    result['overseas'] = False
-                    result['has_bids'] = False
-                    result['skip_count'] = 0
-                    result['total_teams'] = 0
-                    result['all_skipped'] = False
-                    result['is_current_bidder'] = False
+                # Detect: previous player was replaced (sold/unsold) and new player is different
+                if last_seen_player and last_seen_player != current_player_id and current_player_id is not None:
+                    # The previous player is gone - check if they were sold
+                    cursor.execute("""
+                        SELECT sp.id as session_player_id, sp.sold_price, sp.sold_team_id,
+                               sp.status, p.player_name, p.category, p.overseas
+                        FROM session_players sp
+                        JOIN players p ON sp.player_id = p.id
+                        WHERE sp.id = %s AND sp.session_id = %s
+                    """, (last_seen_player, active_session_id))
+                    sold = cursor.fetchone()
                     
-                    if sess.get('current_bidder_id'):
-                        cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sess['current_bidder_id'],))
-                        bidder = cursor.fetchone()
-                        if bidder:
-                            result['current_bidder'] = bidder['team_name']
+                    if sold and sold['status'] == 'sold' and sold['sold_team_id']:
+                        # Player was sold! Get buyer team name
+                        cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sold['sold_team_id'],))
+                        buyer = cursor.fetchone()
+                        
+                        result['sold_player'] = True
+                        result['sold_to_team'] = buyer['team_name'] if buyer else 'Unknown'
+                        result['sold_to_team_id'] = sold['sold_team_id']
+                        result['sold_price'] = float(sold['sold_price'])
+                        result['sold_player_name'] = sold['player_name']
+                        result['sold_player_category'] = sold['category']
+                        result['sold_session_player_id'] = sold['session_player_id']
+                        result['sold_overseas'] = sold.get('overseas', False)
+                        
+                        # Check if this team already set willing price for this player
+                        if team_id:
+                            cursor.execute("""
+                                SELECT willing_price FROM session_team_players
+                                WHERE team_id = %s AND session_player_id = %s AND willing_price IS NOT NULL
+                            """, (team_id, sold['session_player_id']))
+                            wp = cursor.fetchone()
+                            result['willing_price_shown'] = wp is not None
+                
+                # Update last seen player for next poll
+                if current_player_id:
+                    session[last_seen_key] = current_player_id
+                else:
+                    session.pop(last_seen_key, None)
+                
+                # === CURRENT AUCTION STATE ===
+                result['current_bid'] = float(sess.get('current_bid') or 0)
+                result['current_bidder_id'] = sess.get('current_bidder_id')
+                result['current_bidder'] = None
+                result['current_player'] = None
+                result['player_category'] = None
+                result['base_price'] = 0
+                result['session_player_id'] = None
+                result['overseas'] = False
+                result['has_bids'] = False
+                result['skip_count'] = 0
+                result['total_teams'] = 0
+                result['all_skipped'] = False
+                result['is_current_bidder'] = False
+                result['remaining_purse'] = 0
+                
+                if sess.get('current_bidder_id'):
+                    cursor.execute("SELECT team_name FROM teams WHERE id = %s", (sess['current_bidder_id'],))
+                    bidder = cursor.fetchone()
+                    if bidder:
+                        result['current_bidder'] = bidder['team_name']
+                
+                if current_player_id:
+                    cursor.execute("""
+                        SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
+                        FROM session_players sp
+                        JOIN players p ON sp.player_id = p.id
+                        WHERE sp.id = %s
+                    """, (current_player_id,))
+                    player = cursor.fetchone()
+                    if player:
+                        result['current_player'] = player['player_name']
+                        result['player_category'] = player['category']
+                        result['base_price'] = float(player['base_price'])
+                        result['session_player_id'] = player['session_player_id']
+                        result['overseas'] = player.get('overseas', False)
                     
-                    session_player_id = sess.get('current_player_id')
-                    if session_player_id:
-                        cursor.execute("""
-                            SELECT p.player_name, p.category, p.overseas, sp.base_price, sp.id as session_player_id
-                            FROM session_players sp
-                            JOIN players p ON sp.player_id = p.id
-                            WHERE sp.id = %s
-                        """, (session_player_id,))
-                        player = cursor.fetchone()
-                        if player:
-                            result['current_player'] = player['player_name']
-                            result['player_category'] = player['category']
-                            result['base_price'] = float(player['base_price'])
-                            result['session_player_id'] = player['session_player_id']
-                            result['overseas'] = player.get('overseas', False)
-                        
-                        cursor.execute("""
-                            SELECT COUNT(*) as bid_count FROM session_bids 
-                            WHERE session_id = %s AND session_player_id = %s
-                        """, (active_session_id, session_player_id))
-                        bid_result = cursor.fetchone()
-                        result['has_bids'] = bid_result['bid_count'] > 0 if bid_result else False
-                        
-                        # Get skip count
-                        cursor.execute("""
-                            SELECT COUNT(DISTINCT team_id) as skip_count
-                            FROM session_skips
-                            WHERE session_id = %s AND session_player_id = %s
-                        """, (active_session_id, session_player_id))
-                        skip_result = cursor.fetchone()
-                        result['skip_count'] = skip_result['skip_count'] if skip_result else 0
-                        
-                        cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
-                        team_data = cursor.fetchone()
-                        if team_data and team_data['team_ids']:
-                            try:
-                                team_ids = json.loads(team_data['team_ids']) if isinstance(team_data['team_ids'], str) else team_data['team_ids']
-                                result['total_teams'] = len(team_ids)
-                            except:
-                                result['total_teams'] = 0
-                        
-                        result['all_skipped'] = result['skip_count'] >= result['total_teams'] and result['total_teams'] > 0
-                        
-                        # Check if requesting team is current bidder
-                        if team_id and sess.get('current_bidder_id') == team_id:
-                            result['is_current_bidder'] = True
-            
-            return result
-            
-        finally:
-            cursor.close()
-            db.close()
-    
-    result = get_cached(cache_key, fetch_status, ttl_seconds=0)
-    return jsonify(result)
-
+                    cursor.execute("""
+                        SELECT COUNT(*) as bid_count FROM session_bids 
+                        WHERE session_id = %s AND session_player_id = %s
+                    """, (active_session_id, current_player_id))
+                    bid_result = cursor.fetchone()
+                    result['has_bids'] = bid_result['bid_count'] > 0 if bid_result else False
+                    
+                    # Get skip count
+                    cursor.execute("""
+                        SELECT COUNT(DISTINCT team_id) as skip_count
+                        FROM session_skips
+                        WHERE session_id = %s AND session_player_id = %s
+                    """, (active_session_id, current_player_id))
+                    skip_result = cursor.fetchone()
+                    result['skip_count'] = skip_result['skip_count'] if skip_result else 0
+                    
+                    cursor.execute("SELECT team_ids FROM auction_sessions WHERE id = %s", (active_session_id,))
+                    team_data = cursor.fetchone()
+                    if team_data and team_data['team_ids']:
+                        try:
+                            team_ids = json.loads(team_data['team_ids']) if isinstance(team_data['team_ids'], str) else team_data['team_ids']
+                            result['total_teams'] = len(team_ids)
+                        except:
+                            result['total_teams'] = 0
+                    
+                    result['all_skipped'] = result['skip_count'] >= result['total_teams'] and result['total_teams'] > 0
+                    
+                    # Check if requesting team is current bidder
+                    if team_id and sess.get('current_bidder_id') == team_id:
+                        result['is_current_bidder'] = True
+                
+                # Get remaining purse for this team
+                if team_id:
+                    cursor.execute("""
+                        SELECT (purse_limit - COALESCE(spent, 0) - COALESCE(reserved, 0)) as remaining
+                        FROM teams WHERE id = %s
+                    """, (team_id,))
+                    purse = cursor.fetchone()
+                    if purse:
+                        result['remaining_purse'] = float(purse['remaining'])
+        
+        return jsonify(result)
+        
+    finally:
+        cursor.close()
+        db.close()
 
 # ==================== PLAYERS LIST ====================
 
