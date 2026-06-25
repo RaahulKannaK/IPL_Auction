@@ -13,7 +13,7 @@ connection_pool = pooling.MySQLConnectionPool(
     password=Config.DB_PASSWORD,
     database=Config.DB_NAME,
     connection_timeout=30,
-    autocommit=True
+    autocommit=False
 )
 
 def get_db():

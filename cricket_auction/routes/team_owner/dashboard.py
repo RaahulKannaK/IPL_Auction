@@ -7,71 +7,42 @@ bp = Blueprint('team_owner_dashboard', __name__, url_prefix='/team-owner')
 
 @bp.route('/dashboard')
 def dashboard():
-    if session.get('role') != 'team_owner':
-        flash('Unauthorized')
-        return redirect('/')
-    
     db = get_db()
     cursor = db.cursor(dictionary=True)
     
     try:
+        # ONE query gets everything
         cursor.execute("""
-            SELECT t.*, a.league_name, a.status as auction_status, a.id as auction_id
+            SELECT 
+                t.*,
+                a.league_name, a.status as auction_status, a.id as auction_id,
+                COUNT(DISTINCT tp.id) as squad_count,
+                COUNT(DISTINCT CASE WHEN p.overseas = TRUE THEN tp.id END) as overseas,
+                SUM(CASE WHEN p.category = 'batsman' THEN 1 ELSE 0 END) as batsmen,
+                SUM(CASE WHEN p.category = 'bowler' THEN 1 ELSE 0 END) as bowlers,
+                SUM(CASE WHEN p.category = 'all_rounder' THEN 1 ELSE 0 END) as all_rounders,
+                SUM(CASE WHEN p.category = 'wicket_keeper' THEN 1 ELSE 0 END) as wicket_keepers
             FROM teams t
             JOIN auctions a ON t.auction_id = a.id
+            LEFT JOIN team_players tp ON tp.team_id = t.id
+            LEFT JOIN auction_players ap ON tp.auction_player_id = ap.id AND ap.auction_id = a.id
+            LEFT JOIN players p ON ap.player_id = p.id
             WHERE t.owner_id = %s
+            GROUP BY t.id, a.id
             ORDER BY a.created_at DESC
         """, (session['user_id'],))
         teams = cursor.fetchall()
         
         for team in teams:
-            # Squad count
-            cursor.execute("""
-                SELECT COUNT(*) as cnt 
-                FROM team_players tp
-                JOIN auction_players ap ON tp.auction_player_id = ap.id
-                WHERE tp.team_id = %s AND ap.auction_id = %s
-            """, (team['id'], team['auction_id']))
-            result = cursor.fetchone()
-            team['squad_count'] = result['cnt'] if result else 0
-            
-            # Available purse
             spent = float(team['spent'] or 0)
             reserved = float(team['reserved'] or 0)
             team['available'] = float(team['purse_limit']) - spent - reserved
-            
-            # Category breakdown
-            cursor.execute("""
-                SELECT p.category, COUNT(*) as cnt
-                FROM team_players tp
-                JOIN auction_players ap ON tp.auction_player_id = ap.id
-                JOIN players p ON ap.player_id = p.id
-                WHERE tp.team_id = %s AND ap.auction_id = %s
-                GROUP BY p.category
-            """, (team['id'], team['auction_id']))
-            categories = {row['category']: row['cnt'] for row in cursor.fetchall()}
-            team['batsmen'] = categories.get('batsman', 0)
-            team['bowlers'] = categories.get('bowler', 0)
-            team['all_rounders'] = categories.get('all_rounder', 0)
-            team['wicket_keepers'] = categories.get('wicket_keepers', 0)
-            
-            # Overseas count
-            cursor.execute("""
-                SELECT COUNT(*) as cnt
-                FROM team_players tp
-                JOIN auction_players ap ON tp.auction_player_id = ap.id
-                JOIN players p ON ap.player_id = p.id
-                WHERE tp.team_id = %s AND ap.auction_id = %s AND p.overseas = TRUE
-            """, (team['id'], team['auction_id']))
-            result = cursor.fetchone()
-            team['overseas'] = result['cnt'] if result else 0
             
     finally:
         cursor.close()
         db.close()
     
     return render_template('team_owner/dashboard.html', teams=teams)
-
 
 @bp.route('/auction-room/<int:auction_id>')
 def auction_room_entry(auction_id):
