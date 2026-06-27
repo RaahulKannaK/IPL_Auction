@@ -11,7 +11,7 @@ def view_teams():
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get all teams with owner details
@@ -57,7 +57,7 @@ def view_team_detail(team_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get team details

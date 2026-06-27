@@ -16,7 +16,7 @@ def auction_view():
     auction_id = session['active_auction_id']
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Current auction

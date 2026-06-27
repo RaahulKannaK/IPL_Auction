@@ -445,3 +445,26 @@ CREATE TABLE session_purse_reservations (
 -- Add willing_price column to session_team_players
 ALTER TABLE session_team_players 
 ADD COLUMN willing_price DECIMAL(10,2) NULL AFTER purchase_price;
+
+-- Add these indexes to prevent table scans
+CREATE INDEX idx_auction_sessions_lookup ON auction_sessions(id, auction_id, current_player_id);
+CREATE INDEX idx_session_bids_lookup ON session_bids(session_id, session_player_id, created_at);
+CREATE INDEX idx_session_skips_lookup ON session_skips(session_id, session_player_id, team_id);
+CREATE INDEX idx_session_players_lookup ON session_players(id, session_id, player_id);
+
+
+CREATE TABLE IF NOT EXISTS pending_willing_price (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    team_id INT NOT NULL,
+    player_id INT NOT NULL,
+    session_player_id INT NOT NULL,
+    player_name VARCHAR(100) NOT NULL,
+    purchase_price DECIMAL(10,2) NOT NULL,
+    popup_shown TINYINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    FOREIGN KEY (player_id) REFERENCES players(id),
+    FOREIGN KEY (session_player_id) REFERENCES session_players(id)
+);

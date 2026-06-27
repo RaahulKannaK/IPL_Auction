@@ -3,11 +3,11 @@ from mysql.connector import pooling
 from config import Config
 import time
 
-# Only use arguments supported by mysql-connector-python 8.2.0
+# FIXED: pool_reset_session=True ensures clean state on every checkout
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
     pool_size=10,
-    pool_reset_session=False,
+    pool_reset_session=True,  # ← FIXED: Reset session on every reuse
     host=Config.DB_HOST,
     port=Config.DB_PORT,
     user=Config.DB_USER,

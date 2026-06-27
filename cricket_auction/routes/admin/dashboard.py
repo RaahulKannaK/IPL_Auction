@@ -12,7 +12,7 @@ def admin_panel():
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # All auctions for join list
@@ -58,7 +58,7 @@ def enter_auction(auction_id):
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))

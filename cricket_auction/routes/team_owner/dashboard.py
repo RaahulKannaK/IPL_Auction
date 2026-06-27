@@ -260,7 +260,7 @@ def auction_page():
             elif 'afternoon' in name_lower:
                 icon, label = '☀️', '☀️ Afternoon Session'
             else:
-                icon, label = '📅', f'📅 {sess.get("session_name") or f"Session {sess["id"]}"}'
+                icon, label = '📅', f'📅 {sess.get("session_name") or ("Session " + str(sess["id"]))}'
             
             auction_sessions.append({
                 'id': sess['id'],

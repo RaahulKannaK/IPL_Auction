@@ -10,7 +10,7 @@ def dashboard():
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # All active/live auctions for viewer to pick from
@@ -51,7 +51,7 @@ def enter_auction(auction_id):
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM auctions WHERE id = %s", (auction_id,))

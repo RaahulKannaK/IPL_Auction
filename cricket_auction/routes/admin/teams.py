@@ -14,7 +14,7 @@ def list_teams():
     auction_id = request.args.get('auction') or session.get('active_auction_id')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         if auction_id:
@@ -155,7 +155,7 @@ def edit_team(id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get current team data first
@@ -233,7 +233,7 @@ def delete_team(id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT COUNT(*) as cnt FROM team_players WHERE team_id = %s", (id,))
@@ -261,7 +261,7 @@ def remove_owner(team_id, owner_num):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT owner_id, owner_ids FROM teams WHERE id = %s", (team_id,))
@@ -311,7 +311,7 @@ def view_purse(team_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM teams WHERE id = %s", (team_id,))
@@ -340,7 +340,7 @@ def view_squad(team_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""
@@ -379,7 +379,7 @@ def available_owners():
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""

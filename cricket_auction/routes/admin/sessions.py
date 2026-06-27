@@ -35,7 +35,7 @@ def list_sessions():
         session['active_auction_id'] = auction_id
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Current auction details
@@ -177,7 +177,7 @@ def assign_players_page(session_id):
     
     auction_id = session.get('active_auction_id')
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get current session
@@ -322,9 +322,12 @@ def assign_players_page(session_id):
         auto_continue=auto_continue
     )
 
+
+# ==================== UPDATED: APPEND instead of DELETE ====================
+
 @bp.route('/<int:session_id>/assign-players', methods=['POST'])
 def assign_players(session_id):
-    """Assign players to session - from previous session, CSV upload, fresh selection, or manual entry"""
+    """Assign players to session - APPEND mode: adds to existing, never deletes"""
     if session.get('role') not in [ 'team_owner', 'admin', 'auctioneer']:
         return jsonify({'error': 'Unauthorized'}), 403
     
@@ -347,7 +350,7 @@ def assign_players(session_id):
     
     auction_id = session.get('active_auction_id')
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)  # <-- FIX HERE
     
     try:
         # Verify session exists and belongs to this auction
@@ -356,8 +359,16 @@ def assign_players(session_id):
         if not sess:
             return jsonify({'error': 'Session not found'}), 404
         
-        # Clear any existing session players for this session
-        cursor.execute("DELETE FROM session_players WHERE session_id = %s", (session_id,))
+        # ============================================
+        # FIX: NO LONGER DELETE EXISTING PLAYERS
+        # We APPEND instead of REPLACE
+        # ============================================
+        # Get existing player_ids in this session to avoid duplicates
+        cursor.execute("SELECT player_id FROM session_players WHERE session_id = %s", (session_id,))
+        existing_player_ids = {row['player_id'] for row in cursor.fetchall()}
+        
+        added_count = 0
+        skipped_count = 0
         
         if source_type == 'same_set' and previous_session_id:
             # Copy ALL players from previous session, ALL reset to available
@@ -368,13 +379,18 @@ def assign_players(session_id):
             prev_players = cursor.fetchall()
             
             for p in prev_players:
+                if p['player_id'] in existing_player_ids:
+                    skipped_count += 1
+                    continue
+                    
                 cursor.execute("""
                     INSERT INTO session_players (session_id, player_id, base_price, status)
                     VALUES (%s, %s, %s, 'available')
                 """, (session_id, p['player_id'], p['base_price']))
+                existing_player_ids.add(p['player_id'])
+                added_count += 1
             
-            count = len(prev_players)
-            message = f'Using same set of {count} players (all reset to available for fresh bidding)'
+            message = f'Added {added_count} new players from same set (skipped {skipped_count} duplicates)'
             
         elif source_type == 'previous' and previous_session_id:
             # Copy ONLY UNSOLD players from previous session
@@ -385,16 +401,21 @@ def assign_players(session_id):
             unsold_players = cursor.fetchall()
             
             for p in unsold_players:
+                if p['player_id'] in existing_player_ids:
+                    skipped_count += 1
+                    continue
+                    
                 cursor.execute("""
                     INSERT INTO session_players (session_id, player_id, base_price, status)
                     VALUES (%s, %s, %s, 'available')
                 """, (session_id, p['player_id'], p['base_price']))
+                existing_player_ids.add(p['player_id'])
+                added_count += 1
             
-            count = len(unsold_players)
-            message = f'Carried forward {count} unsold players from previous session'
+            message = f'Carried forward {added_count} unsold players (skipped {skipped_count} duplicates)'
             
         elif source_type == 'fresh' and players_data:
-            # === NEW: Manual entry - array of player objects ===
+            # === Manual entry or CSV import via JSON ===
             for p in players_data:
                 player_name = p.get('player_name', '').strip()
                 category = p.get('category', 'batsman')
@@ -424,14 +445,20 @@ def assign_players(session_id):
                         (auction_id, player_id, base_price)
                     )
                 
+                # Skip if already in session
+                if player_id in existing_player_ids:
+                    skipped_count += 1
+                    continue
+                
                 # Add to session_players
                 cursor.execute("""
                     INSERT INTO session_players (session_id, player_id, base_price, status)
                     VALUES (%s, %s, %s, 'available')
                 """, (session_id, player_id, base_price))
+                existing_player_ids.add(player_id)
+                added_count += 1
             
-            count = len(players_data)
-            message = f'Added {count} players to session via manual entry'
+            message = f'Added {added_count} new players via import (skipped {skipped_count} duplicates)'
             
         else:
             # Fresh selection - user selected specific players from master pool
@@ -449,14 +476,19 @@ def assign_players(session_id):
             
             for pid in player_ids:
                 pid = int(pid)
+                if pid in existing_player_ids:
+                    skipped_count += 1
+                    continue
+                    
                 base_price = player_data.get(pid, 2.0)
                 cursor.execute("""
                     INSERT INTO session_players (session_id, player_id, base_price, status)
                     VALUES (%s, %s, %s, 'available')
                 """, (session_id, pid, base_price))
+                existing_player_ids.add(pid)
+                added_count += 1
             
-            count = len(player_ids)
-            message = f'Assigned {count} players to session'
+            message = f'Assigned {added_count} new players (skipped {skipped_count} duplicates)'
         
         db.commit()
         
@@ -464,11 +496,12 @@ def assign_players(session_id):
         cursor.close()
         db.close()
     
-    return jsonify({'success': True, 'message': message, 'count': count})
+    return jsonify({'success': True, 'message': message, 'count': added_count, 'skipped': skipped_count})
 
+# ==================== UPDATED: APPEND instead of DELETE ====================
 
 def import_players_to_session(session_id):
-    """Bulk import players from CSV into a session"""
+    """Bulk import players from CSV into a session - APPEND mode"""
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -478,17 +511,23 @@ def import_players_to_session(session_id):
     
     auction_id = session.get('active_auction_id')
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True, buffered=True)  # <-- FIX HERE
     
     try:
-        # Clear existing session players
-        cursor.execute("DELETE FROM session_players WHERE session_id = %s", (session_id,))
+        # ============================================
+        # FIX: NO LONGER DELETE EXISTING PLAYERS
+        # Get existing player_ids to avoid duplicates
+        # ============================================
+        cursor.execute("SELECT player_id FROM session_players WHERE session_id = %s", (session_id,))
+        existing_player_ids = {row['player_id'] for row in cursor.fetchall()}
         
         stream = StringIO(file.stream.read().decode("UTF8"), newline=None)
         csv_input = csv.reader(stream)
         next(csv_input)  # Skip header
         
-        count = 0
+        added_count = 0
+        skipped_count = 0
+        
         for row in csv_input:
             if len(row) >= 3:
                 player_name = row[0].strip()
@@ -501,7 +540,7 @@ def import_players_to_session(session_id):
                 existing = cursor.fetchone()
                 
                 if existing:
-                    player_id = existing[0]
+                    player_id = existing['id']
                 else:
                     # Create new player in master pool
                     cursor.execute(
@@ -516,12 +555,18 @@ def import_players_to_session(session_id):
                         (auction_id, player_id, base_price)
                     )
                 
+                # Skip if already in session
+                if player_id in existing_player_ids:
+                    skipped_count += 1
+                    continue
+                
                 # Add to session_players
                 cursor.execute("""
                     INSERT INTO session_players (session_id, player_id, base_price, status)
                     VALUES (%s, %s, %s, 'available')
                 """, (session_id, player_id, base_price))
-                count += 1
+                existing_player_ids.add(player_id)
+                added_count += 1
         
         db.commit()
         
@@ -529,8 +574,12 @@ def import_players_to_session(session_id):
         cursor.close()
         db.close()
     
-    return jsonify({'success': True, 'message': f'{count} players imported to session', 'count': count})
-
+    return jsonify({
+        'success': True, 
+        'message': f'Added {added_count} new players from CSV (skipped {skipped_count} duplicates)', 
+        'count': added_count,
+        'skipped': skipped_count
+    })
 
 @bp.route('/<int:session_id>/players')
 def get_session_players(session_id):
@@ -539,7 +588,7 @@ def get_session_players(session_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""
@@ -575,7 +624,7 @@ def enter_session_room(session_id):
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
@@ -603,7 +652,7 @@ def close_session(session_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""
@@ -654,7 +703,7 @@ def players_by_session():
         session['active_auction_id'] = auction_id
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get all sessions for this auction
@@ -759,7 +808,7 @@ def remove_team_from_session(session_id, team_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM auction_sessions WHERE id = %s", (session_id,))
@@ -794,7 +843,7 @@ def remove_team_from_session(session_id, team_id):
 def get_session_status(session_id):
     """Get real-time session status with player stats"""
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""
@@ -859,7 +908,7 @@ def delete_session_player(session_id, sp_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Check if player exists in this session (match by session_players.id)
@@ -908,7 +957,7 @@ def add_session_player(session_id):
     
     auction_id = session.get('active_auction_id')
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Check if player exists in master pool
@@ -981,7 +1030,7 @@ def delete_session(session_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Verify session exists

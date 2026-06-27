@@ -27,7 +27,7 @@ def list_players():
         selected_session_id = request.args.get('session_id', type=int)
         if selected_session_id:
             db = get_db()
-            cursor = db.cursor(dictionary=True)
+            cursor = db.cursor(dictionary=True, buffered=True)
             try:
                 cursor.execute("SELECT auction_id FROM auction_sessions WHERE id = %s", (selected_session_id,))
                 result = cursor.fetchone()
@@ -49,7 +49,7 @@ def list_players():
         return redirect('/admin/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Get all sessions for this auction (for the tabs)
@@ -298,7 +298,7 @@ def delete_player(id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Check if sold anywhere
@@ -335,7 +335,7 @@ def export_players():
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("""

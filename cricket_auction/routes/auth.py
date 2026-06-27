@@ -26,7 +26,7 @@ def do_login():
     password = request.form['password']
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
@@ -69,7 +69,7 @@ def dashboard_activity():
     
     def fetch_activities():
         db = get_db()
-        cursor = db.cursor(dictionary=True)
+        cursor = db.cursor(dictionary=True, buffered=True)
         
         try:
             cursor.execute("""

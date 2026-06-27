@@ -9,6 +9,7 @@
         --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
         --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
         --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --green: #22c55e; --green-light: #4ade80;
         --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
     }
@@ -223,6 +224,13 @@
         font-size: 0.85rem;
     }
 
+    .reserve-tag {
+        font-family: 'JetBrains Mono';
+        color: #f59e0b;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
     .overseas-icon { color: var(--gold); }
 
     /* WILLING PRICES SECTION */
@@ -270,6 +278,11 @@
         color: var(--gold-light);
         font-weight: 600;
     }
+    .willing-card .reserve-price {
+        font-family: 'JetBrains Mono';
+        color: #f59e0b;
+        font-weight: 700;
+    }
     .willing-card .status {
         font-size: 0.75rem;
         padding: 4px 12px;
@@ -296,6 +309,20 @@
         color: var(--ice-blue-light);
         border: 1px solid rgba(0, 212, 255, 0.2);
     }
+    .status-pending {
+        background: rgba(255, 107, 0, 0.15);
+        color: #ff6b00;
+        border: 1px solid rgba(255, 107, 0, 0.2);
+    }
+
+    /* PENDING POPUPS */
+    .pending-card {
+        border: 1px solid rgba(255, 107, 0, 0.2) !important;
+        background: rgba(255, 107, 0, 0.05) !important;
+    }
+    .pending-card .player-name {
+        color: var(--lava-orange) !important;
+    }
 
     /* EMPTY STATE */
     .empty-state {
@@ -316,6 +343,55 @@
         color: var(--text-dim);
     }
 
+    /* SESSION BADGE */
+    .session-badge {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        background: rgba(100, 120, 200, 0.1);
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-family: 'JetBrains Mono';
+    }
+
+    /* RESERVE BREAKDOWN */
+    .reserve-breakdown {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(245, 158, 11, 0.05);
+        border: 1px solid rgba(245, 158, 11, 0.15);
+        border-radius: 16px;
+    }
+    .reserve-breakdown h3 {
+        color: #f59e0b;
+        font-family: 'Space Grotesk';
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+    .reserve-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+    .reserve-item .player-name {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    .reserve-item .calc {
+        color: var(--text-dim);
+        font-family: 'JetBrains Mono';
+        font-size: 0.8rem;
+    }
+    .reserve-item .amount {
+        color: #f59e0b;
+        font-family: 'JetBrains Mono';
+        font-weight: 700;
+    }
+
     @media (max-width: 640px) {
         .squad-container { padding: 10px; }
         .top-bar h1 { font-size: 1.3rem; }
@@ -334,7 +410,7 @@
         <a href="/team-owner/auction" class="nav-btn">⚡ Auction Room</a>
     </div>
 
-    <!-- PURSE STATS - 4 CARDS ONLY -->
+    <!-- PURSE STATS - 4 CARDS -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="label">💰 Total Purse</div>
@@ -348,7 +424,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="label">🔒 Reserved (Willing)</div>
+            <div class="label">🔒 Reserved (20%)</div>
             <div class="value reserved">₹{{ "%.2f"|format(stats.reserved) }}Cr</div>
             <div class="progress-bar-container">
                 <div class="progress-bar reserved" style="width: {{ stats.reserved_pct }}%"></div>
@@ -362,17 +438,18 @@
 
     <!-- INFO BOX: Willing Price Explanation -->
     <div class="info-box">
-        <h3>🛡️ How Willing Price (Auto-Bid Substitute) Works</h3>
+        <h3>🛡️ Reserve System (20% of Difference)</h3>
         <p>
-            When you set a <span class="highlight">Willing Price</span> for a player, it acts as a 
-            <strong>substitute/auto-bid shield</strong>. If that player appears in a later session and another team bids, 
-            your bot automatically bids up to your willing price. If no one bids, you keep the player at the original price. 
-            The willing price amount is <strong>reserved</strong> from your purse until the player is fully resolved.
+            <span class="highlight">Reserve</span> = <strong>20% of (Willing Price - Purchase Price)</strong> per player. 
+            Only the difference is reserved — not the full willing price.
             <br><br>
-            <span style="color: var(--gold-light);">Example:</span> Russell won at ₹6Cr, willing price ₹9Cr → 
-            ₹9Cr reserved from purse. Available = ₹100Cr - ₹9Cr = <strong>₹91Cr</strong>. 
-            If night session bids reach ₹7Cr, auto-bid to ₹7Cr. If bids exceed ₹9Cr, you lose Russell 
-            and ₹9Cr is released back.
+            <span style="color: var(--gold-light);">Rohit Example:</span> Bought ₹13Cr, willing ₹25Cr → 
+            Diff = ₹25 - ₹13 = ₹12Cr. Reserve = 20% of ₹12Cr = <strong>₹2.40Cr</strong>. Available = ₹100 - ₹13 - ₹2.40 = <strong>₹84.60Cr</strong>.
+            <br><br>
+            <span style="color: var(--gold-light);">Bumrah Example:</span> Bought ₹10Cr, willing ₹35Cr → 
+            Diff = ₹35 - ₹10 = ₹25Cr. Reserve = 20% of ₹25Cr = <strong>₹5Cr</strong>. Available = ₹100 - ₹10 - ₹5 = <strong>₹85Cr</strong>.
+            <br><br>
+            If re-auction bids exceed your willing price, you lose the player and reserve is released back.
         </p>
     </div>
 
@@ -413,6 +490,9 @@
                         <th>Player</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>Willing Price</th>
+                        <th>Reserve (20%)</th>
+                        <th>Session</th>
                         <th>Overseas</th>
                     </tr>
                 </thead>
@@ -422,7 +502,22 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-batsman">Batsman</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>
+                            {% if player.willing_price %}
+                            <span class="willing-tag">₹{{ "%.2f"|format(player.willing_price) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.willing_price and player.willing_price > player.sold_price %}
+                            <span class="reserve-tag">₹{{ "%.2f"|format((player.willing_price|float - player.sold_price|float) * 0.20) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="session-badge">{{ player.session_name or '—' }}</span></td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}—{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -445,6 +540,9 @@
                         <th>Player</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>Willing Price</th>
+                        <th>Reserve (20%)</th>
+                        <th>Session</th>
                         <th>Overseas</th>
                     </tr>
                 </thead>
@@ -454,7 +552,22 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-bowler">Bowler</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>
+                            {% if player.willing_price %}
+                            <span class="willing-tag">₹{{ "%.2f"|format(player.willing_price) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.willing_price and player.willing_price > player.sold_price %}
+                            <span class="reserve-tag">₹{{ "%.2f"|format((player.willing_price|float - player.sold_price|float) * 0.20) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="session-badge">{{ player.session_name or '—' }}</span></td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}—{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -477,6 +590,9 @@
                         <th>Player</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>Willing Price</th>
+                        <th>Reserve (20%)</th>
+                        <th>Session</th>
                         <th>Overseas</th>
                     </tr>
                 </thead>
@@ -486,7 +602,22 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-all_rounder">All Rounder</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>
+                            {% if player.willing_price %}
+                            <span class="willing-tag">₹{{ "%.2f"|format(player.willing_price) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.willing_price and player.willing_price > player.sold_price %}
+                            <span class="reserve-tag">₹{{ "%.2f"|format((player.willing_price|float - player.sold_price|float) * 0.20) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="session-badge">{{ player.session_name or '—' }}</span></td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}—{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -509,6 +640,9 @@
                         <th>Player</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>Willing Price</th>
+                        <th>Reserve (20%)</th>
+                        <th>Session</th>
                         <th>Overseas</th>
                     </tr>
                 </thead>
@@ -518,7 +652,22 @@
                         <td style="font-weight: 600;">{{ player.player_name }}</td>
                         <td><span class="cat-badge badge-wicket_keeper">Wicket Keeper</span></td>
                         <td class="price-tag">₹{{ "%.2f"|format(player.sold_price) }}Cr</td>
-                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}-{% endif %}</td>
+                        <td>
+                            {% if player.willing_price %}
+                            <span class="willing-tag">₹{{ "%.2f"|format(player.willing_price) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if player.willing_price and player.willing_price > player.sold_price %}
+                            <span class="reserve-tag">₹{{ "%.2f"|format((player.willing_price|float - player.sold_price|float) * 0.20) }}Cr</span>
+                            {% else %}
+                            <span style="color: var(--text-dim); font-size: 0.85rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="session-badge">{{ player.session_name or '—' }}</span></td>
+                        <td>{% if player.overseas %}<span class="overseas-icon">🌍</span>{% else %}—{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -527,40 +676,71 @@
     </div>
     {% endif %}
 
-    <!-- WILLING PRICES SECTION -->
+    <!-- RESERVE BREAKDOWN -->
+    {% if willing_prices %}
+    <div class="reserve-breakdown">
+        <h3>🔒 Reserve Breakdown (20% of Difference)</h3>
+        {% for wp in willing_prices %}
+        <div class="reserve-item">
+            <span class="player-name">{{ wp.player_name }}</span>
+            <span class="calc">Diff ₹{{ "%.2f"|format(wp.willing_price - wp.sold_price) }}Cr × 20%</span>
+            <span class="amount">₹{{ "%.2f"|format(wp.reserve_amount) }}Cr</span>
+        </div>
+        {% endfor %}
+        <div class="reserve-item" style="border-top: 1px solid rgba(245, 158, 11, 0.3); margin-top: 10px; padding-top: 12px;">
+            <span class="player-name" style="color: #f59e0b;">Total Reserved</span>
+            <span></span>
+            <span class="amount">₹{{ "%.2f"|format(stats.reserved) }}Cr</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- WILLING PRICES HISTORY SECTION -->
     {% if willing_prices %}
     <div class="willing-section">
-        <h2>🔒 Willing Prices History (Auto-Bid Substitute)</h2>
+        <h2>🔒 Protected Players (Willing Price Set)</h2>
         {% for wp in willing_prices %}
         <div class="willing-card">
             <div class="player-name">{{ wp.player_name }}</div>
             
             <div class="price-info">
-                <div class="price-label">Willing Price (Max)</div>
-                <div class="price">₹{{ "%.2f"|format(wp.max_bid) }}Cr</div>
+                <div class="price-label">Bought For</div>
+                <div class="actual-price">₹{{ "%.2f"|format(wp.sold_price) }}Cr</div>
             </div>
             
-            {% if wp.final_price %}
-                <div class="price-info">
-                    <div class="price-label">Final Price</div>
-                    <div class="actual-price">₹{{ "%.2f"|format(wp.final_price) }}Cr</div>
-                </div>
-                {% if wp.sold_team_id == team.id %}
-                    {% if wp.final_price <= wp.max_bid %}
-                    <span class="status status-won">✅ WON (Auto-Bid Protected)</span>
-                    {% else %}
-                    <span class="status status-lost">❌ LOST (Exceeded Limit)</span>
-                    {% endif %}
-                {% else %}
-                    <span class="status status-lost">❌ LOST (To Another Team)</span>
-                {% endif %}
-            {% else %}
-                {% if wp.is_active %}
-                <span class="status status-substitute">🛡️ Substitute Active</span>
-                {% else %}
-                <span class="status status-active">⏳ Pending</span>
-                {% endif %}
-            {% endif %}
+            <div class="price-info">
+                <div class="price-label">Max Willing</div>
+                <div class="price">₹{{ "%.2f"|format(wp.willing_price) }}Cr</div>
+            </div>
+            
+            <div class="price-info">
+                <div class="price-label">Reserve (20%)</div>
+                <div class="reserve-price">₹{{ "%.2f"|format(wp.reserve_amount) }}Cr</div>
+            </div>
+            
+            <div class="price-info">
+                <div class="price-label">Session</div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">{{ wp.bought_session or 'Unknown' }}</div>
+            </div>
+            
+            <span class="status status-won">✅ PROTECTED</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- PENDING POPUPS SECTION -->
+    {% if pending_popups %}
+    <div class="willing-section" style="margin-top: 20px;">
+        <h2>⏳ Pending Willing Price Popups</h2>
+        {% for pp in pending_popups %}
+        <div class="willing-card pending-card">
+            <div class="player-name">{{ pp.player_name }}</div>
+            <div class="price-info">
+                <div class="price-label">Purchase Price</div>
+                <div class="actual-price">₹{{ "%.2f"|format(pp.purchase_price) }}Cr</div>
+            </div>
+            <span class="status status-pending">⏳ SET WILLING PRICE</span>
         </div>
         {% endfor %}
     </div>

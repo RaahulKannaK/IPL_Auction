@@ -13,7 +13,7 @@ def reports_dashboard():
         return redirect('/dashboard')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     # Team spending
     cursor.execute("""
@@ -72,7 +72,7 @@ def team_spending_api():
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     cursor.execute("""
         SELECT t.team_name, t.purse_limit, t.spent, t.reserved
         FROM teams t
@@ -89,7 +89,7 @@ def auction_history_api():
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     cursor.execute("""
         SELECT p.player_name, ap.sold_price, t.team_name
         FROM auction_players ap

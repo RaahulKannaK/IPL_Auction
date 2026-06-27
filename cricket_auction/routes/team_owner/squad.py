@@ -1,11 +1,29 @@
 from flask import Blueprint, render_template, session, flash, redirect, jsonify
 from database.db import get_db
+import json
 
 bp = Blueprint('team_owner_squad', __name__, url_prefix='/team-owner/squad')
 
-def get_user_team(cursor, user_id):
-    cursor.execute("SELECT * FROM teams WHERE owner_id = %s", (user_id,))
-    return cursor.fetchone()
+def get_user_team_by_ids(cursor, user_id, auction_id=None):
+    """Get team where user is owner (supports owner_ids JSON)"""
+    if auction_id:
+        cursor.execute("SELECT * FROM teams WHERE auction_id = %s", (auction_id,))
+    else:
+        cursor.execute("SELECT * FROM teams WHERE owner_id = %s", (user_id,))
+    
+    all_teams = cursor.fetchall()
+    for team in all_teams:
+        if team.get('owner_id') == user_id:
+            return team
+        if team.get('owner_ids'):
+            try:
+                owner_ids = json.loads(team['owner_ids']) if isinstance(team['owner_ids'], str) else team['owner_ids']
+                if user_id in owner_ids:
+                    return team
+            except:
+                pass
+    return None
+
 
 @bp.route('/')
 def view_squad():
@@ -14,48 +32,89 @@ def view_squad():
         return redirect('/')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
-        user_team = get_user_team(cursor, session['user_id'])
+        auction_id = session.get('active_auction_id')
+        
+        if auction_id:
+            user_team = get_user_team_by_ids(cursor, session['user_id'], auction_id)
+        else:
+            user_team = get_user_team_by_ids(cursor, session['user_id'])
+        
         if not user_team:
             flash('No team assigned')
-            return redirect('/dashboard')
+            return redirect('/team_owner/dashboard')
         
-        # Squad with purchase details
+        team_id = user_team['id']
+        auction_id = user_team['auction_id']
+        
+        # ============================================
+        # GET SQUAD: All players bought across ALL sessions
+        # ============================================
         cursor.execute("""
-            SELECT p.*, tp.purchase_price as sold_price, tp.purchased_at, ap.id as auction_player_id
-            FROM team_players tp
-            JOIN auction_players ap ON tp.auction_player_id = ap.id
-            JOIN players p ON ap.player_id = p.id
-            WHERE tp.team_id = %s
-            ORDER BY tp.purchase_price DESC
-        """, (user_team['id'],))
+            SELECT 
+                p.id as player_id,
+                p.player_name,
+                p.category,
+                p.overseas,
+                sp.id as session_player_id,
+                sp.session_id,
+                s.session_name,
+                stp.purchase_price as sold_price,
+                stp.willing_price,
+                stp.purchased_at
+            FROM session_team_players stp
+            JOIN session_players sp ON stp.session_player_id = sp.id
+            JOIN players p ON sp.player_id = p.id
+            JOIN auction_sessions s ON sp.session_id = s.id
+            WHERE stp.team_id = %s
+            ORDER BY stp.purchased_at DESC
+        """, (team_id,))
         squad = cursor.fetchall()
         
-        # Willing prices (hidden_max_bids) for this team - ALL history
+        # ============================================
+        # GET WILLING PRICES: Players with willing price set
+        # Reserve = 20% of (WILLING - PURCHASE) — DIFFERENCE ONLY
+        # ============================================
         cursor.execute("""
-            SELECT h.*, p.player_name, ap.sold_price as final_price, ap.sold_team_id
-            FROM hidden_max_bids h
-            JOIN auction_players ap ON h.auction_player_id = ap.id
-            JOIN players p ON ap.player_id = p.id
-            WHERE h.team_id = %s
-            ORDER BY h.created_at DESC
-        """, (user_team['id'],))
+            SELECT 
+                p.player_name,
+                p.category,
+                stp.purchase_price as sold_price,
+                stp.willing_price,
+                ((stp.willing_price - stp.purchase_price) * 0.20) as reserve_amount,
+                s.session_name as bought_session,
+                stp.purchased_at
+            FROM session_team_players stp
+            JOIN session_players sp ON stp.session_player_id = sp.id
+            JOIN players p ON sp.player_id = p.id
+            JOIN auction_sessions s ON sp.session_id = s.id
+            WHERE stp.team_id = %s
+              AND stp.willing_price IS NOT NULL
+              AND stp.willing_price > stp.purchase_price
+            ORDER BY stp.purchased_at DESC
+        """, (team_id,))
         willing_prices = cursor.fetchall()
         
-        # Active willing prices (player not yet sold OR sold to another team - still active protection)
+        # ============================================
+        # GET PENDING POPUPS
+        # ============================================
         cursor.execute("""
-            SELECT h.*, p.player_name, ap.sold_price as final_price, ap.sold_team_id
-            FROM hidden_max_bids h
-            JOIN auction_players ap ON h.auction_player_id = ap.id
-            JOIN players p ON ap.player_id = p.id
-            WHERE h.team_id = %s AND h.is_active = TRUE
-            ORDER BY h.max_bid DESC
-        """, (user_team['id'],))
-        active_willing = cursor.fetchall()
+            SELECT 
+                pwp.player_name,
+                pwp.purchase_price,
+                pwp.created_at
+            FROM pending_willing_price pwp
+            WHERE pwp.team_id = %s
+              AND pwp.popup_shown = 0
+            ORDER BY pwp.created_at DESC
+        """, (team_id,))
+        pending_popups = cursor.fetchall()
         
-        # Category breakdown
+        # ============================================
+        # CATEGORY BREAKDOWN
+        # ============================================
         breakdown = {
             'batsmen': [p for p in squad if p['category'] == 'batsman'],
             'bowlers': [p for p in squad if p['category'] == 'bowler'],
@@ -64,46 +123,57 @@ def view_squad():
             'overseas': [p for p in squad if p['overseas']]
         }
         
-        # FIXED PURSE CALCULATIONS
-        # Logic:
-        # - spent = actual money spent on won players (informational only)
-        # - reserved = sum of all active willing prices (max auto-bid limits)
-        #   This is the ONLY deduction from purse. Spent is INCLUDED in reserved.
-        # - available = purse_limit - reserved
-        #
-        # Example: Russell won at 6Cr, willing price 9Cr
-        #   reserved = 9Cr (this 9Cr includes the 6Cr already spent)
-        #   spent = 6Cr (just for display - shows what you actually paid)
-        #   available = 100 - 9 = 91Cr ✓
-        
+        # ============================================
+        # PURSE CALCULATIONS — RESERVE = 20% OF (WILLING - PURCHASE)
+        # ============================================
         purse_limit = float(user_team['purse_limit'] or 100)
-        spent = float(user_team['spent'] or 0)
         
-        # Calculate reserved from active willing prices
+        # Total spent = sum of all purchase prices
         cursor.execute("""
-            SELECT COALESCE(SUM(max_bid), 0) as total_reserved
-            FROM hidden_max_bids
-            WHERE team_id = %s AND is_active = TRUE
-        """, (user_team['id'],))
+            SELECT COALESCE(SUM(purchase_price), 0) as total_spent
+            FROM session_team_players
+            WHERE team_id = %s
+        """, (team_id,))
+        spent_result = cursor.fetchone()
+        total_spent = float(spent_result['total_spent'] or 0) if spent_result else 0
+        
+        # Reserved = 20% of (willing_price - purchase_price) for all players with willing price set
+        # ONLY the DIFFERENCE, not full willing price
+        cursor.execute("""
+            SELECT COALESCE(SUM((willing_price - purchase_price) * 0.20), 0) as total_reserved
+            FROM session_team_players
+            WHERE team_id = %s 
+              AND willing_price IS NOT NULL
+              AND willing_price > purchase_price
+        """, (team_id,))
         reserved_result = cursor.fetchone()
-        reserved = float(reserved_result['total_reserved'] or 0) if reserved_result else 0
+        total_reserved = float(reserved_result['total_reserved'] or 0) if reserved_result else 0
         
-        # FIXED: Available = Purse - Reserved (NOT purse - spent - reserved)
-        # Spent is already inside reserved, don't double count
-        available = purse_limit - reserved
+        # Also add active hidden max bids from current session (for players not yet bought)
+        cursor.execute("""
+            SELECT COALESCE(SUM(max_bid), 0) as total_hidden
+            FROM session_hidden_max_bids
+            WHERE team_id = %s AND is_active = TRUE
+        """, (team_id,))
+        hidden_result = cursor.fetchone()
+        total_hidden = float(hidden_result['total_hidden'] or 0) if hidden_result else 0
         
-        # Stats
+        total_reserved = total_reserved + total_hidden
+        
+        # Available = Purse - Spent - Reserved
+        available = purse_limit - total_spent - total_reserved
+        
         total_players = len(squad)
         overseas_count = len(breakdown['overseas'])
         overseas_limit = 8
         
         stats = {
             'purse_limit': purse_limit,
-            'spent': spent,
-            'reserved': reserved,
+            'spent': total_spent,
+            'reserved': total_reserved,
             'available': available,
-            'spent_pct': (spent / purse_limit * 100) if purse_limit > 0 else 0,
-            'reserved_pct': (reserved / purse_limit * 100) if purse_limit > 0 else 0,
+            'spent_pct': (total_spent / purse_limit * 100) if purse_limit > 0 else 0,
+            'reserved_pct': (total_reserved / purse_limit * 100) if purse_limit > 0 else 0,
             'total_players': total_players,
             'overseas_count': overseas_count,
             'overseas_limit': overseas_limit,
@@ -114,11 +184,11 @@ def view_squad():
         cursor.close()
         db.close()
     
-    return render_template('team_owner/squad.html', 
-        squad=squad, 
-        breakdown=breakdown, 
+    return render_template('team_owner/squad.html',
+        squad=squad,
+        breakdown=breakdown,
         team=user_team,
         stats=stats,
         willing_prices=willing_prices,
-        active_willing=active_willing
+        pending_popups=pending_popups
     )

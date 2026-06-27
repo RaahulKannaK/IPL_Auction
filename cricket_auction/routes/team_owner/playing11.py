@@ -15,7 +15,7 @@ def playing11_builder():
         return redirect('/dashboard')
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         user_team = get_user_team(cursor, session['user_id'])
@@ -62,7 +62,7 @@ def save_playing11():
     players = data.get('players', [])
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # Verify team belongs to user
@@ -116,7 +116,7 @@ def view_playing11(team_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     db = get_db()
-    cursor = db.cursor(dictionary=True)
+    cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
         # If team_owner, verify they own this team
