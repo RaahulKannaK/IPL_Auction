@@ -106,9 +106,54 @@
     .es .i { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3; }
     .es h3 { color: var(--ts); margin-bottom: 8px; font-family: 'Space Grotesk'; }
     .es p { color: var(--td); font-size: 0.9rem; }
+
+    /* Password modal styles */
+    .pwd-modal-backdrop {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.7); z-index: 1000;
+        align-items: center; justify-content: center;
+    }
+    .pwd-modal {
+        width: 90%; max-width: 400px; padding: 28px;
+    }
+    .pwd-modal h3 {
+        font-family: 'Space Grotesk'; color: var(--tp);
+        margin-bottom: 20px; text-align: center;
+    }
+    .pwd-msg {
+        display: none; margin-bottom: 12px;
+        font-size: 0.8rem; text-align: center;
+    }
+    .pwd-msg.ok { color: #4ade80; }
+    .pwd-msg.err { color: #ff2a00; }
+    .pwd-actions { display: flex; gap: 10px; }
 </style>
 
-<h1>⚡ My Teams</h1>
+<!-- Header with Change Password -->
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <h1 style="margin:0;">⚡ My Teams</h1>
+    <button type="button" class="ab ab-v" onclick="openPwdModal()" style="width:auto; padding:8px 16px; font-size:0.8rem;">
+        🔒 Change Password
+    </button>
+</div>
+
+<!-- Change Password Modal -->
+<div id="pwdModal" class="pwd-modal-backdrop">
+    <div class="gp pwd-modal">
+        <h3>🔒 Change Password</h3>
+        
+        <input type="password" id="pwdCurrent" class="aid" placeholder="Current Password" style="margin-bottom:12px; text-align:left; letter-spacing:normal;">
+        <input type="password" id="pwdNew" class="aid" placeholder="New Password (min 6 chars)" style="margin-bottom:12px; text-align:left; letter-spacing:normal;">
+        <input type="password" id="pwdConfirm" class="aid" placeholder="Confirm New Password" style="margin-bottom:16px; text-align:left; letter-spacing:normal;">
+        
+        <div id="pwdMsg" class="pwd-msg"></div>
+        
+        <div class="pwd-actions">
+            <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Update</button>
+            <button type="button" class="ab ab-d" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
 
 {% if teams %}
 <div class="tg" id="teamGrid">
@@ -176,7 +221,7 @@
 </div>
 
 <script>
-// Optimized: single function, minimal DOM access
+// Auction entry
 function eA(expectedId) {
     const input = document.getElementById('aid-' + expectedId);
     const btn = document.getElementById('btn-' + expectedId);
@@ -188,7 +233,7 @@ function eA(expectedId) {
     input.classList.remove('err');
     
     if (val === String(expectedId)) {
-        window.location.href = '/team_owner/sessions?auction_id=' + expectedId;
+        window.location.href = '/team-owner/auction-room/' + expectedId;
     } else {
         err.style.display = 'block';
         input.classList.add('err');
@@ -197,6 +242,71 @@ function eA(expectedId) {
         btn.disabled = false;
     }
 }
+
+// Password modal
+function openPwdModal() {
+    document.getElementById('pwdModal').style.display = 'flex';
+    document.getElementById('pwdCurrent').focus();
+}
+
+function closePwdModal() {
+    document.getElementById('pwdModal').style.display = 'none';
+    document.getElementById('pwdCurrent').value = '';
+    document.getElementById('pwdNew').value = '';
+    document.getElementById('pwdConfirm').value = '';
+    const msg = document.getElementById('pwdMsg');
+    msg.style.display = 'none';
+    msg.textContent = '';
+    msg.className = 'pwd-msg';
+    document.getElementById('pwdSubmitBtn').disabled = false;
+}
+
+async function submitPwd() {
+    const btn = document.getElementById('pwdSubmitBtn');
+    const msg = document.getElementById('pwdMsg');
+    const current = document.getElementById('pwdCurrent').value;
+    const newPwd = document.getElementById('pwdNew').value;
+    const confirm = document.getElementById('pwdConfirm').value;
+    
+    btn.disabled = true;
+    msg.style.display = 'none';
+    msg.className = 'pwd-msg';
+    
+    try {
+        const res = await fetch('/team-owner/change-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({current_password: current, new_password: newPwd, confirm_password: confirm})
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            msg.className = 'pwd-msg ok';
+            msg.textContent = '✅ ' + data.message;
+            msg.style.display = 'block';
+            setTimeout(closePwdModal, 1500);
+        } else {
+            msg.className = 'pwd-msg err';
+            msg.textContent = '❌ ' + data.message;
+            msg.style.display = 'block';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        msg.className = 'pwd-msg err';
+        msg.textContent = '❌ Network error';
+        msg.style.display = 'block';
+        btn.disabled = false;
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePwdModal();
+});
+// Close modal on backdrop click
+document.getElementById('pwdModal').addEventListener('click', function(e) {
+    if (e.target === this) closePwdModal();
+});
 </script>
 
 {% else %}
