@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Bootstrap 5.3 CSS (inline critical, rest loaded via CDN) -->
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
     /* ============================================
-       UNIFIED DESIGN SYSTEM — DASHBOARD v3
-       Adaptive: Mobile-first, scales gracefully
+       BOOTSTRAP OVERRIDES — YOUR DARK THEME
        ============================================ */
     :root {
         --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
@@ -12,98 +14,29 @@
         --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
         --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
         --green: #22c55e; --green-light: #4ade80;
-        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.9);
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
     }
 
-    /* ============================================
-       FLUID TYPOGRAPHY — no breakpoint jumps
-       ============================================ */
-    .dash-wrap {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: clamp(12px, 3vw, 32px);
-        padding-bottom: clamp(24px, 5vw, 60px);
-    }
+    body { background: var(--bg-dark); color: var(--text-primary); font-family: 'Inter', sans-serif; }
 
     /* ============================================
-       HEADER — always compact
+       CARD — GLASSMORPHISM
        ============================================ */
-    .dash-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: clamp(16px, 3vw, 28px);
-        gap: 12px;
-    }
-    .dash-head h1 {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(1.3rem, 4vw, 1.8rem);
-        font-weight: 700;
-        color: var(--text-primary);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .dash-head h1 span { font-size: 1.2em; }
-
-    .head-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 18px);
-        border-radius: 12px;
-        background: rgba(124, 77, 255, 0.1);
-        border: 1px solid rgba(124, 77, 255, 0.2);
-        color: var(--cosmic-purple-light);
-        font-size: clamp(0.75rem, 1.5vw, 0.9rem);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        text-decoration: none;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .head-btn:hover {
-        background: rgba(124, 77, 255, 0.18);
-        border-color: var(--cosmic-purple-light);
-    }
-    .head-btn .txt { display: none; }
-    @media (min-width: 480px) { .head-btn .txt { display: inline; } }
-
-    /* ============================================
-       TEAM GRID — adaptive columns
-       ============================================ */
-    .team-grid {
-        display: grid;
-        gap: clamp(12px, 2vw, 24px);
-        grid-template-columns: 1fr;
-    }
-    @media (min-width: 700px) and (max-width: 1099px) {
-        .team-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (min-width: 1100px) {
-        .team-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-
-    /* ============================================
-       TEAM CARD — MOBILE: full bleed, big
-       ============================================ */
-    .team-card {
+    .auction-card {
         background: var(--bg-panel);
         backdrop-filter: blur(24px);
         border: 1px solid rgba(100, 120, 200, 0.12);
-        border-radius: clamp(16px, 3vw, 24px);
-        padding: clamp(20px, 4vw, 32px);
+        border-radius: 20px;
+        padding: 1.5rem;
         position: relative;
         overflow: hidden;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        gap: clamp(12px, 2vw, 20px);
     }
-    .team-card::before {
+    .auction-card::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -111,84 +44,84 @@
         background: linear-gradient(90deg, transparent, rgba(124,77,255,0.5), rgba(0,212,255,0.4), rgba(247,181,0,0.4), transparent);
     }
     @media (hover: hover) {
-        .team-card:hover {
+        .auction-card:hover {
             border-color: rgba(124, 77, 255, 0.25);
             box-shadow: 0 0 40px rgba(124, 77, 255, 0.1);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
         }
     }
 
     /* ============================================
-       LEAGUE & TEAM NAME
+       TYPOGRAPHY
        ============================================ */
-    .league-name {
-        font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+    .league-tag {
+        font-size: 0.75rem;
         color: var(--text-dim);
         text-transform: uppercase;
         letter-spacing: 2px;
         font-weight: 700;
+        margin-bottom: 0.5rem;
     }
     .team-name {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(1.4rem, 4vw, 1.9rem);
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
-        line-height: 1.15;
+        line-height: 1.2;
+        margin-bottom: 0.75rem;
+    }
+    @media (min-width: 768px) {
+        .team-name { font-size: 1.3rem; }
     }
 
     /* ============================================
-       STATUS PILLS — compact row
+       STATUS BADGES
        ============================================ */
-    .status-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: clamp(6px, 1.5vw, 10px);
-    }
-    .pill {
+    .status-pill {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: clamp(4px, 1vw, 6px) clamp(8px, 2vw, 14px);
+        gap: 6px;
+        padding: 5px 12px;
         border-radius: 30px;
-        font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+        font-size: 0.75rem;
         font-weight: 700;
         letter-spacing: 0.5px;
-        white-space: nowrap;
+        width: fit-content;
     }
-    .pill-live {
+    .status-live {
         background: rgba(34, 197, 94, 0.15);
         color: var(--green);
         border: 1px solid rgba(34, 197, 94, 0.3);
         box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
     }
-    .pill-live .dot {
+    .status-live .dot {
         width: 7px; height: 7px;
         border-radius: 50%;
         background: var(--green);
         box-shadow: 0 0 8px var(--green);
         animation: pulse 2s infinite;
     }
-    .pill-paused {
+    .status-paused {
         background: rgba(245, 158, 11, 0.15);
         color: #fbbf24;
         border: 1px solid rgba(245, 158, 11, 0.3);
     }
-    .pill-pending {
+    .status-pending {
         background: rgba(100, 116, 139, 0.12);
         color: var(--text-dim);
         border: 1px solid rgba(100, 116, 139, 0.2);
     }
-    .pill-completed {
+    .status-completed {
         background: rgba(124, 77, 255, 0.12);
         color: var(--cosmic-purple-light);
         border: 1px solid rgba(124, 77, 255, 0.25);
     }
-    .pill-ok {
+    .session-ok {
         background: rgba(34, 197, 94, 0.1);
         color: var(--green-light);
         border: 1px solid rgba(34, 197, 94, 0.2);
     }
-    .pill-warn {
+    .session-warn {
         background: rgba(245, 158, 11, 0.1);
         color: #fbbf24;
         border: 1px solid rgba(245, 158, 11, 0.2);
@@ -199,109 +132,92 @@
     }
 
     /* ============================================
-       STATS — adaptive sizing
+       STATS
        ============================================ */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: clamp(8px, 2vw, 14px);
-    }
-    .stat-item {
+    .stat-box {
         background: rgba(0, 0, 0, 0.25);
-        border-radius: clamp(12px, 2vw, 16px);
-        padding: clamp(14px, 3vw, 22px) clamp(6px, 1.5vw, 14px);
+        border-radius: 14px;
+        padding: 1rem 0.5rem;
         text-align: center;
         border: 1px solid rgba(100, 120, 200, 0.06);
     }
-    .stat-item .num {
+    .stat-box .num {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(1.2rem, 3.5vw, 1.7rem);
+        font-size: 1.3rem;
         font-weight: 700;
         margin-bottom: 4px;
     }
-    .stat-item .lbl {
-        font-size: clamp(0.6rem, 1.2vw, 0.7rem);
+    .stat-box .lbl {
+        font-size: 0.65rem;
         color: var(--text-dim);
         text-transform: uppercase;
         letter-spacing: 1px;
         font-weight: 600;
     }
+    @media (min-width: 768px) {
+        .stat-box { padding: 0.875rem 0.5rem; }
+        .stat-box .num { font-size: 1.1rem; }
+    }
 
     /* ============================================
-       CATEGORY PILLS
+       CATEGORY TAGS
        ============================================ */
-    .cat-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: clamp(6px, 1.5vw, 10px);
-    }
-    .cat-pill {
-        padding: clamp(5px, 1vw, 7px) clamp(10px, 2vw, 16px);
+    .cat-tag {
+        padding: 5px 12px;
         border-radius: 20px;
-        font-size: clamp(0.75rem, 1.5vw, 0.85rem);
+        font-size: 0.8rem;
         font-weight: 600;
         background: rgba(124, 77, 255, 0.08);
         color: var(--cosmic-purple-light);
         border: 1px solid rgba(124, 77, 255, 0.15);
         white-space: nowrap;
     }
+    @media (min-width: 768px) {
+        .cat-tag { font-size: 0.75rem; padding: 4px 10px; }
+    }
 
     /* ============================================
-       ACTION SECTION
+       AUCTION ENTRY
        ============================================ */
     .action-box {
         background: rgba(0, 0, 0, 0.2);
-        border-radius: clamp(14px, 2.5vw, 20px);
-        padding: clamp(18px, 3vw, 28px);
+        border-radius: 16px;
+        padding: 1.25rem;
         border: 1px solid rgba(100, 120, 200, 0.08);
         margin-top: auto;
     }
-
     .aid-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+        font-size: 0.85rem;
         color: var(--text-secondary);
-        margin-bottom: clamp(10px, 2vw, 16px);
+        text-align: center;
+        margin-bottom: 0.75rem;
     }
     .aid-label strong {
         color: var(--cosmic-purple-light);
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1.1em;
-    }
-
-    .aid-input-wrap {
-        display: flex;
-        gap: clamp(8px, 1.5vw, 12px);
-        margin-bottom: clamp(8px, 1.5vw, 12px);
     }
     .aid-input {
-        flex: 1;
-        padding: clamp(14px, 3vw, 18px) clamp(12px, 2.5vw, 18px);
-        border-radius: clamp(12px, 2vw, 16px);
-        border: 2px solid rgba(124, 77, 255, 0.2);
         background: rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(124, 77, 255, 0.2);
         color: var(--text-primary);
         font-family: 'JetBrains Mono', monospace;
-        font-size: clamp(1rem, 2.5vw, 1.3rem);
+        font-size: 1.1rem;
         letter-spacing: 2px;
         text-align: center;
-        outline: none;
-        transition: all 0.2s;
-        -webkit-appearance: none;
-        min-width: 0;
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
     }
     .aid-input:focus {
+        background: rgba(0, 0, 0, 0.3);
         border-color: var(--cosmic-purple-light);
+        color: var(--text-primary);
         box-shadow: 0 0 20px rgba(124, 77, 255, 0.15);
     }
     .aid-input::placeholder {
         color: var(--text-dim);
         font-family: 'Inter', sans-serif;
         letter-spacing: normal;
-        font-size: 0.85em;
+        font-size: 0.9rem;
     }
     .aid-input.err {
         border-color: var(--lava-red);
@@ -313,19 +229,18 @@
     }
 
     .copy-btn {
-        padding: clamp(12px, 2.5vw, 16px);
-        border-radius: clamp(12px, 2vw, 16px);
+        padding: 0.875rem 1rem;
+        border-radius: 12px;
         border: 2px solid rgba(124, 77, 255, 0.2);
         background: rgba(124, 77, 255, 0.08);
         color: var(--cosmic-purple-light);
         cursor: pointer;
-        font-size: clamp(1rem, 2vw, 1.3rem);
+        font-size: 1.1rem;
         transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: clamp(44px, 8vw, 56px);
-        flex-shrink: 0;
+        min-width: 52px;
     }
     .copy-btn:active { transform: scale(0.95); }
     .copy-btn.copied {
@@ -336,445 +251,360 @@
 
     .aid-err {
         color: var(--lava-red);
-        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+        font-size: 0.85rem;
         text-align: center;
-        margin-bottom: clamp(8px, 1.5vw, 12px);
+        margin-bottom: 0.75rem;
         display: none;
         font-weight: 500;
     }
     .aid-err.show { display: block; }
 
-    .big-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: clamp(14px, 3vw, 20px) clamp(16px, 3vw, 28px);
-        border-radius: clamp(12px, 2vw, 16px);
-        border: 2px solid rgba(34, 197, 94, 0.3);
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn-enter {
         background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+        border: 2px solid rgba(34, 197, 94, 0.3);
         color: var(--green-light);
-        font-size: clamp(0.95rem, 2.5vw, 1.1rem);
         font-weight: 700;
-        cursor: pointer;
+        font-size: 1rem;
+        padding: 1rem;
+        border-radius: 14px;
+        width: 100%;
         transition: all 0.3s;
-        font-family: 'Inter', sans-serif;
-        min-height: clamp(48px, 10vw, 60px);
-        position: relative;
-        overflow: hidden;
+        min-height: 56px;
     }
-    .big-btn:hover:not(:disabled) {
+    .btn-enter:hover:not(:disabled) {
         border-color: var(--green-light);
         box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
         transform: translateY(-2px);
     }
-    .big-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .big-btn .spin {
-        width: 18px; height: 18px;
-        border: 2px solid transparent;
-        border-top-color: currentColor;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        display: none;
-    }
-    .big-btn.loading .spin { display: block; }
-    .big-btn.loading .bt { opacity: 0.6; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-enter:disabled { opacity: 0.5; }
 
-    .result-btn {
+    .btn-result {
+        background: rgba(124, 77, 255, 0.08);
+        border: 2px solid rgba(124, 77, 255, 0.25);
+        color: var(--cosmic-purple-light);
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 1rem;
+        border-radius: 14px;
+        width: 100%;
+        text-decoration: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: clamp(14px, 3vw, 20px);
-        border-radius: clamp(12px, 2vw, 16px);
-        border: 2px solid rgba(124, 77, 255, 0.25);
-        background: rgba(124, 77, 255, 0.08);
-        color: var(--cosmic-purple-light);
-        font-size: clamp(0.95rem, 2.5vw, 1.1rem);
-        font-weight: 700;
-        text-decoration: none;
         transition: all 0.3s;
-        min-height: clamp(48px, 10vw, 60px);
+        min-height: 56px;
     }
-    .result-btn:hover {
+    .btn-result:hover {
         border-color: var(--cosmic-purple-light);
         box-shadow: 0 0 30px rgba(124, 77, 255, 0.15);
         transform: translateY(-2px);
+        color: var(--cosmic-purple-light);
     }
 
-    .wait-box {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: clamp(14px, 3vw, 20px);
-        border-radius: clamp(12px, 2vw, 16px);
-        border: 1px solid rgba(100, 116, 139, 0.15);
+    .btn-wait {
         background: rgba(100, 116, 139, 0.06);
+        border: 1px solid rgba(100, 116, 139, 0.15);
         color: var(--text-dim);
-        font-size: clamp(0.9rem, 2vw, 1rem);
         font-weight: 600;
-        min-height: clamp(48px, 10vw, 60px);
+        font-size: 1rem;
+        padding: 1rem;
+        border-radius: 14px;
+        width: 100%;
+        text-align: center;
+        min-height: 56px;
     }
 
-    /* ============================================
-       LAPTOP: horizontal card layout
-       ============================================ */
-    @media (min-width: 1100px) {
-        .team-card {
-            display: grid;
-            grid-template-columns: 1fr 280px;
-            gap: 24px;
-            align-items: start;
-        }
-        .action-box {
-            margin-top: 0;
-            position: sticky;
-            top: 20px;
-        }
+    .btn-pwd {
+        background: rgba(124, 77, 255, 0.1);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        color: var(--cosmic-purple-light);
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.625rem 1.125rem;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+    .btn-pwd:hover {
+        background: rgba(124, 77, 255, 0.18);
+        border-color: var(--cosmic-purple-light);
     }
 
     /* ============================================
        MODAL
        ============================================ */
-    .modal-bg {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(16px);
-        z-index: 1000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-    .modal-bg.on { display: flex; opacity: 1; }
-    .modal-box {
+    .modal-dark .modal-content {
         background: var(--bg-panel);
         border: 1px solid rgba(100, 120, 200, 0.2);
-        border-radius: clamp(16px, 3vw, 24px);
-        width: 100%;
-        max-width: 440px;
-        padding: clamp(24px, 4vw, 36px);
-        transform: scale(0.92) translateY(20px);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 24px;
         box-shadow: 0 30px 100px rgba(0,0,0,0.6);
     }
-    .modal-bg.on .modal-box { transform: scale(1) translateY(0); }
-
-    .modal-title { text-align: center; margin-bottom: clamp(20px, 3vw, 28px); }
-    .modal-title h3 {
-        font-family: 'Space Grotesk', sans-serif;
-        color: var(--text-primary);
-        font-size: clamp(1.2rem, 3vw, 1.5rem);
-        margin: 0 0 6px 0;
+    .modal-dark .modal-header {
+        border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+        padding: 1.5rem;
     }
-    .modal-title p { color: var(--text-dim); font-size: 0.85rem; margin: 0; }
-
-    .inp-group { margin-bottom: clamp(14px, 2.5vw, 18px); }
-    .inp-label {
-        display: block;
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        margin-bottom: 8px;
-        font-weight: 500;
+    .modal-dark .modal-body {
+        padding: 1.5rem;
     }
-    .inp {
-        width: 100%;
-        padding: clamp(14px, 2.5vw, 18px);
-        border-radius: 14px;
-        border: 2px solid rgba(124, 77, 255, 0.2);
+    .modal-dark .modal-footer {
+        border-top: 1px solid rgba(100, 120, 200, 0.1);
+        padding: 1.25rem 1.5rem;
+    }
+    .modal-dark .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    .form-dark {
         background: rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(124, 77, 255, 0.2);
         color: var(--text-primary);
+        border-radius: 14px;
+        padding: 1rem 1.125rem;
         font-size: 16px;
-        outline: none;
-        transition: all 0.2s;
-        box-sizing: border-box;
     }
-    .inp:focus {
+    .form-dark:focus {
+        background: rgba(0, 0, 0, 0.3);
         border-color: var(--cosmic-purple-light);
+        color: var(--text-primary);
         box-shadow: 0 0 20px rgba(124, 77, 255, 0.12);
     }
-    .inp.err { border-color: var(--lava-red); animation: shake 0.4s ease; }
+    .form-dark::placeholder { color: var(--text-dim); }
 
-    .str-bar {
+    .strength-bar {
         height: 4px;
         border-radius: 2px;
-        margin-top: 10px;
+        margin-top: 8px;
         background: rgba(100, 116, 139, 0.2);
         overflow: hidden;
         display: none;
     }
-    .str-bar.on { display: block; }
-    .str-bar .fill {
+    .strength-bar.show { display: block; }
+    .strength-bar .fill {
         height: 100%;
         border-radius: 2px;
         transition: all 0.3s;
         width: 0;
     }
-    .str-w { background: var(--lava-red); width: 33%; }
-    .str-m { background: var(--gold); width: 66%; }
-    .str-s { background: var(--green); width: 100%; }
-
-    .modal-msg {
-        text-align: center;
-        font-size: 0.9rem;
-        margin-bottom: 14px;
-        min-height: 22px;
-        font-weight: 500;
-    }
-    .modal-msg.ok { color: var(--green-light); }
-    .modal-msg.bad { color: var(--lava-red); }
-
-    .modal-btns { display: flex; gap: 12px; margin-top: clamp(16px, 3vw, 24px); }
-    .modal-btns button { flex: 1; }
-
-    .btn-save {
-        padding: clamp(14px, 2.5vw, 18px);
-        border-radius: 14px;
-        border: 2px solid rgba(34, 197, 94, 0.3);
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
-        color: var(--green-light);
-        font-size: 0.95rem;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-family: 'Inter', sans-serif;
-        min-height: 50px;
-    }
-    .btn-save:hover:not(:disabled) {
-        border-color: var(--green-light);
-        box-shadow: 0 0 24px rgba(34, 197, 94, 0.2);
-    }
-    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .btn-cancel {
-        padding: clamp(14px, 2.5vw, 18px);
-        border-radius: 14px;
-        border: 1px solid rgba(100, 116, 139, 0.2);
-        background: rgba(100, 116, 139, 0.08);
-        color: var(--text-dim);
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-        font-family: 'Inter', sans-serif;
-        min-height: 50px;
-    }
-    .btn-cancel:hover {
-        background: rgba(239, 68, 68, 0.1);
-        color: #fca5a5;
-        border-color: rgba(239, 68, 68, 0.2);
-    }
+    .str-weak { background: var(--lava-red); width: 33%; }
+    .str-medium { background: var(--gold); width: 66%; }
+    .str-strong { background: var(--green); width: 100%; }
 
     /* ============================================
        TOAST
        ============================================ */
-    .toast-box {
+    .toast-container {
         position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2000;
-        width: calc(100% - 24px);
-        max-width: 400px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        pointer-events: none;
+        z-index: 1060;
     }
-    @media (min-width: 640px) {
-        .toast-box {
-            top: 20px; right: 20px; left: auto; bottom: auto;
-            transform: none;
+    @media (max-width: 767px) {
+        .toast-container {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
         }
     }
-    .toast {
+    @media (min-width: 768px) {
+        .toast-container {
+            top: 20px;
+            right: 20px;
+            left: auto;
+            bottom: auto;
+        }
+    }
+    .toast-dark {
         background: linear-gradient(135deg, rgba(12, 16, 32, 0.97), rgba(5, 8, 16, 0.99));
         border: 1px solid rgba(124, 77, 255, 0.25);
-        border-radius: 16px;
-        padding: 14px 18px;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        animation: popin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: auto;
         backdrop-filter: blur(12px);
+        color: var(--text-primary);
     }
-    .toast.good { border-color: rgba(34, 197, 94, 0.3); color: var(--green-light); }
-    .toast.bad { border-color: rgba(255, 42, 0, 0.3); color: #ff6b6b; }
-    @keyframes popin {
-        from { opacity: 0; transform: translateY(16px) scale(0.96); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .toast.out { animation: popout 0.25s ease forwards; }
-    @keyframes popout { to { opacity: 0; transform: translateY(-8px) scale(0.96); } }
+    .toast-dark.success { border-color: rgba(34, 197, 94, 0.3); color: var(--green-light); }
+    .toast-dark.error { border-color: rgba(255, 42, 0, 0.3); color: #ff6b6b; }
 
     /* ============================================
        EMPTY STATE
        ============================================ */
-    .empty-box {
+    .empty-state {
         text-align: center;
-        padding: clamp(50px, 10vw, 100px) 24px;
+        padding: 80px 24px;
         background: var(--bg-panel);
-        border-radius: clamp(16px, 3vw, 24px);
+        border-radius: 24px;
         border: 1px solid rgba(100, 120, 200, 0.1);
     }
-    .empty-box .icon {
-        font-size: clamp(3.5rem, 8vw, 5rem);
-        margin-bottom: 20px;
+    .empty-state .icon {
+        font-size: 5rem;
+        margin-bottom: 24px;
         opacity: 0.25;
         animation: bob 3s ease-in-out infinite;
     }
-    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-    .empty-box h3 {
-        color: var(--text-secondary);
-        margin-bottom: 10px;
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: clamp(1.2rem, 3vw, 1.5rem);
+    @keyframes bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
     }
-    .empty-box p {
+    .empty-state h3 {
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.5rem;
+    }
+    .empty-state p {
         color: var(--text-dim);
-        font-size: clamp(0.9rem, 2vw, 1rem);
-        line-height: 1.7;
+        font-size: 1rem;
         max-width: 400px;
         margin: 0 auto;
     }
+
+    /* Spinner */
+    .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.15em; }
 </style>
 
-<!-- Toast -->
-<div class="toast-box" id="toastBox"></div>
+<!-- Toast Container -->
+<div class="toast-container" id="toastBox"></div>
 
-<div class="dash-wrap">
+<div class="container-fluid px-3 px-md-4 py-4">
     <!-- Header -->
-    <div class="dash-head">
-        <h1><span>⚡</span> My Teams</h1>
-        <button type="button" class="head-btn" onclick="openPwd()">
-            <span>🔒</span>
-            <span class="txt">Change Password</span>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="m-0" style="font-family:'Space Grotesk',sans-serif;font-size:clamp(1.4rem,4vw,1.8rem);font-weight:700;">
+            <span class="me-2">⚡</span>My Teams
+        </h1>
+        <button type="button" class="btn btn-pwd" data-bs-toggle="modal" data-bs-target="#pwdModal">
+            <span class="d-none d-sm-inline">🔒 Change Password</span>
+            <span class="d-sm-none">🔒</span>
         </button>
     </div>
 
     <!-- Password Modal -->
-    <div class="modal-bg" id="pwdModal">
-        <div class="modal-box">
-            <div class="modal-title">
-                <h3>🔒 Change Password</h3>
-                <p>Secure your account</p>
-            </div>
-            <div class="modal-msg" id="pwdMsg"></div>
-            <div class="inp-group">
-                <label class="inp-label">New Password</label>
-                <input type="password" id="pwdNew" class="inp" placeholder="Min. 6 characters" oninput="checkStr()">
-                <div class="str-bar" id="strBar"><div class="fill" id="strFill"></div></div>
-            </div>
-            <div class="inp-group">
-                <label class="inp-label">Confirm Password</label>
-                <input type="password" id="pwdConfirm" class="inp" placeholder="Re-enter password">
-            </div>
-            <div class="modal-btns">
-                <button class="btn-save" onclick="savePwd()" id="pwdBtn">Save Changes</button>
-                <button class="btn-cancel" onclick="closePwd()">Cancel</button>
+    <div class="modal fade modal-dark" id="pwdModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="font-family:'Space Grotesk',sans-serif;color:var(--text-primary);">
+                        🔒 Change Password
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3" id="pwdMsg" style="min-height:24px;font-size:0.9rem;font-weight:500;"></div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color:var(--text-secondary);font-size:0.85rem;">New Password</label>
+                        <input type="password" id="pwdNew" class="form-control form-dark" placeholder="Min. 6 characters" oninput="checkStr()">
+                        <div class="strength-bar" id="strBar"><div class="fill" id="strFill"></div></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color:var(--text-secondary);font-size:0.85rem;">Confirm Password</label>
+                        <input type="password" id="pwdConfirm" class="form-control form-dark" placeholder="Re-enter password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background:rgba(100,116,139,0.1);border-color:rgba(100,116,139,0.2);color:var(--text-dim);">Cancel</button>
+                    <button type="button" class="btn btn-enter" onclick="savePwd()" id="pwdBtn" style="width:auto;padding:0.75rem 1.5rem;font-size:0.9rem;min-height:auto;">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="pwdSpin"></span>
+                        Save Changes
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     {% if teams %}
-    <div class="team-grid">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
         {% for team in teams %}
-        <div class="team-card">
-            <div class="team-info">
-                <div class="league-name">{{ team.league_name }}</div>
+        <div class="col">
+            <div class="auction-card">
+                <!-- League & Name -->
+                <div class="league-tag">{{ team.league_name }}</div>
                 <div class="team-name">{{ team.team_name }}</div>
-                
-                <div class="status-row">
+
+                <!-- Status Row -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
                     {% if team.auction_status == 'live' %}
-                    <span class="pill pill-live"><span class="dot"></span> LIVE</span>
+                    <span class="status-pill status-live"><span class="dot"></span> LIVE</span>
                     {% elif team.auction_status == 'paused' %}
-                    <span class="pill pill-paused">⏸ PAUSED</span>
+                    <span class="status-pill status-paused">⏸ PAUSED</span>
                     {% elif team.auction_status == 'completed' %}
-                    <span class="pill pill-completed">✓ COMPLETED</span>
+                    <span class="status-pill status-completed">✓ COMPLETED</span>
                     {% else %}
-                    <span class="pill pill-pending">○ PENDING</span>
+                    <span class="status-pill status-pending">○ PENDING</span>
                     {% endif %}
-                    
+
                     {% if team.your_sessions_count %}
-                    <span class="pill pill-ok">✅ {{ team.your_sessions_count }} Session{{ 's' if team.your_sessions_count > 1 else '' }}</span>
+                    <span class="status-pill session-ok">✅ {{ team.your_sessions_count }} Session{{ 's' if team.your_sessions_count > 1 else '' }}</span>
                     {% else %}
-                    <span class="pill pill-warn">⏳ Not Allocated</span>
+                    <span class="status-pill session-warn">⏳ Not Allocated</span>
                     {% endif %}
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="num" style="color: var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
-                        <div class="lbl">Available</div>
+                <!-- Stats -->
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <div class="num" style="color:var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
+                            <div class="lbl">Available</div>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <div class="num" style="color: var(--ice-blue);">{{ team.squad_count }}</div>
-                        <div class="lbl">Squad</div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <div class="num" style="color:var(--ice-blue);">{{ team.squad_count }}</div>
+                            <div class="lbl">Squad</div>
+                        </div>
                     </div>
-                    <div class="stat-item">
-                        <div class="num" style="color: var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
-                        <div class="lbl">Purse</div>
+                    <div class="col-4">
+                        <div class="stat-box">
+                            <div class="num" style="color:var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
+                            <div class="lbl">Purse</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="cat-row">
-                    <span class="cat-pill">🏏 {{ team.batsmen }} Batsmen</span>
-                    <span class="cat-pill">🎯 {{ team.bowlers }} Bowlers</span>
-                    <span class="cat-pill">⚡ {{ team.all_rounders }} All-Rounders</span>
-                    <span class="cat-pill">🧤 {{ team.wicket_keepers }} Keepers</span>
-                    <span class="cat-pill">🌍 {{ team.overseas }} Overseas</span>
+                <!-- Categories -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="cat-tag">🏏 {{ team.batsmen }} Batsmen</span>
+                    <span class="cat-tag">🎯 {{ team.bowlers }} Bowlers</span>
+                    <span class="cat-tag">⚡ {{ team.all_rounders }} All-Rounders</span>
+                    <span class="cat-tag">🧤 {{ team.wicket_keepers }} Keepers</span>
+                    <span class="cat-tag">🌍 {{ team.overseas }} Overseas</span>
                 </div>
-            </div>
 
-            <div class="action-box">
-                {% if team.auction_status in ['live', 'paused'] %}
-                <div class="aid-label">
-                    <span>🔑</span>
-                    <span>Auction ID: <strong>{{ team.auction_id }}</strong></span>
+                <!-- Action -->
+                <div class="action-box">
+                    {% if team.auction_status in ['live', 'paused'] %}
+                    <div class="aid-label">
+                        <span class="me-1">🔑</span>Auction ID: <strong class="ms-1">{{ team.auction_id }}</strong>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                        <input 
+                            type="tel" 
+                            class="form-control aid-input" 
+                            id="aid-{{ team.auction_id }}"
+                            placeholder="Enter Auction ID"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            autocomplete="off"
+                            onkeypress="if(event.key==='Enter')goAuction({{ team.auction_id }})"
+                        >
+                        <button type="button" class="copy-btn" onclick="copyId({{ team.auction_id }}, this)" title="Copy">📋</button>
+                    </div>
+                    <div class="aid-err" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
+                    <button type="button" class="btn-enter" id="btn-{{ team.auction_id }}" onclick="goAuction({{ team.auction_id }})">
+                        <span class="spinner-border spinner-border-sm me-2 d-none" id="spin-{{ team.auction_id }}"></span>
+                        <span>🚀 Enter Auction Room</span>
+                    </button>
+                    {% elif team.auction_status == 'completed' %}
+                    <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="btn-result">
+                        📊 View Results
+                    </a>
+                    {% else %}
+                    <div class="btn-wait">⏳ Auction Not Started</div>
+                    {% endif %}
                 </div>
-                <div class="aid-input-wrap">
-                    <input 
-                        type="tel" 
-                        class="aid-input" 
-                        id="aid-{{ team.auction_id }}"
-                        placeholder="Enter Auction ID"
-                        inputmode="numeric"
-                        pattern="[0-9]*"
-                        autocomplete="off"
-                        onkeypress="if(event.key==='Enter')goAuction({{ team.auction_id }})"
-                    >
-                    <button class="copy-btn" onclick="copyId({{ team.auction_id }}, this)" title="Copy">📋</button>
-                </div>
-                <div class="aid-err" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
-                <button class="big-btn" id="btn-{{ team.auction_id }}" onclick="goAuction({{ team.auction_id }})">
-                    <span class="spin"></span>
-                    <span class="bt">🚀 Enter Auction Room</span>
-                </button>
-                {% elif team.auction_status == 'completed' %}
-                <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="result-btn">
-                    📊 View Results
-                </a>
-                {% else %}
-                <div class="wait-box">⏳ Auction Not Started</div>
-                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty-box">
+    <div class="empty-state">
         <div class="icon">🏏</div>
         <h3>No Teams Assigned</h3>
         <p>You don't own any teams in active auctions. Contact your league administrator to get started.</p>
@@ -782,17 +612,25 @@
     {% endif %}
 </div>
 
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-function toast(msg, type='good', t=3000) {
+// Toast
+function toast(msg, type='success', t=3000) {
     const box = document.getElementById('toastBox');
     const el = document.createElement('div');
-    el.className = 'toast ' + type;
-    const icon = type==='good'?'✅':type==='bad'?'❌':'ℹ️';
-    el.innerHTML = '<span>'+icon+'</span><span>'+msg+'</span>';
+    el.className = 'toast toast-dark ' + type + ' align-items-center';
+    el.setAttribute('role', 'alert');
+    const icon = type==='success'?'✅':type==='error'?'❌':'ℹ️';
+    el.innerHTML = '<div class="d-flex"><div class="toast-body"><span class="me-2">'+icon+'</span>'+msg+'</div></div>';
     box.appendChild(el);
-    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),250); }, t);
+    const bsToast = new bootstrap.Toast(el, { delay: t });
+    bsToast.show();
+    el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
+// Copy
 function copyId(id, btn) {
     navigator.clipboard.writeText(String(id)).then(()=>{
         btn.classList.add('copied'); btn.innerHTML='✓';
@@ -805,16 +643,18 @@ function copyId(id, btn) {
     });
 }
 
+// Enter Auction
 function goAuction(expectedId) {
     const inp = document.getElementById('aid-'+expectedId);
     const btn = document.getElementById('btn-'+expectedId);
+    const spin = document.getElementById('spin-'+expectedId);
     const err = document.getElementById('err-'+expectedId);
     const val = inp.value.trim();
     
     err.classList.remove('show');
     inp.classList.remove('err');
-    btn.classList.add('loading');
     btn.disabled = true;
+    spin.classList.remove('d-none');
     
     setTimeout(()=>{
         if(val === String(expectedId)) {
@@ -824,62 +664,45 @@ function goAuction(expectedId) {
             err.classList.add('show');
             inp.classList.add('err');
             inp.value=''; inp.focus();
-            btn.classList.remove('loading');
             btn.disabled = false;
-            toast('Wrong Auction ID', 'bad');
+            spin.classList.add('d-none');
+            toast('Wrong Auction ID', 'error');
         }
-    }, 250);
+    }, 300);
 }
 
-function openPwd() {
-    document.getElementById('pwdModal').classList.add('on');
-    document.getElementById('pwdNew').focus();
-    document.body.style.overflow='hidden';
-}
-function closePwd() {
-    document.getElementById('pwdModal').classList.remove('on');
-    document.getElementById('pwdNew').value='';
-    document.getElementById('pwdConfirm').value='';
-    document.getElementById('pwdNew').classList.remove('err');
-    document.getElementById('pwdConfirm').classList.remove('err');
-    document.getElementById('pwdMsg').textContent='';
-    document.getElementById('pwdMsg').className='modal-msg';
-    document.getElementById('pwdBtn').disabled=false;
-    document.body.style.overflow='';
-    document.getElementById('strBar').classList.remove('on');
-    document.getElementById('strFill').className='fill';
-}
-
+// Password strength
 function checkStr() {
     const pwd = document.getElementById('pwdNew').value;
     const bar = document.getElementById('strBar');
     const fill = document.getElementById('strFill');
-    if(!pwd){ bar.classList.remove('on'); return; }
-    bar.classList.add('on');
+    if(!pwd){ bar.classList.remove('show'); return; }
+    bar.classList.add('show');
     let s=0;
     if(pwd.length>=6)s++; if(pwd.length>=10)s++;
     if(/[A-Z]/.test(pwd))s++; if(/[0-9]/.test(pwd))s++; if(/[^A-Za-z0-9]/.test(pwd))s++;
-    fill.className='fill '+(s<=2?'str-w':s<=3?'str-m':'str-s');
+    fill.className='fill '+(s<=2?'str-weak':s<=3?'str-medium':'str-strong');
 }
 
 async function savePwd() {
     const btn = document.getElementById('pwdBtn');
+    const spin = document.getElementById('pwdSpin');
     const msg = document.getElementById('pwdMsg');
     const n = document.getElementById('pwdNew').value.trim();
     const c = document.getElementById('pwdConfirm').value.trim();
     const ni = document.getElementById('pwdNew');
     const ci = document.getElementById('pwdConfirm');
     
-    msg.textContent=''; msg.className='modal-msg';
+    msg.textContent=''; msg.className='';
     ni.classList.remove('err'); ci.classList.remove('err');
     
     let bad=false;
-    if(!n || n.length<6){ msg.textContent='❌ Min 6 chars'; msg.classList.add('bad'); ni.classList.add('err'); bad=true; }
-    if(!c){ if(!bad){ msg.textContent='❌ Confirm password'; msg.classList.add('bad'); } ci.classList.add('err'); bad=true; }
-    if(n && c && n!==c){ msg.textContent='❌ Passwords mismatch'; msg.classList.add('bad'); ni.classList.add('err'); ci.classList.add('err'); bad=true; }
+    if(!n || n.length<6){ msg.textContent='❌ Min 6 chars'; msg.style.color='var(--lava-red)'; ni.classList.add('err'); bad=true; }
+    if(!c){ if(!bad){ msg.textContent='❌ Confirm password'; msg.style.color='var(--lava-red)'; } ci.classList.add('err'); bad=true; }
+    if(n && c && n!==c){ msg.textContent='❌ Passwords mismatch'; msg.style.color='var(--lava-red)'; ni.classList.add('err'); ci.classList.add('err'); bad=true; }
     if(bad) return;
     
-    btn.disabled=true;
+    btn.disabled=true; spin.classList.remove('d-none');
     try{
         const r = await fetch('/team-owner/change-password', {
             method:'POST', headers:{'Content-Type':'application/json'},
@@ -887,20 +710,17 @@ async function savePwd() {
         });
         const d = await r.json();
         if(d.success){
-            msg.textContent='✅ '+d.message; msg.classList.add('ok');
-            toast('Password changed!','good'); setTimeout(closePwd,1500);
+            msg.textContent='✅ '+d.message; msg.style.color='var(--green-light)';
+            toast('Password changed!','success');
+            setTimeout(()=>{ bootstrap.Modal.getInstance(document.getElementById('pwdModal')).hide(); }, 1500);
         } else {
-            msg.textContent='❌ '+(d.message||'Failed'); msg.classList.add('bad');
-            btn.disabled=false;
+            msg.textContent='❌ '+(d.message||'Failed'); msg.style.color='var(--lava-red)';
+            btn.disabled=false; spin.classList.add('d-none');
         }
     } catch(e){
-        msg.textContent='❌ Network error'; msg.classList.add('bad');
-        btn.disabled=false;
+        msg.textContent='❌ Network error'; msg.style.color='var(--lava-red)';
+        btn.disabled=false; spin.classList.add('d-none');
     }
 }
-
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePwd(); });
-document.getElementById('pwdModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closePwd(); });
-document.getElementById('pwdConfirm').addEventListener('keypress', e=>{ if(e.key==='Enter'){ e.preventDefault(); savePwd(); }});
 </script>
 {% endblock %}
