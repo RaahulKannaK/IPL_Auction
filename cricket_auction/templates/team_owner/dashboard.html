@@ -107,23 +107,20 @@
     .es h3 { color: var(--ts); margin-bottom: 8px; font-family: 'Space Grotesk'; }
     .es p { color: var(--td); font-size: 0.9rem; }
 
-    /* Password modal styles */
     .pwd-input {
         width: 100%; padding: 12px 14px; border-radius: 10px;
         border: 1px solid rgba(124,77,255,0.25);
         background: rgba(0,0,0,0.3); color: var(--tp);
         font-family: 'Inter'; font-size: 0.9rem;
         outline: none; margin-bottom: 12px;
-        transition: all 0.2s;
     }
     .pwd-input:focus { border-color: var(--cp-l); box-shadow: 0 0 12px rgba(124,77,255,0.15); }
     .pwd-input::placeholder { color: var(--td); }
     .pwd-input.err { border-color: #ff2a00; animation: sh 0.4s; }
 
-    .pwd-success { color: #4ade80 !important; }
-    .pwd-msg {
-        font-size: 0.8rem; text-align: center;
-        margin-bottom: 12px; display: none;
+    .pwd-label {
+        font-size: 0.8rem; color: var(--ts);
+        margin-bottom: 6px; display: block;
     }
 
     .header-row {
@@ -142,19 +139,19 @@
 
 <!-- Change Password Modal -->
 <div id="pwdModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
-    <div class="gp" style="width:90%; max-width:420px; padding:32px; position:relative;">
-        <button onclick="closePwdModal()" style="position:absolute; top:12px; right:16px; background:none; border:none; color:var(--td); font-size:1.4rem; cursor:pointer;">&times;</button>
+    <div class="gp" style="width:90%; max-width:380px; padding:28px;">
+        <h3 style="font-family:'Space Grotesk'; color:var(--tp); margin-bottom:20px; text-align:center; font-size:1.2rem;">🔒 Change Password</h3>
         
-        <h3 style="font-family:'Space Grotesk'; color:var(--tp); margin-bottom:24px; text-align:center; font-size:1.3rem;">🔒 Change Password</h3>
+        <label class="pwd-label">New Password</label>
+        <input type="password" id="pwdNew" class="pwd-input" placeholder="Enter new password">
         
-        <input type="password" id="pwdCurrent" class="pwd-input" placeholder="Current Password" autocomplete="current-password">
-        <input type="password" id="pwdNew" class="pwd-input" placeholder="New Password (min 6 characters)" autocomplete="new-password">
-        <input type="password" id="pwdConfirm" class="pwd-input" placeholder="Confirm New Password" autocomplete="new-password">
+        <label class="pwd-label">Confirm New Password</label>
+        <input type="password" id="pwdConfirm" class="pwd-input" placeholder="Re-enter new password">
         
-        <div id="pwdMsg" class="pwd-msg aerr"></div>
+        <div id="pwdMsg" style="color:#ff2a00; font-size:0.8rem; text-align:center; margin-bottom:12px; display:none;"></div>
         
         <div style="display:flex; gap:10px;">
-            <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Update Password</button>
+            <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Save</button>
             <button type="button" class="ab ab-d" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
         </div>
     </div>
@@ -226,7 +223,6 @@
 </div>
 
 <script>
-// Auction ID entry
 function eA(expectedId) {
     const input = document.getElementById('aid-' + expectedId);
     const btn = document.getElementById('btn-' + expectedId);
@@ -248,47 +244,37 @@ function eA(expectedId) {
     }
 }
 
-// Change Password Modal
 function openPwdModal() {
     document.getElementById('pwdModal').style.display = 'flex';
-    document.getElementById('pwdCurrent').focus();
+    document.getElementById('pwdNew').focus();
 }
 
 function closePwdModal() {
     document.getElementById('pwdModal').style.display = 'none';
-    document.getElementById('pwdCurrent').value = '';
     document.getElementById('pwdNew').value = '';
     document.getElementById('pwdConfirm').value = '';
     const msg = document.getElementById('pwdMsg');
     msg.style.display = 'none';
     msg.textContent = '';
-    msg.classList.remove('pwd-success');
     document.getElementById('pwdSubmitBtn').disabled = false;
-    ['pwdCurrent','pwdNew','pwdConfirm'].forEach(id => {
-        document.getElementById(id).classList.remove('err');
-    });
+    document.getElementById('pwdNew').classList.remove('err');
+    document.getElementById('pwdConfirm').classList.remove('err');
 }
 
 async function submitPwd() {
     const btn = document.getElementById('pwdSubmitBtn');
     const msg = document.getElementById('pwdMsg');
-    const current = document.getElementById('pwdCurrent').value;
-    const newPwd = document.getElementById('pwdNew').value;
-    const confirm = document.getElementById('pwdConfirm').value;
+    const newPwd = document.getElementById('pwdNew').value.trim();
+    const confirm = document.getElementById('pwdConfirm').value.trim();
     
-    // Reset states
     btn.disabled = true;
     msg.style.display = 'none';
-    msg.classList.remove('pwd-success');
-    ['pwdCurrent','pwdNew','pwdConfirm'].forEach(id => {
-        document.getElementById(id).classList.remove('err');
-    });
+    document.getElementById('pwdNew').classList.remove('err');
+    document.getElementById('pwdConfirm').classList.remove('err');
     
-    // Client-side validation
-    if (!current || !newPwd || !confirm) {
-        msg.textContent = '❌ All fields are required';
+    if (!newPwd || !confirm) {
+        msg.textContent = '❌ Both fields are required';
         msg.style.display = 'block';
-        if (!current) document.getElementById('pwdCurrent').classList.add('err');
         if (!newPwd) document.getElementById('pwdNew').classList.add('err');
         if (!confirm) document.getElementById('pwdConfirm').classList.add('err');
         btn.disabled = false;
@@ -296,18 +282,10 @@ async function submitPwd() {
     }
     
     if (newPwd !== confirm) {
-        msg.textContent = '❌ New passwords do not match';
+        msg.textContent = '❌ Passwords do not match';
         msg.style.display = 'block';
         document.getElementById('pwdNew').classList.add('err');
         document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false;
-        return;
-    }
-    
-    if (newPwd.length < 6) {
-        msg.textContent = '❌ Password must be at least 6 characters';
-        msg.style.display = 'block';
-        document.getElementById('pwdNew').classList.add('err');
         btn.disabled = false;
         return;
     }
@@ -316,46 +294,32 @@ async function submitPwd() {
         const res = await fetch('/team-owner/change-password', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                current_password: current,
-                new_password: newPwd,
-                confirm_password: confirm
-            })
+            body: JSON.stringify({new_password: newPwd, confirm_password: confirm})
         });
         const data = await res.json();
         
         if (data.success) {
-            msg.classList.add('pwd-success');
+            msg.style.color = '#4ade80';
             msg.textContent = '✅ ' + data.message;
             msg.style.display = 'block';
-            setTimeout(closePwdModal, 1500);
+            setTimeout(closePwdModal, 1200);
         } else {
+            msg.style.color = '#ff2a00';
             msg.textContent = '❌ ' + data.message;
             msg.style.display = 'block';
-            if (data.message.toLowerCase().includes('current')) {
-                document.getElementById('pwdCurrent').classList.add('err');
-            } else if (data.message.toLowerCase().includes('match')) {
-                document.getElementById('pwdNew').classList.add('err');
-                document.getElementById('pwdConfirm').classList.add('err');
-            }
             btn.disabled = false;
         }
     } catch (e) {
-        msg.textContent = '❌ Network error. Please try again.';
+        msg.style.color = '#ff2a00';
+        msg.textContent = '❌ Something went wrong';
         msg.style.display = 'block';
         btn.disabled = false;
     }
 }
 
-// Allow Enter key to submit
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closePwdModal();
-    if (e.key === 'Enter' && document.getElementById('pwdModal').style.display === 'flex') {
-        submitPwd();
-    }
 });
-
-// Close modal on backdrop click
 document.getElementById('pwdModal').addEventListener('click', function(e) {
     if (e.target === this) closePwdModal();
 });

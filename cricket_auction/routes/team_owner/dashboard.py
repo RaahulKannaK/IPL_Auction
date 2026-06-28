@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, session, flash, redirect, jsonify, request
 from database.db import get_db, get_cached, clear_cache, db_transaction
-from werkzeug.security import generate_password_hash, check_password_hash
 import json
 
 bp = Blueprint('team_owner_dashboard', __name__, url_prefix='/team-owner')
@@ -444,40 +443,26 @@ def exit_auction():
 
 @bp.route('/change-password', methods=['POST'])
 def change_password():
-    """Team owner changes their own password."""
+    """Team owner changes their own password — stored as plain text."""
     if session.get('role') != 'team_owner':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     data = request.get_json() or {}
-    current = data.get('current_password', '').strip()
     new_pwd = data.get('new_password', '').strip()
     confirm = data.get('confirm_password', '').strip()
     
-    if not current or not new_pwd or not confirm:
-        return jsonify({'success': False, 'message': 'All fields are required'}), 400
+    if not new_pwd or not confirm:
+        return jsonify({'success': False, 'message': 'Both fields are required'}), 400
     
     if new_pwd != confirm:
-        return jsonify({'success': False, 'message': 'New passwords do not match'}), 400
-    
-    if len(new_pwd) < 6:
-        return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
+        return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
     
     user_id = session['user_id']
     
     with db_transaction() as cursor:
-        cursor.execute("SELECT password_hash FROM users WHERE id = %s", (user_id,))
-        row = cursor.fetchone()
-        
-        if not row:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-        
-        if not check_password_hash(row['password_hash'], current):
-            return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
-        
-        new_hash = generate_password_hash(new_pwd)
         cursor.execute(
             "UPDATE users SET password_hash = %s WHERE id = %s",
-            (new_hash, user_id)
+            (new_pwd, user_id)
         )
     
-    return jsonify({'success': True, 'message': 'Password updated successfully'})
+    return jsonify({'success': True, 'message': 'Password saved'})
