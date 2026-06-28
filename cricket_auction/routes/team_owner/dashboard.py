@@ -453,9 +453,8 @@ def change_password():
     new_pwd = data.get('new_password', '').strip()
     confirm = data.get('confirm_password', '').strip()
     
-    # Validation
     if not current or not new_pwd or not confirm:
-        return jsonify({'success': False, 'message': 'All fields required'}), 400
+        return jsonify({'success': False, 'message': 'All fields are required'}), 400
     
     if new_pwd != confirm:
         return jsonify({'success': False, 'message': 'New passwords do not match'}), 400
@@ -472,11 +471,9 @@ def change_password():
         if not row:
             return jsonify({'success': False, 'message': 'User not found'}), 404
         
-        # Verify current password
         if not check_password_hash(row['password_hash'], current):
             return jsonify({'success': False, 'message': 'Current password is incorrect'}), 400
         
-        # Update password
         new_hash = generate_password_hash(new_pwd)
         cursor.execute(
             "UPDATE users SET password_hash = %s WHERE id = %s",
