@@ -13,13 +13,35 @@
         --tp: #e8f0ff; --ts: #a0b0d0; --td: #7080a0;
     }
 
+    /* ===== CRITICAL: Override base.html container padding for this page ===== */
+    .dash-override {
+        margin: -16px;
+        padding: 16px;
+        width: calc(100% + 32px);
+        min-height: calc(100vh - 60px);
+    }
+    @media (min-width: 768px) {
+        .dash-override {
+            margin: -24px;
+            padding: 24px;
+            width: calc(100% + 48px);
+        }
+    }
+    @media (min-width: 1200px) {
+        .dash-override {
+            margin: -30px;
+            padding: 30px;
+            width: calc(100% + 60px);
+        }
+    }
+
     /* ===== HEADER ===== */
     .dash-head {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
     }
     .dash-head h1 {
-        font-family: 'Space Grotesk'; font-size: 1.6rem; color: var(--tp); margin: 0;
+        font-family: 'Space Grotesk'; font-size: 1.5rem; color: var(--tp); margin: 0;
     }
     @media (min-width: 768px) { .dash-head h1 { font-size: 1.8rem; } }
 
@@ -32,105 +54,173 @@
     }
     .head-btn:hover { background: rgba(124,77,255,0.18); border-color: var(--cp-l); }
 
-    /* ===== CARD ===== */
-    .gp {
+    /* ===== CARD — FULL WIDTH ON MOBILE ===== */
+    .team-card {
         background: var(--bg-p); backdrop-filter: blur(24px);
-        border: 1px solid rgba(100,120,200,0.12); border-radius: 20px;
-        padding: 24px 20px; position: relative; overflow: hidden;
+        border: 1px solid rgba(100,120,200,0.12);
+        border-radius: 20px;
+        padding: 24px 20px;
+        position: relative; overflow: hidden;
+        width: 100%;
     }
-    .gp::before {
+    .team-card::before {
         content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
         background: linear-gradient(90deg, transparent, rgba(124,77,255,0.5), rgba(0,212,255,0.4), rgba(247,181,0,0.4), transparent);
     }
-    @media (min-width: 768px) { .gp { padding: 28px; } }
+    @media (min-width: 768px) { .team-card { padding: 28px; border-radius: 24px; } }
 
     /* ===== GRID ===== */
-    .tg {
-        display: grid; grid-template-columns: 1fr; gap: 16px;
+    .team-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
-    @media (min-width: 768px) { .tg { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
-    @media (min-width: 1200px) { .tg { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 768px) {
+        .team-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    }
+    @media (min-width: 1200px) {
+        .team-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    }
 
     /* ===== CARD CONTENT ===== */
-    .tc { display: flex; flex-direction: column; gap: 14px; }
-    .tc .lg { font-size: 0.8rem; color: var(--td); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
-    .tc .nm { font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700; color: var(--tp); line-height: 1.2; }
-    @media (min-width: 768px) { .tc .nm { font-size: 1.4rem; } }
+    .card-body { display: flex; flex-direction: column; gap: 14px; }
+    .league-name {
+        font-size: 0.75rem; color: var(--td); text-transform: uppercase;
+        letter-spacing: 2px; font-weight: 700;
+    }
+    .team-name {
+        font-family: 'Space Grotesk'; font-size: 1.6rem; font-weight: 700;
+        color: var(--tp); line-height: 1.2;
+    }
+    @media (min-width: 768px) { .team-name { font-size: 1.5rem; } }
 
     /* ===== STATUS ===== */
-    .st {
+    .status-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;
-        padding: 5px 12px; border-radius: 30px; width: fit-content;
+        padding: 6px 14px; border-radius: 30px; width: fit-content;
     }
-    .st-live { background: rgba(34,197,94,0.15); color: var(--g); border: 1px solid rgba(34,197,94,0.3); box-shadow: 0 0 12px rgba(34,197,94,0.1); }
-    .st-live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--g); box-shadow: 0 0 8px var(--g); animation: pulse 2s infinite; }
-    .st-paused { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-    .st-pending { background: rgba(100,116,139,0.12); color: var(--td); border: 1px solid rgba(100,116,139,0.2); }
-    .st-completed { background: rgba(124,77,255,0.12); color: var(--cp-l); border: 1px solid rgba(124,77,255,0.25); }
+    .pill-live {
+        background: rgba(34,197,94,0.15); color: var(--g);
+        border: 1px solid rgba(34,197,94,0.3);
+        box-shadow: 0 0 12px rgba(34,197,94,0.1);
+    }
+    .pill-live::before {
+        content: ''; width: 7px; height: 7px; border-radius: 50%;
+        background: var(--g); box-shadow: 0 0 8px var(--g);
+        animation: pulse 2s infinite;
+    }
+    .pill-paused { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .pill-pending { background: rgba(100,116,139,0.12); color: var(--td); border: 1px solid rgba(100,116,139,0.2); }
+    .pill-completed { background: rgba(124,77,255,0.12); color: var(--cp-l); border: 1px solid rgba(124,77,255,0.25); }
+    .pill-ok { background: rgba(34,197,94,0.1); color: var(--g-l); border: 1px solid rgba(34,197,94,0.2); }
+    .pill-warn { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 
-    .si { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; }
-    .si-ok { background: rgba(34,197,94,0.1); color: var(--g); border: 1px solid rgba(34,197,94,0.2); }
-    .si-warn { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
-
-    /* ===== STATS ===== */
-    .sr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0; }
-    .sm { text-align: center; padding: 16px 8px; background: rgba(0,0,0,0.25); border-radius: 14px; border: 1px solid rgba(100,120,200,0.06); }
-    .sm .v { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; }
-    .sm .l { font-size: 0.65rem; color: var(--td); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 600; }
-    @media (min-width: 768px) { .sm { padding: 14px 8px; } .sm .v { font-size: 1.2rem; } }
+    /* ===== STATS — ALWAYS 3 COLUMNS, NEVER STACK ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 8px 0;
+    }
+    .stat-box {
+        text-align: center; padding: 18px 10px;
+        background: rgba(0,0,0,0.25); border-radius: 16px;
+        border: 1px solid rgba(100,120,200,0.06);
+    }
+    .stat-box .num {
+        font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .stat-box .lbl {
+        font-size: 0.65rem; color: var(--td); text-transform: uppercase;
+        letter-spacing: 1px; font-weight: 600;
+    }
+    @media (min-width: 768px) {
+        .stat-box { padding: 16px 10px; }
+        .stat-box .num { font-size: 1.3rem; }
+    }
 
     /* ===== CATEGORIES ===== */
-    .ct { display: flex; flex-wrap: wrap; gap: 8px; }
-    .ct span { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(124,77,255,0.08); color: var(--cp-l); border: 1px solid rgba(124,77,255,0.15); white-space: nowrap; }
-    @media (min-width: 768px) { .ct span { font-size: 0.75rem; padding: 4px 10px; } }
+    .cat-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cat-tag {
+        padding: 6px 14px; border-radius: 20px;
+        font-size: 0.85rem; font-weight: 600;
+        background: rgba(124,77,255,0.08); color: var(--cp-l);
+        border: 1px solid rgba(124,77,255,0.15); white-space: nowrap;
+    }
+    @media (min-width: 768px) { .cat-tag { font-size: 0.8rem; padding: 5px 12px; } }
 
-    /* ===== AUCTION ENTRY ===== */
-    .ae { font-size: 0.85rem; color: var(--td); text-align: center; margin-bottom: 10px; }
-    .ae strong { color: var(--cp-l); font-family: 'JetBrains Mono'; }
+    /* ===== ACTION SECTION ===== */
+    .action-box {
+        background: rgba(0,0,0,0.2); border-radius: 16px;
+        padding: 20px; border: 1px solid rgba(100,120,200,0.08);
+        margin-top: auto;
+    }
+    @media (min-width: 768px) { .action-box { padding: 24px; } }
+
+    .aid-label {
+        font-size: 0.9rem; color: var(--ts); text-align: center; margin-bottom: 12px;
+    }
+    .aid-label strong { color: var(--cp-l); font-family: 'JetBrains Mono'; font-size: 1.1rem; }
 
     .aid-wrap { display: flex; gap: 10px; margin-bottom: 10px; }
-    .aid {
-        flex: 1; padding: 14px 16px; border-radius: 12px;
+    .aid-input {
+        flex: 1; padding: 16px 18px; border-radius: 14px;
         border: 2px solid rgba(124,77,255,0.2); background: rgba(0,0,0,0.3);
-        color: var(--tp); font-family: 'JetBrains Mono'; font-size: 1.1rem;
-        letter-spacing: 2px; text-align: center; outline: none; -webkit-appearance: none;
+        color: var(--tp); font-family: 'JetBrains Mono'; font-size: 1.2rem;
+        letter-spacing: 2px; text-align: center; outline: none;
+        -webkit-appearance: none;
     }
-    .aid:focus { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.15); }
-    .aid::placeholder { color: var(--td); font-family: 'Inter'; letter-spacing: normal; font-size: 0.9rem; }
-    .aid.err { border-color: #ff2a00; animation: sh 0.4s; }
-    @keyframes sh { 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+    .aid-input:focus { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.15); }
+    .aid-input::placeholder { color: var(--td); font-family: 'Inter'; letter-spacing: normal; font-size: 0.9rem; }
+    .aid-input.err { border-color: #ff2a00; animation: shake 0.4s; }
+    @keyframes shake { 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
     .copy-btn {
-        padding: 14px 16px; border-radius: 12px; border: 2px solid rgba(124,77,255,0.2);
-        background: rgba(124,77,255,0.08); color: var(--cp-l); cursor: pointer;
-        font-size: 1.1rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
-        min-width: 52px; flex-shrink: 0;
+        padding: 16px; border-radius: 14px;
+        border: 2px solid rgba(124,77,255,0.2);
+        background: rgba(124,77,255,0.08); color: var(--cp-l);
+        cursor: pointer; font-size: 1.2rem; transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center;
+        min-width: 56px; flex-shrink: 0;
     }
     .copy-btn:active { transform: scale(0.95); }
     .copy-btn.copied { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); color: var(--g-l); }
 
-    .aerr { color: #ff2a00; font-size: 0.85rem; text-align: center; margin-bottom: 10px; display: none; font-weight: 500; }
-    .aerr.show { display: block; }
+    .aid-err { color: #ff2a00; font-size: 0.9rem; text-align: center; margin-bottom: 10px; display: none; font-weight: 500; }
+    .aid-err.show { display: block; }
 
     /* ===== BUTTONS ===== */
-    .ab {
+    .btn-big {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 16px 20px; border-radius: 14px; font-weight: 700; font-size: 1rem;
-        cursor: pointer; width: 100%; border: 2px solid; text-decoration: none; transition: all 0.3s; min-height: 56px;
+        padding: 18px 24px; border-radius: 16px; font-weight: 700;
+        font-size: 1.05rem; cursor: pointer; width: 100%; border: 2px solid;
+        text-decoration: none; transition: all 0.3s; min-height: 60px;
     }
-    .ab-e { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05)); border-color: rgba(34,197,94,0.3); color: var(--g-l); }
-    .ab-e:hover { border-color: var(--g-l); box-shadow: 0 0 24px rgba(34,197,94,0.2); transform: translateY(-2px); }
-    .ab-e:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .ab-v { background: rgba(124,77,255,0.08); border-color: rgba(124,77,255,0.25); color: var(--cp-l); }
-    .ab-v:hover { border-color: var(--cp-l); box-shadow: 0 0 24px rgba(124,77,255,0.2); transform: translateY(-2px); }
-    .ab-d { background: rgba(100,116,139,0.06); border-color: rgba(100,116,139,0.15); color: var(--td); cursor: not-allowed; font-weight: 600; }
+    .btn-enter {
+        background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
+        border-color: rgba(34,197,94,0.3); color: var(--g-l);
+    }
+    .btn-enter:hover { border-color: var(--g-l); box-shadow: 0 0 30px rgba(34,197,94,0.2); transform: translateY(-2px); }
+    .btn-enter:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-view {
+        background: rgba(124,77,255,0.08); border-color: rgba(124,77,255,0.25);
+        color: var(--cp-l);
+    }
+    .btn-view:hover { border-color: var(--cp-l); box-shadow: 0 0 30px rgba(124,77,255,0.15); transform: translateY(-2px); }
+    .btn-wait {
+        background: rgba(100,116,139,0.06); border-color: rgba(100,116,139,0.15);
+        color: var(--td); cursor: not-allowed; font-weight: 600;
+    }
 
     /* ===== MODAL ===== */
     .modal-bg {
         display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-        backdrop-filter: blur(16px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;
+        backdrop-filter: blur(16px); z-index: 9999;
+        align-items: center; justify-content: center; padding: 20px;
     }
     .modal-bg.on { display: flex; }
     .modal-box {
@@ -142,26 +232,31 @@
 
     .pwd-label { font-size: 0.85rem; color: var(--ts); margin-bottom: 8px; display: block; font-weight: 500; }
     .pwd-input {
-        width: 100%; padding: 16px 18px; border-radius: 14px; border: 2px solid rgba(124,77,255,0.2);
-        background: rgba(0,0,0,0.3); color: var(--tp); font-family: 'Inter'; font-size: 16px;
+        width: 100%; padding: 16px 18px; border-radius: 14px;
+        border: 2px solid rgba(124,77,255,0.2); background: rgba(0,0,0,0.3);
+        color: var(--tp); font-family: 'Inter'; font-size: 16px;
         outline: none; margin-bottom: 16px; box-sizing: border-box;
     }
     .pwd-input:focus { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.12); }
     .pwd-input::placeholder { color: var(--td); }
-    .pwd-input.err { border-color: #ff2a00; animation: sh 0.4s; }
+    .pwd-input.err { border-color: #ff2a00; animation: shake 0.4s; }
 
     .modal-msg { color: #ff2a00; font-size: 0.9rem; text-align: center; margin-bottom: 16px; min-height: 22px; font-weight: 500; }
     .modal-msg.ok { color: var(--g-l); }
 
     .modal-btns { display: flex; gap: 12px; }
-    .modal-btns .ab { font-size: 0.95rem; padding: 14px; min-height: 52px; }
+    .modal-btns .btn-big { font-size: 0.95rem; padding: 14px; min-height: 52px; }
 
     /* ===== EMPTY ===== */
-    .es { text-align: center; padding: 80px 24px; background: var(--bg-p); border-radius: 24px; border: 1px solid rgba(100,120,200,0.1); }
-    .es .i { font-size: 5rem; margin-bottom: 24px; opacity: 0.25; animation: bob 3s ease-in-out infinite; }
+    .empty-state {
+        text-align: center; padding: 80px 24px;
+        background: var(--bg-p); border-radius: 24px;
+        border: 1px solid rgba(100,120,200,0.1);
+    }
+    .empty-state .icon { font-size: 5rem; margin-bottom: 24px; opacity: 0.25; animation: bob 3s ease-in-out infinite; }
     @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-    .es h3 { color: var(--ts); margin-bottom: 12px; font-family: 'Space Grotesk'; font-size: 1.5rem; }
-    .es p { color: var(--td); font-size: 1rem; max-width: 400px; margin: 0 auto; line-height: 1.7; }
+    .empty-state h3 { color: var(--ts); margin-bottom: 12px; font-family: 'Space Grotesk'; font-size: 1.5rem; }
+    .empty-state p { color: var(--td); font-size: 1rem; max-width: 400px; margin: 0 auto; line-height: 1.7; }
 
     /* ===== TOAST ===== */
     .toast-box {
@@ -174,8 +269,9 @@
         background: linear-gradient(135deg, rgba(12,16,32,0.97), rgba(5,8,16,0.99));
         border: 1px solid rgba(124,77,255,0.25); border-radius: 16px;
         padding: 16px 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-        display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500;
-        animation: popin 0.35s ease; pointer-events: auto; backdrop-filter: blur(12px);
+        display: flex; align-items: center; gap: 10px;
+        font-size: 0.95rem; font-weight: 500; animation: popin 0.35s ease;
+        pointer-events: auto; backdrop-filter: blur(12px);
     }
     .toast.good { border-color: rgba(34,197,94,0.3); color: var(--g-l); }
     .toast.bad { border-color: rgba(255,42,0,0.3); color: #ff6b6b; }
@@ -187,7 +283,8 @@
 <!-- Toast -->
 <div class="toast-box" id="toastBox"></div>
 
-<div>
+<!-- BREAKOUT WRAPPER — removes base.html container padding -->
+<div class="dash-override">
     <!-- Header -->
     <div class="dash-head">
         <h1>⚡ My Teams</h1>
@@ -207,83 +304,96 @@
             <label class="pwd-label">Confirm New Password</label>
             <input type="password" id="pwdConfirm" class="pwd-input" placeholder="Re-enter password">
             <div class="modal-btns">
-                <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Save</button>
-                <button type="button" class="ab ab-d" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
+                <button type="button" class="btn-big btn-enter" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Save</button>
+                <button type="button" class="btn-big btn-wait" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
             </div>
         </div>
     </div>
 
     {% if teams %}
-    <div class="tg" id="teamGrid">
+    <div class="team-grid">
         {% for team in teams %}
-        <div class="gp tc">
-            <div class="lg">{{ team.league_name }}</div>
-            <div class="nm">{{ team.team_name }}</div>
-            
-            <div class="d-flex flex-wrap gap-2">
-                <div class="st st-{{ team.auction_status }}">
-                    {% if team.auction_status == 'live' %}<span class="dot"></span>{% elif team.auction_status == 'paused' %}⏸{% elif team.auction_status == 'completed' %}✓{% else %}○{% endif %}
-                    {{ team.auction_status.upper() }}
+        <div class="team-card">
+            <div class="card-body">
+                <div class="league-name">{{ team.league_name }}</div>
+                <div class="team-name">{{ team.team_name }}</div>
+                
+                <div class="status-row">
+                    {% if team.auction_status == 'live' %}
+                    <span class="pill pill-live">LIVE</span>
+                    {% elif team.auction_status == 'paused' %}
+                    <span class="pill pill-paused">⏸ PAUSED</span>
+                    {% elif team.auction_status == 'completed' %}
+                    <span class="pill pill-completed">✓ COMPLETED</span>
+                    {% else %}
+                    <span class="pill pill-pending">○ PENDING</span>
+                    {% endif %}
+                    
+                    {% if team.your_sessions_count %}
+                    <span class="pill pill-ok">✅ {{ team.your_sessions_count }} Session{{ 's' if team.your_sessions_count > 1 else '' }}</span>
+                    {% else %}
+                    <span class="pill pill-warn">⏳ Not Allocated</span>
+                    {% endif %}
                 </div>
-                {% if team.your_sessions_count %}
-                <div class="si si-ok">✅ {{ team.your_sessions_count }} Session{{ 's' if team.your_sessions_count > 1 else '' }}</div>
-                {% else %}
-                <div class="si si-warn">⏳ Not Allocated</div>
-                {% endif %}
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="num" style="color:var(--gd-l)">₹{{ "%.2f"|format(team.available) }}Cr</div>
+                        <div class="lbl">Available</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num" style="color:var(--ib)">{{ team.squad_count }}</div>
+                        <div class="lbl">Squad</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num" style="color:var(--cp-l)">{{ team.purse_limit|int }}</div>
+                        <div class="lbl">Purse</div>
+                    </div>
+                </div>
+
+                <div class="cat-row">
+                    <span class="cat-tag">🏏 {{ team.batsmen }} Batsmen</span>
+                    <span class="cat-tag">🎯 {{ team.bowlers }} Bowlers</span>
+                    <span class="cat-tag">⚡ {{ team.all_rounders }} All-Rounders</span>
+                    <span class="cat-tag">🧤 {{ team.wicket_keepers }} Keepers</span>
+                    <span class="cat-tag">🌍 {{ team.overseas }} Overseas</span>
+                </div>
             </div>
-            
-            <div class="sr">
-                <div class="sm">
-                    <div class="v" style="color:var(--gd-l)">₹{{ "%.2f"|format(team.available) }}Cr</div>
-                    <div class="l">Available</div>
-                </div>
-                <div class="sm">
-                    <div class="v" style="color:var(--ib)">{{ team.squad_count }}</div>
-                    <div class="l">Squad</div>
-                </div>
-                <div class="sm">
-                    <div class="v" style="color:var(--cp-l)">{{ team.purse_limit|int }}</div>
-                    <div class="l">Purse</div>
-                </div>
-            </div>
-            
-            <div class="ct">
-                <span>🏏 {{ team.batsmen }} Batsmen</span>
-                <span>🎯 {{ team.bowlers }} Bowlers</span>
-                <span>⚡ {{ team.all_rounders }} All-Rounders</span>
-                <span>🧤 {{ team.wicket_keepers }} Keepers</span>
-                <span>🌍 {{ team.overseas }} Overseas</span>
-            </div>
-            
-            {% if team.auction_status in ['live', 'paused'] %}
-            <div style="margin-top:auto;">
-                <div class="ae">🔑 Auction ID: <strong>{{ team.auction_id }}</strong></div>
+
+            <div class="action-box">
+                {% if team.auction_status in ['live', 'paused'] %}
+                <div class="aid-label">🔑 Auction ID: <strong>{{ team.auction_id }}</strong></div>
                 <div class="aid-wrap">
-                    <input type="tel" class="aid" id="aid-{{ team.auction_id }}"
+                    <input 
+                        type="tel" 
+                        class="aid-input" 
+                        id="aid-{{ team.auction_id }}"
                         placeholder="Enter Auction ID"
-                        onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
-                        inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-                    <button type="button" class="copy-btn" onclick="copyId({{ team.auction_id }}, this)">📋</button>
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        autocomplete="off"
+                        onkeypress="if(event.key==='Enter')goAuction({{ team.auction_id }})"
+                    >
+                    <button type="button" class="copy-btn" onclick="copyId({{ team.auction_id }}, this)" title="Copy">📋</button>
                 </div>
-                <div class="aerr" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
-                <button type="button" class="ab ab-e" id="btn-{{ team.auction_id }}"
-                        onclick="eA({{ team.auction_id }})">
+                <div class="aid-err" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
+                <button type="button" class="btn-big btn-enter" id="btn-{{ team.auction_id }}" onclick="goAuction({{ team.auction_id }})">
                     🚀 Enter Auction Room
                 </button>
+                {% elif team.auction_status == 'completed' %}
+                <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="btn-big btn-view">
+                    📊 View Results
+                </a>
+                {% else %}
+                <div class="btn-big btn-wait">⏳ Auction Not Started</div>
+                {% endif %}
             </div>
-            {% elif team.auction_status == 'completed' %}
-            <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="ab ab-v">
-                📊 View Results
-            </a>
-            {% else %}
-            <div class="ab ab-d">⏳ Auction Not Started</div>
-            {% endif %}
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="es">
-        <div class="i">🏏</div>
+    <div class="empty-state">
+        <div class="icon">🏏</div>
         <h3>No Teams Assigned</h3>
         <p>You don't own any teams in active auctions. Contact your league administrator to get started.</p>
     </div>
@@ -313,10 +423,10 @@ function copyId(id, btn) {
     });
 }
 
-function eA(expectedId) {
-    const input = document.getElementById('aid-' + expectedId);
-    const btn = document.getElementById('btn-' + expectedId);
-    const err = document.getElementById('err-' + expectedId);
+function goAuction(expectedId) {
+    const input = document.getElementById('aid-'+expectedId);
+    const btn = document.getElementById('btn-'+expectedId);
+    const err = document.getElementById('err-'+expectedId);
     const val = input.value.trim();
     
     btn.disabled = true;
@@ -326,11 +436,11 @@ function eA(expectedId) {
     setTimeout(()=>{
         if (val === String(expectedId)) {
             toast('Redirecting...', 'info', 1200);
-            setTimeout(()=>{ window.location.href = '/team-owner/auction-room/' + expectedId; }, 400);
+            setTimeout(()=>{ window.location.href='/team-owner/auction-room/'+expectedId; }, 400);
         } else {
             err.classList.add('show');
             input.classList.add('err');
-            input.value = ''; input.focus();
+            input.value=''; input.focus();
             btn.disabled = false;
             toast('Wrong Auction ID', 'bad');
         }
@@ -340,62 +450,53 @@ function eA(expectedId) {
 function openPwdModal() {
     document.getElementById('pwdModal').classList.add('on');
     document.getElementById('pwdNew').focus();
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow='hidden';
 }
 function closePwdModal() {
     document.getElementById('pwdModal').classList.remove('on');
-    document.getElementById('pwdNew').value = '';
-    document.getElementById('pwdConfirm').value = '';
+    document.getElementById('pwdNew').value='';
+    document.getElementById('pwdConfirm').value='';
     document.getElementById('pwdNew').classList.remove('err');
     document.getElementById('pwdConfirm').classList.remove('err');
-    document.getElementById('pwdMsg').textContent = '';
-    document.getElementById('pwdMsg').className = 'modal-msg';
-    document.getElementById('pwdSubmitBtn').disabled = false;
-    document.body.style.overflow = '';
+    document.getElementById('pwdMsg').textContent='';
+    document.getElementById('pwdMsg').className='modal-msg';
+    document.getElementById('pwdSubmitBtn').disabled=false;
+    document.body.style.overflow='';
 }
 
 async function submitPwd() {
     const btn = document.getElementById('pwdSubmitBtn');
     const msg = document.getElementById('pwdMsg');
-    const newPwd = document.getElementById('pwdNew').value.trim();
-    const confirm = document.getElementById('pwdConfirm').value.trim();
+    const n = document.getElementById('pwdNew').value.trim();
+    const c = document.getElementById('pwdConfirm').value.trim();
     
-    btn.disabled = true;
-    msg.className = 'modal-msg';
+    msg.textContent=''; msg.className='modal-msg';
     document.getElementById('pwdNew').classList.remove('err');
     document.getElementById('pwdConfirm').classList.remove('err');
     
-    if (!newPwd || !confirm) {
-        msg.textContent = '❌ Both fields required';
-        msg.classList.add('bad');
-        if (!newPwd) document.getElementById('pwdNew').classList.add('err');
-        if (!confirm) document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false; return;
-    }
-    if (newPwd !== confirm) {
-        msg.textContent = '❌ Passwords do not match';
-        msg.classList.add('bad');
-        document.getElementById('pwdNew').classList.add('err');
-        document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false; return;
-    }
+    let bad=false;
+    if(!n || n.length<6){ msg.textContent='❌ Min 6 chars'; msg.classList.add('bad'); document.getElementById('pwdNew').classList.add('err'); bad=true; }
+    if(!c){ if(!bad){ msg.textContent='❌ Confirm password'; msg.classList.add('bad'); } document.getElementById('pwdConfirm').classList.add('err'); bad=true; }
+    if(n && c && n!==c){ msg.textContent='❌ Passwords mismatch'; msg.classList.add('bad'); document.getElementById('pwdNew').classList.add('err'); document.getElementById('pwdConfirm').classList.add('err'); bad=true; }
+    if(bad) return;
     
-    try {
-        const res = await fetch('/team-owner/change-password', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({new_password: newPwd, confirm_password: confirm})
+    btn.disabled=true;
+    try{
+        const r = await fetch('/team-owner/change-password', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({new_password:n, confirm_password:c})
         });
-        const data = await res.json();
-        if (data.success) {
-            msg.textContent = '✅ ' + data.message; msg.classList.add('ok');
-            toast('Password changed!'); setTimeout(closePwdModal, 1500);
+        const d = await r.json();
+        if(d.success){
+            msg.textContent='✅ '+d.message; msg.classList.add('ok');
+            toast('Password changed!','good'); setTimeout(closePwdModal,1500);
         } else {
-            msg.textContent = '❌ ' + data.message; msg.classList.add('bad');
-            btn.disabled = false;
+            msg.textContent='❌ '+(d.message||'Failed'); msg.classList.add('bad');
+            btn.disabled=false;
         }
-    } catch (e) {
-        msg.textContent = '❌ Network error'; msg.classList.add('bad');
-        btn.disabled = false;
+    } catch(e){
+        msg.textContent='❌ Network error'; msg.classList.add('bad');
+        btn.disabled=false;
     }
 }
 
