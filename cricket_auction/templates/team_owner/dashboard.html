@@ -201,10 +201,10 @@
         {% if team.auction_status in ['live', 'paused'] %}
         <div style="margin-top:auto;">
             <div class="ae">Enter Auction ID: {{ team.auction_id }}</div>
-            <input type="text" class="aid" id="aid-{{ team.auction_id }}"
-                   placeholder="Enter Auction ID ({{ team.auction_id }})" 
-                   maxlength="10" autocomplete="off"
-                   onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})">
+            <input type="number" class="aid" id="aid-{{ team.auction_id }}"
+                placeholder="Enter Auction ID ({{ team.auction_id }})" 
+                onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
+                inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             <div class="aerr" id="err-{{ team.auction_id }}">Wrong Auction ID</div>
             <button type="button" class="ab ab-e" id="btn-{{ team.auction_id }}"
                     onclick="eA({{ team.auction_id }})">
