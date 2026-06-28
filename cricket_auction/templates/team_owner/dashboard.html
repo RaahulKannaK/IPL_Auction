@@ -3,7 +3,7 @@
 {% block content %}
 <style>
     /* ============================================
-       UNIFIED DESIGN SYSTEM — DASHBOARD
+       UNIFIED DESIGN SYSTEM — DASHBOARD v2
        ============================================ */
     :root {
         --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
@@ -13,837 +13,797 @@
         --green: #22c55e; --green-light: #4ade80;
         --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
         --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
-        
-        --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px; --radius-xl: 24px;
-        --shadow-sm: 0 4px 12px rgba(0,0,0,0.2);
-        --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
-        --shadow-glow-purple: 0 0 30px rgba(124, 77, 255, 0.15);
-        --transition-fast: 0.2s ease;
-        --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* ============================================
-       LAYOUT
+       BASE
        ============================================ */
-    .dash-container {
+    .dash-wrap {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 16px;
+        padding: 20px 16px 40px;
     }
-    @media (min-width: 640px) {
-        .dash-container { padding: 24px; }
-    }
-    @media (min-width: 1024px) {
-        .dash-container { padding: 32px; }
-    }
+    @media (min-width: 640px) { .dash-wrap { padding: 28px 24px 50px; } }
+    @media (min-width: 1024px) { .dash-wrap { padding: 32px 32px 60px; } }
 
     /* ============================================
        HEADER
        ============================================ */
-    .dash-header {
+    .dash-head {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
+        margin-bottom: 28px;
         gap: 12px;
     }
-    .dash-header h1 {
+    .dash-head h1 {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.5rem;
+        font-size: 1.6rem;
+        font-weight: 700;
         color: var(--text-primary);
         margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    .dash-header h1 .emoji {
-        font-size: 1.8rem;
-        filter: drop-shadow(0 0 8px rgba(124, 77, 255, 0.4));
-    }
+    .dash-head h1 span { font-size: 1.8rem; }
     @media (min-width: 640px) {
-        .dash-header h1 { font-size: 1.8rem; }
+        .dash-head h1 { font-size: 2rem; }
+        .dash-head h1 span { font-size: 2.2rem; }
     }
 
+    .head-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        background: rgba(124, 77, 255, 0.1);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        color: var(--cosmic-purple-light);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .head-btn:hover {
+        background: rgba(124, 77, 255, 0.18);
+        border-color: var(--cosmic-purple-light);
+        transform: translateY(-1px);
+    }
+    .head-btn .txt { display: none; }
+    @media (min-width: 480px) { .head-btn .txt { display: inline; } }
+
     /* ============================================
-       GLASS PANEL (Card Base)
+       CARD — BIGGER, BOLDER
        ============================================ */
-    .glass-panel {
+    .team-card {
         background: var(--bg-panel);
         backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(100, 120, 200, 0.1);
-        border-radius: var(--radius-lg);
-        padding: 20px;
+        border: 1px solid rgba(100, 120, 200, 0.12);
+        border-radius: 24px;
+        padding: 28px 24px;
         position: relative;
         overflow: hidden;
-        transition: all var(--transition-base);
+        margin-bottom: 20px;
+        transition: all 0.3s;
     }
-    .glass-panel::before {
+    .team-card::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
-        opacity: 0.5;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.5), rgba(0,212,255,0.4), rgba(247,181,0,0.4), transparent);
     }
-    @media (hover: hover) {
-        .glass-panel:hover {
-            border-color: rgba(124, 77, 255, 0.2);
-            box-shadow: var(--shadow-glow-purple);
-            transform: translateY(-2px);
+    @media (min-width: 640px) {
+        .team-card { padding: 32px 28px; margin-bottom: 24px; }
+    }
+    @media (min-width: 1024px) {
+        .team-card {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 32px;
+            align-items: start;
         }
     }
 
     /* ============================================
-       TEAM GRID
+       LEAGUE & TEAM NAME
        ============================================ */
-    .team-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    @media (min-width: 640px) {
-        .team-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    }
-    @media (min-width: 1024px) {
-        .team-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-    }
-
-    /* ============================================
-       TEAM CARD
-       ============================================ */
-    .team-card {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-    .team-card .league-tag {
-        font-size: 0.7rem;
+    .league-name {
+        font-size: 0.8rem;
         color: var(--text-dim);
         text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 600;
+        letter-spacing: 2.5px;
+        font-weight: 700;
+        margin-bottom: 10px;
     }
-    .team-card .team-name {
+    @media (min-width: 640px) { .league-name { font-size: 0.85rem; } }
+
+    .team-name {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.3rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: var(--text-primary);
-        line-height: 1.2;
+        line-height: 1.15;
+        margin-bottom: 14px;
     }
-    @media (min-width: 640px) {
-        .team-card .team-name { font-size: 1.5rem; }
-    }
+    @media (min-width: 640px) { .team-name { font-size: 2rem; } }
 
     /* ============================================
-       STATUS BADGE
+       STATUS ROW
        ============================================ */
-    .status-badge {
+    .status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 0.75rem;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.8rem;
         font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        padding: 4px 10px;
-        border-radius: 20px;
-        width: fit-content;
+        letter-spacing: 0.5px;
     }
-    .status-live {
-        background: rgba(34, 197, 94, 0.12);
+    .pill-live {
+        background: rgba(34, 197, 94, 0.15);
         color: var(--green);
-        border: 1px solid rgba(34, 197, 94, 0.25);
-        box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        box-shadow: 0 0 16px rgba(34, 197, 94, 0.1);
     }
-    .status-live .dot {
+    .pill-live .dot {
         width: 8px; height: 8px;
         border-radius: 50%;
         background: var(--green);
-        box-shadow: 0 0 8px var(--green);
-        animation: pulse-dot 2s infinite;
+        box-shadow: 0 0 10px var(--green);
+        animation: pulse 2s infinite;
     }
-    .status-paused {
-        background: rgba(245, 158, 11, 0.12);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.25);
+    .pill-paused {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
-    .status-pending {
-        background: rgba(100, 116, 139, 0.1);
+    .pill-pending {
+        background: rgba(100, 116, 139, 0.12);
         color: var(--text-dim);
-        border: 1px solid rgba(100, 116, 139, 0.15);
+        border: 1px solid rgba(100, 116, 139, 0.2);
     }
-    .status-completed {
-        background: rgba(124, 77, 255, 0.1);
+    .pill-completed {
+        background: rgba(124, 77, 255, 0.12);
         color: var(--cosmic-purple-light);
-        border: 1px solid rgba(124, 77, 255, 0.2);
+        border: 1px solid rgba(124, 77, 255, 0.25);
     }
-    @keyframes pulse-dot {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    /* ============================================
-       SESSION ALLOCATION BADGE
-       ============================================ */
-    .session-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: var(--radius-sm);
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 2px;
-    }
-    .session-ok {
+    .pill-ok {
         background: rgba(34, 197, 94, 0.1);
         color: var(--green-light);
         border: 1px solid rgba(34, 197, 94, 0.2);
     }
-    .session-warn {
+    .pill-warn {
         background: rgba(245, 158, 11, 0.1);
         color: #fbbf24;
         border: 1px solid rgba(245, 158, 11, 0.2);
     }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.7); }
+    }
 
     /* ============================================
-       STATS ROW
+       STATS — BIG NUMBERS
        ============================================ */
-    .stats-row {
+    .stats-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin: 4px 0;
+        gap: 12px;
+        margin-bottom: 20px;
     }
-    .stat-box {
+    .stat-item {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 16px;
+        padding: 18px 10px;
         text-align: center;
-        padding: 12px 8px;
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: var(--radius-sm);
+        border: 1px solid rgba(100, 120, 200, 0.06);
     }
-    .stat-box .value {
+    .stat-item .num {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.1rem;
+        font-size: 1.5rem;
         font-weight: 700;
+        margin-bottom: 6px;
     }
-    .stat-box .label {
-        font-size: 0.6rem;
+    .stat-item .lbl {
+        font-size: 0.65rem;
         color: var(--text-dim);
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 4px;
+        letter-spacing: 1.5px;
+        font-weight: 600;
     }
     @media (min-width: 640px) {
-        .stat-box .value { font-size: 1.3rem; }
-        .stat-box .label { font-size: 0.65rem; }
+        .stat-item { padding: 22px 14px; }
+        .stat-item .num { font-size: 1.8rem; }
+        .stat-item .lbl { font-size: 0.7rem; }
     }
 
     /* ============================================
-       CATEGORY TAGS
+       CATEGORY ROW
        ============================================ */
-    .category-tags {
+    .cat-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
+        margin-bottom: 24px;
     }
-    .category-tags span {
-        padding: 4px 10px;
-        border-radius: 16px;
-        font-size: 0.7rem;
+    .cat-pill {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
         font-weight: 600;
         background: rgba(124, 77, 255, 0.08);
         color: var(--cosmic-purple-light);
-        border: 1px solid rgba(124, 77, 255, 0.12);
+        border: 1px solid rgba(124, 77, 255, 0.15);
     }
+    @media (min-width: 640px) { .cat-pill { font-size: 0.85rem; padding: 7px 16px; } }
 
     /* ============================================
-       AUCTION ID INPUT SECTION
+       ACTION SECTION (Right side on desktop)
        ============================================ */
-    .auction-entry {
-        margin-top: auto;
-        padding-top: 12px;
-        border-top: 1px solid rgba(100, 120, 200, 0.08);
+    .action-box {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid rgba(100, 120, 200, 0.08);
     }
-    .auction-id-label {
-        font-size: 0.7rem;
-        color: var(--text-dim);
-        text-align: center;
-        margin-bottom: 8px;
+    @media (min-width: 1024px) {
+        .action-box {
+            position: sticky;
+            top: 20px;
+        }
+    }
+
+    .aid-label {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-    }
-    .auction-id-input-wrapper {
-        display: flex;
         gap: 8px;
-        margin-bottom: 8px;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 14px;
     }
-    .auction-id-input {
+    .aid-label strong {
+        color: var(--cosmic-purple-light);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+    }
+
+    .aid-input-wrap {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .aid-input {
         flex: 1;
-        padding: 12px 14px;
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(124, 77, 255, 0.25);
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 2px solid rgba(124, 77, 255, 0.2);
         background: rgba(0, 0, 0, 0.3);
         color: var(--text-primary);
         font-family: 'JetBrains Mono', monospace;
-        font-size: 1rem;
-        letter-spacing: 2px;
+        font-size: 1.2rem;
+        letter-spacing: 3px;
         text-align: center;
         outline: none;
-        transition: all var(--transition-fast);
+        transition: all 0.2s;
         -webkit-appearance: none;
     }
-    .auction-id-input:focus {
+    .aid-input:focus {
         border-color: var(--cosmic-purple-light);
-        box-shadow: 0 0 16px rgba(124, 77, 255, 0.15);
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.15);
     }
-    .auction-id-input::placeholder {
+    .aid-input::placeholder {
         color: var(--text-dim);
         font-family: 'Inter', sans-serif;
         letter-spacing: normal;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
     }
-    .auction-id-input.error {
+    .aid-input.err {
         border-color: var(--lava-red);
         animation: shake 0.4s ease;
     }
     @keyframes shake {
-        25% { transform: translateX(-4px); }
-        75% { transform: translateX(4px); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
     }
 
-    /* Copy button */
     .copy-btn {
-        padding: 10px 12px;
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(124, 77, 255, 0.25);
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 2px solid rgba(124, 77, 255, 0.2);
         background: rgba(124, 77, 255, 0.08);
         color: var(--cosmic-purple-light);
         cursor: pointer;
-        font-size: 1rem;
-        transition: all var(--transition-fast);
+        font-size: 1.2rem;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 44px;
+        min-width: 52px;
     }
-    .copy-btn:hover {
-        background: rgba(124, 77, 255, 0.15);
-        border-color: var(--cosmic-purple-light);
-    }
+    .copy-btn:active { transform: scale(0.95); }
     .copy-btn.copied {
         background: rgba(34, 197, 94, 0.15);
         border-color: rgba(34, 197, 94, 0.3);
         color: var(--green-light);
     }
 
-    .auction-error {
+    .aid-err {
         color: var(--lava-red);
-        font-size: 0.75rem;
+        font-size: 0.85rem;
         text-align: center;
-        margin-top: -4px;
-        margin-bottom: 6px;
+        margin-bottom: 12px;
         display: none;
         font-weight: 500;
     }
-    .auction-error.show { display: block; }
+    .aid-err.show { display: block; }
 
-    /* ============================================
-       BUTTONS
-       ============================================ */
-    .btn {
-        display: inline-flex;
+    .big-btn {
+        display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 14px 20px;
-        border-radius: var(--radius-md);
-        font-weight: 700;
-        font-size: 0.9rem;
-        cursor: pointer;
+        gap: 10px;
         width: 100%;
-        border: 1px solid;
-        text-decoration: none;
-        transition: all var(--transition-base);
+        padding: 18px 24px;
+        border-radius: 16px;
+        border: 2px solid rgba(34, 197, 94, 0.3);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+        color: var(--green-light);
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
         font-family: 'Inter', sans-serif;
-        min-height: 48px;
+        min-height: 56px;
         position: relative;
         overflow: hidden;
     }
-    .btn:disabled {
+    .big-btn:hover:not(:disabled) {
+        border-color: var(--green-light);
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+        transform: translateY(-2px);
+    }
+    .big-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        transform: none !important;
     }
-    .btn-primary {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
-        border-color: rgba(34, 197, 94, 0.3);
-        color: var(--green-light);
-    }
-    .btn-primary:hover:not(:disabled) {
-        border-color: var(--green-light);
-        box-shadow: 0 0 24px rgba(34, 197, 94, 0.2);
-        transform: translateY(-2px);
-    }
-    .btn-secondary {
-        background: rgba(124, 77, 255, 0.08);
-        border-color: rgba(124, 77, 255, 0.25);
-        color: var(--cosmic-purple-light);
-    }
-    .btn-secondary:hover:not(:disabled) {
-        border-color: var(--cosmic-purple-light);
-        box-shadow: 0 0 24px rgba(124, 77, 255, 0.15);
-        transform: translateY(-2px);
-    }
-    .btn-ghost {
-        background: rgba(100, 116, 139, 0.08);
-        border-color: rgba(100, 116, 139, 0.15);
-        color: var(--text-dim);
-        cursor: not-allowed;
-    }
-    .btn-sm {
-        padding: 8px 16px;
-        font-size: 0.8rem;
-        min-height: 40px;
-        width: auto;
-    }
-
-    /* Spinner */
-    .btn .spinner {
-        width: 16px; height: 16px;
+    .big-btn .spin {
+        width: 18px; height: 18px;
         border: 2px solid transparent;
         border-top-color: currentColor;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         display: none;
     }
-    .btn.loading .spinner { display: inline-block; }
-    .btn.loading .btn-text { opacity: 0.7; }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
+    .big-btn.loading .spin { display: block; }
+    .big-btn.loading .bt { opacity: 0.6; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ============================================
-       CHANGE PASSWORD BUTTON (Header)
-       ============================================ */
-    .header-actions {
+    .result-btn {
         display: flex;
-        gap: 10px;
         align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 18px 24px;
+        border-radius: 16px;
+        border: 2px solid rgba(124, 77, 255, 0.25);
+        background: rgba(124, 77, 255, 0.08);
+        color: var(--cosmic-purple-light);
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s;
+        min-height: 56px;
+    }
+    .result-btn:hover {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 30px rgba(124, 77, 255, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .wait-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 18px 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(100, 116, 139, 0.15);
+        background: rgba(100, 116, 139, 0.06);
+        color: var(--text-dim);
+        font-size: 1rem;
+        font-weight: 600;
+        min-height: 56px;
     }
 
     /* ============================================
-       PASSWORD MODAL
+       MODAL
        ============================================ */
-    .modal-overlay {
+    .modal-bg {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(16px);
         z-index: 1000;
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 16px;
+        padding: 20px;
         opacity: 0;
-        transition: opacity var(--transition-base);
+        transition: opacity 0.3s;
     }
-    .modal-overlay.show {
+    .modal-bg.on {
         display: flex;
         opacity: 1;
     }
-    .modal-content {
+    .modal-box {
         background: var(--bg-panel);
         border: 1px solid rgba(100, 120, 200, 0.2);
-        border-radius: var(--radius-xl);
+        border-radius: 24px;
         width: 100%;
-        max-width: 420px;
-        padding: 28px;
-        position: relative;
-        transform: scale(0.95) translateY(10px);
-        transition: transform var(--transition-base);
-        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+        max-width: 440px;
+        padding: 32px;
+        transform: scale(0.92) translateY(20px);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 30px 100px rgba(0,0,0,0.6);
     }
-    .modal-overlay.show .modal-content {
+    .modal-bg.on .modal-box {
         transform: scale(1) translateY(0);
     }
-    .modal-header {
+
+    .modal-title {
         text-align: center;
-        margin-bottom: 24px;
+        margin-bottom: 28px;
     }
-    .modal-header h3 {
+    .modal-title h3 {
         font-family: 'Space Grotesk', sans-serif;
         color: var(--text-primary);
-        font-size: 1.3rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+        font-size: 1.4rem;
+        margin: 0 0 6px 0;
     }
-    .modal-header .subtitle {
+    .modal-title p {
         color: var(--text-dim);
-        font-size: 0.8rem;
-        margin-top: 6px;
+        font-size: 0.85rem;
+        margin: 0;
     }
 
-    .form-group {
-        margin-bottom: 16px;
-    }
-    .form-label {
+    .inp-group { margin-bottom: 18px; }
+    .inp-label {
         display: block;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         color: var(--text-secondary);
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         font-weight: 500;
     }
-    .form-input {
+    .inp {
         width: 100%;
-        padding: 14px 16px;
-        border-radius: var(--radius-sm);
-        border: 1px solid rgba(124, 77, 255, 0.25);
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 2px solid rgba(124, 77, 255, 0.2);
         background: rgba(0, 0, 0, 0.3);
         color: var(--text-primary);
-        font-family: 'Inter', sans-serif;
-        font-size: 16px; /* Prevents iOS zoom */
+        font-size: 16px;
         outline: none;
-        transition: all var(--transition-fast);
+        transition: all 0.2s;
         box-sizing: border-box;
     }
-    .form-input:focus {
+    .inp:focus {
         border-color: var(--cosmic-purple-light);
-        box-shadow: 0 0 16px rgba(124, 77, 255, 0.12);
+        box-shadow: 0 0 20px rgba(124, 77, 255, 0.12);
     }
-    .form-input::placeholder {
-        color: var(--text-dim);
-    }
-    .form-input.error {
-        border-color: var(--lava-red);
-        animation: shake 0.4s ease;
-    }
+    .inp.err { border-color: var(--lava-red); animation: shake 0.4s ease; }
 
-    /* Password strength bar */
-    .strength-bar {
+    .str-bar {
         height: 4px;
         border-radius: 2px;
-        margin-top: 8px;
+        margin-top: 10px;
         background: rgba(100, 116, 139, 0.2);
         overflow: hidden;
         display: none;
     }
-    .strength-bar.show { display: block; }
-    .strength-bar .fill {
+    .str-bar.on { display: block; }
+    .str-bar .fill {
         height: 100%;
         border-radius: 2px;
-        transition: all var(--transition-base);
+        transition: all 0.3s;
         width: 0;
     }
-    .strength-weak { background: var(--lava-red); width: 33%; }
-    .strength-medium { background: var(--gold); width: 66%; }
-    .strength-strong { background: var(--green); width: 100%; }
+    .str-w { background: var(--lava-red); width: 33%; }
+    .str-m { background: var(--gold); width: 66%; }
+    .str-s { background: var(--green); width: 100%; }
 
-    .modal-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 20px;
-    }
-    .modal-actions .btn { flex: 1; }
-
-    .modal-message {
+    .modal-msg {
         text-align: center;
-        font-size: 0.85rem;
-        margin-bottom: 12px;
-        min-height: 20px;
+        font-size: 0.9rem;
+        margin-bottom: 14px;
+        min-height: 22px;
         font-weight: 500;
     }
-    .modal-message.success { color: var(--green-light); }
-    .modal-message.error { color: var(--lava-red); }
+    .modal-msg.ok { color: var(--green-light); }
+    .modal-msg.bad { color: var(--lava-red); }
+
+    .modal-btns {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    .modal-btns button { flex: 1; }
+
+    .btn-save {
+        padding: 16px;
+        border-radius: 14px;
+        border: 2px solid rgba(34, 197, 94, 0.3);
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+        color: var(--green-light);
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Inter', sans-serif;
+        min-height: 52px;
+    }
+    .btn-save:hover:not(:disabled) {
+        border-color: var(--green-light);
+        box-shadow: 0 0 24px rgba(34, 197, 94, 0.2);
+    }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-cancel {
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(100, 116, 139, 0.2);
+        background: rgba(100, 116, 139, 0.08);
+        color: var(--text-dim);
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Inter', sans-serif;
+        min-height: 52px;
+    }
+    .btn-cancel:hover {
+        background: rgba(239, 68, 68, 0.1);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.2);
+    }
 
     /* ============================================
-       TOAST NOTIFICATION
+       TOAST
        ============================================ */
-    .toast-container {
+    .toast-box {
         position: fixed;
-        z-index: 2000;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        pointer-events: none;
-    }
-    /* Mobile: bottom-center */
-    .toast-container {
-        bottom: 20px;
+        bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
+        z-index: 2000;
         width: calc(100% - 32px);
-        max-width: 400px;
+        max-width: 420px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
     }
-    /* Desktop: top-right */
     @media (min-width: 640px) {
-        .toast-container {
-            top: 20px;
-            right: 20px;
+        .toast-box {
+            top: 24px;
+            right: 24px;
             left: auto;
             bottom: auto;
             transform: none;
-            width: 360px;
         }
     }
     .toast {
-        background: linear-gradient(135deg, rgba(12, 16, 32, 0.95), rgba(5, 8, 16, 0.98));
-        border: 1px solid rgba(124, 77, 255, 0.2);
-        border-radius: var(--radius-md);
-        padding: 14px 18px;
-        box-shadow: var(--shadow-md);
+        background: linear-gradient(135deg, rgba(12, 16, 32, 0.97), rgba(5, 8, 16, 0.99));
+        border: 1px solid rgba(124, 77, 255, 0.25);
+        border-radius: 16px;
+        padding: 16px 20px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.5);
         display: flex;
         align-items: center;
-        gap: 10px;
-        font-size: 0.9rem;
+        gap: 12px;
+        font-size: 0.95rem;
         font-weight: 500;
-        animation: toast-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: popin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         pointer-events: auto;
         backdrop-filter: blur(12px);
     }
-    .toast.success { border-color: rgba(34, 197, 94, 0.3); color: var(--green-light); }
-    .toast.error { border-color: rgba(255, 42, 0, 0.3); color: #ff6b6b; }
-    .toast.info { border-color: rgba(0, 212, 255, 0.3); color: var(--ice-blue-light); }
-    @keyframes toast-in {
-        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    .toast.good { border-color: rgba(34, 197, 94, 0.3); color: var(--green-light); }
+    .toast.bad { border-color: rgba(255, 42, 0, 0.3); color: #ff6b6b; }
+    @keyframes popin {
+        from { opacity: 0; transform: translateY(16px) scale(0.96); }
         to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .toast-out {
-        animation: toast-out 0.3s ease forwards;
+    .toast.out {
+        animation: popout 0.25s ease forwards;
     }
-    @keyframes toast-out {
-        to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    @keyframes popout {
+        to { opacity: 0; transform: translateY(-8px) scale(0.96); }
     }
 
     /* ============================================
        EMPTY STATE
        ============================================ */
-    .empty-state {
+    .empty-box {
         text-align: center;
-        padding: 60px 20px;
+        padding: 80px 24px;
+        background: var(--bg-panel);
+        border-radius: 24px;
+        border: 1px solid rgba(100, 120, 200, 0.1);
     }
-    .empty-state .icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-        opacity: 0.3;
-        animation: float 3s ease-in-out infinite;
+    .empty-box .icon {
+        font-size: 5rem;
+        margin-bottom: 24px;
+        opacity: 0.25;
+        animation: bob 3s ease-in-out infinite;
     }
-    @keyframes float {
+    @keyframes bob {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
+        50% { transform: translateY(-12px); }
     }
-    .empty-state h3 {
+    .empty-box h3 {
         color: var(--text-secondary);
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.3rem;
+        font-size: 1.5rem;
     }
-    .empty-state p {
+    .empty-box p {
         color: var(--text-dim);
-        font-size: 0.9rem;
+        font-size: 1rem;
+        line-height: 1.7;
         max-width: 400px;
         margin: 0 auto;
-        line-height: 1.6;
-    }
-
-    /* ============================================
-       SKELETON LOADER
-       ============================================ */
-    .skeleton {
-        background: linear-gradient(90deg, rgba(100,120,200,0.08) 25%, rgba(100,120,200,0.15) 50%, rgba(100,120,200,0.08) 75%);
-        background-size: 200% 100%;
-        animation: skeleton-shimmer 1.5s infinite;
-        border-radius: var(--radius-sm);
-    }
-    @keyframes skeleton-shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-    .skeleton-text { height: 16px; margin-bottom: 8px; }
-    .skeleton-text.short { width: 60%; }
-    .skeleton-text.long { width: 90%; }
-    .skeleton-badge { height: 24px; width: 80px; margin-bottom: 12px; }
-    .skeleton-stats { height: 60px; margin-bottom: 12px; }
-    .skeleton-btn { height: 48px; }
-
-    /* ============================================
-       RESPONSIVE UTILITIES
-       ============================================ */
-    .hide-mobile { display: none; }
-    @media (min-width: 640px) {
-        .hide-mobile { display: inline-flex; }
-        .hide-desktop { display: none; }
     }
 </style>
 
-<!-- Toast Container -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- Toast -->
+<div class="toast-box" id="toastBox"></div>
 
-<div class="dash-container">
+<div class="dash-wrap">
     <!-- Header -->
-    <div class="dash-header">
-        <h1><span class="emoji">⚡</span> My Teams</h1>
-        <div class="header-actions">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openPwdModal()">
-                <span>🔒</span>
-                <span class="hide-mobile">Change Password</span>
-            </button>
-        </div>
+    <div class="dash-head">
+        <h1><span>⚡</span> My Teams</h1>
+        <button type="button" class="head-btn" onclick="openPwd()">
+            <span>🔒</span>
+            <span class="txt">Change Password</span>
+        </button>
     </div>
 
     <!-- Password Modal -->
-    <div class="modal-overlay" id="pwdModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><span>🔒</span> Change Password</h3>
-                <p class="subtitle">Secure your account</p>
+    <div class="modal-bg" id="pwdModal">
+        <div class="modal-box">
+            <div class="modal-title">
+                <h3>🔒 Change Password</h3>
+                <p>Secure your account</p>
+            </div>
+            <div class="modal-msg" id="pwdMsg"></div>
+            
+            <div class="inp-group">
+                <label class="inp-label">New Password</label>
+                <input type="password" id="pwdNew" class="inp" placeholder="Min. 6 characters" oninput="checkStr()">
+                <div class="str-bar" id="strBar"><div class="fill" id="strFill"></div></div>
             </div>
             
-            <div class="modal-message" id="pwdMsg"></div>
-            
-            <div class="form-group">
-                <label class="form-label">New Password</label>
-                <input type="password" id="pwdNew" class="form-input" placeholder="Min. 6 characters" oninput="checkStrength()">
-                <div class="strength-bar" id="strengthBar">
-                    <div class="fill" id="strengthFill"></div>
-                </div>
+            <div class="inp-group">
+                <label class="inp-label">Confirm Password</label>
+                <input type="password" id="pwdConfirm" class="inp" placeholder="Re-enter password">
             </div>
             
-            <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input type="password" id="pwdConfirm" class="form-input" placeholder="Re-enter password">
-            </div>
-            
-            <div class="modal-actions">
-                <button type="button" class="btn btn-primary" onclick="submitPwd()" id="pwdSubmitBtn">
-                    <span class="spinner"></span>
-                    <span class="btn-text">Save Changes</span>
+            <div class="modal-btns">
+                <button class="btn-save" onclick="savePwd()" id="pwdBtn">
+                    <span class="spin" style="display:none;width:16px;height:16px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite;"></span>
+                    <span class="bt">Save Changes</span>
                 </button>
-                <button type="button" class="btn btn-secondary" onclick="closePwdModal()" style="background:rgba(100,116,139,0.1);color:var(--text-dim);">
-                    Cancel
-                </button>
+                <button class="btn-cancel" onclick="closePwd()">Cancel</button>
             </div>
         </div>
     </div>
 
     {% if teams %}
-    <div class="team-grid" id="teamGrid">
         {% for team in teams %}
-        <div class="glass-panel team-card">
-            <div class="league-tag">{{ team.league_name }}</div>
-            <div class="team-name">{{ team.team_name }}</div>
-            
-            <!-- Status -->
-            <div class="status-badge status-{{ team.auction_status }}">
-                {% if team.auction_status == 'live' %}
-                    <span class="dot"></span> Live
-                {% elif team.auction_status == 'paused' %}
-                    ⏸ Paused
-                {% elif team.auction_status == 'completed' %}
-                    ✓ Completed
-                {% else %}
-                    ○ Pending
-                {% endif %}
-            </div>
-            
-            <!-- Session Allocation -->
-            {% if team.your_sessions_count %}
-            <div class="session-badge session-ok">
-                ✅ Allocated to {{ team.your_sessions_count }} session{{ 's' if team.your_sessions_count > 1 else '' }}
-            </div>
-            {% else %}
-            <div class="session-badge session-warn">
-                ⏳ Not allocated to any session yet
-            </div>
-            {% endif %}
-            
-            <!-- Stats -->
-            <div class="stats-row">
-                <div class="stat-box">
-                    <div class="value" style="color: var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
-                    <div class="label">Available</div>
+        <div class="team-card">
+            <!-- Left: Info -->
+            <div class="team-info">
+                <div class="league-name">{{ team.league_name }}</div>
+                <div class="team-name">{{ team.team_name }}</div>
+                
+                <div class="status-row">
+                    {% if team.auction_status == 'live' %}
+                    <span class="pill pill-live"><span class="dot"></span> LIVE</span>
+                    {% elif team.auction_status == 'paused' %}
+                    <span class="pill pill-paused">⏸ PAUSED</span>
+                    {% elif team.auction_status == 'completed' %}
+                    <span class="pill pill-completed">✓ COMPLETED</span>
+                    {% else %}
+                    <span class="pill pill-pending">○ PENDING</span>
+                    {% endif %}
+                    
+                    {% if team.your_sessions_count %}
+                    <span class="pill pill-ok">✅ {{ team.your_sessions_count }} Session{{ 's' if team.your_sessions_count > 1 else '' }}</span>
+                    {% else %}
+                    <span class="pill pill-warn">⏳ Not Allocated</span>
+                    {% endif %}
                 </div>
-                <div class="stat-box">
-                    <div class="value" style="color: var(--ice-blue);">{{ team.squad_count }}</div>
-                    <div class="label">Squad</div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="num" style="color: var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
+                        <div class="lbl">Available</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="num" style="color: var(--ice-blue);">{{ team.squad_count }}</div>
+                        <div class="lbl">Squad</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="num" style="color: var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
+                        <div class="lbl">Purse</div>
+                    </div>
                 </div>
-                <div class="stat-box">
-                    <div class="value" style="color: var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
-                    <div class="label">Purse</div>
+
+                <div class="cat-row">
+                    <span class="cat-pill">🏏 {{ team.batsmen }} Batsmen</span>
+                    <span class="cat-pill">🎯 {{ team.bowlers }} Bowlers</span>
+                    <span class="cat-pill">⚡ {{ team.all_rounders }} All-Rounders</span>
+                    <span class="cat-pill">🧤 {{ team.wicket_keepers }} Keepers</span>
+                    <span class="cat-pill">🌍 {{ team.overseas }} Overseas</span>
                 </div>
             </div>
-            
-            <!-- Categories -->
-            <div class="category-tags">
-                <span>🏏 {{ team.batsmen }} Batsmen</span>
-                <span>🎯 {{ team.bowlers }} Bowlers</span>
-                <span>⚡ {{ team.all_rounders }} All-Rounders</span>
-                <span>🧤 {{ team.wicket_keepers }} Keepers</span>
-                <span>🌍 {{ team.overseas }} Overseas</span>
-            </div>
-            
-            <!-- Action -->
-            {% if team.auction_status in ['live', 'paused'] %}
-            <div class="auction-entry">
-                <div class="auction-id-label">
+
+            <!-- Right: Action -->
+            <div class="action-box">
+                {% if team.auction_status in ['live', 'paused'] %}
+                <div class="aid-label">
                     <span>🔑</span>
-                    <span>Auction ID: <strong style="color:var(--cosmic-purple-light);">{{ team.auction_id }}</strong></span>
+                    <span>Auction ID: <strong>{{ team.auction_id }}</strong></span>
                 </div>
-                <div class="auction-id-input-wrapper">
+                <div class="aid-input-wrap">
                     <input 
                         type="tel" 
-                        class="auction-id-input" 
+                        class="aid-input" 
                         id="aid-{{ team.auction_id }}"
                         placeholder="Enter Auction ID"
                         inputmode="numeric"
                         pattern="[0-9]*"
                         autocomplete="off"
-                        onkeypress="if(event.key==='Enter')enterAuction({{ team.auction_id }})"
+                        onkeypress="if(event.key==='Enter')goAuction({{ team.auction_id }})"
                     >
-                    <button 
-                        type="button" 
-                        class="copy-btn" 
-                        onclick="copyAuctionId({{ team.auction_id }}, this)"
-                        title="Copy Auction ID"
-                    >
-                        📋
-                    </button>
+                    <button class="copy-btn" onclick="copyId({{ team.auction_id }}, this)" title="Copy">📋</button>
                 </div>
-                <div class="auction-error" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
-                <button 
-                    type="button" 
-                    class="btn btn-primary" 
-                    id="btn-{{ team.auction_id }}"
-                    onclick="enterAuction({{ team.auction_id }})"
-                >
-                    <span class="spinner"></span>
-                    <span class="btn-text">🚀 Enter Auction Room</span>
+                <div class="aid-err" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
+                <button class="big-btn" id="btn-{{ team.auction_id }}" onclick="goAuction({{ team.auction_id }})">
+                    <span class="spin"></span>
+                    <span class="bt">🚀 Enter Auction Room</span>
                 </button>
+                
+                {% elif team.auction_status == 'completed' %}
+                <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="result-btn">
+                    📊 View Results
+                </a>
+                
+                {% else %}
+                <div class="wait-box">
+                    ⏳ Auction Not Started
+                </div>
+                {% endif %}
             </div>
-            {% elif team.auction_status == 'completed' %}
-            <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="btn btn-secondary">
-                📊 View Results
-            </a>
-            {% else %}
-            <div class="btn btn-ghost">
-                ⏳ Auction Not Started
-            </div>
-            {% endif %}
         </div>
         {% endfor %}
-    </div>
     {% else %}
-    <!-- Empty State -->
-    <div class="glass-panel empty-state">
+    <div class="empty-box">
         <div class="icon">🏏</div>
         <h3>No Teams Assigned</h3>
         <p>You don't own any teams in active auctions. Contact your league administrator to get started.</p>
@@ -852,239 +812,129 @@
 </div>
 
 <script>
-// ============================================
-// TOAST SYSTEM
-// ============================================
-function showToast(message, type = 'info', duration = 3000) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
-    toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('toast-out');
-        setTimeout(() => toast.remove(), 300);
-    }, duration);
+// Toast
+function toast(msg, type='good', t=3000) {
+    const box = document.getElementById('toastBox');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    const icon = type==='good' ? '✅' : type==='bad' ? '❌' : 'ℹ️';
+    el.innerHTML = '<span>'+icon+'</span><span>'+msg+'</span>';
+    box.appendChild(el);
+    setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),250); }, t);
 }
 
-// ============================================
-// AUCTION ID COPY
-// ============================================
-function copyAuctionId(auctionId, btn) {
-    navigator.clipboard.writeText(String(auctionId)).then(() => {
-        btn.classList.add('copied');
-        btn.innerHTML = '✓';
-        showToast('Auction ID copied!', 'success', 2000);
-        setTimeout(() => {
-            btn.classList.remove('copied');
-            btn.innerHTML = '📋';
-        }, 2000);
-    }).catch(() => {
-        // Fallback for older browsers
-        const input = document.createElement('input');
-        input.value = auctionId;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        showToast('Auction ID copied!', 'success', 2000);
+// Copy
+function copyId(id, btn) {
+    navigator.clipboard.writeText(String(id)).then(()=>{
+        btn.classList.add('copied'); btn.innerHTML='✓';
+        toast('Auction ID copied!');
+        setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML='📋'; }, 2000);
+    }).catch(()=>{
+        const i=document.createElement('input'); i.value=id;
+        document.body.appendChild(i); i.select(); document.execCommand('copy');
+        document.body.removeChild(i); toast('Auction ID copied!');
     });
 }
 
-// ============================================
-// ENTER AUCTION ROOM
-// ============================================
-function enterAuction(expectedId) {
-    const input = document.getElementById('aid-' + expectedId);
-    const btn = document.getElementById('btn-' + expectedId);
-    const err = document.getElementById('err-' + expectedId);
-    const val = input.value.trim();
+// Enter Auction
+function goAuction(expectedId) {
+    const inp = document.getElementById('aid-'+expectedId);
+    const btn = document.getElementById('btn-'+expectedId);
+    const err = document.getElementById('err-'+expectedId);
+    const val = inp.value.trim();
     
-    // Reset states
     err.classList.remove('show');
-    input.classList.remove('error');
-    
-    // Loading state
+    inp.classList.remove('err');
     btn.classList.add('loading');
     btn.disabled = true;
     
-    // Small delay for UX feedback
-    setTimeout(() => {
-        if (val === String(expectedId)) {
-            showToast('Redirecting to auction room...', 'info', 1500);
-            setTimeout(() => {
-                window.location.href = '/team-owner/auction-room/' + expectedId;
-            }, 500);
+    setTimeout(()=>{
+        if(val === String(expectedId)) {
+            toast('Redirecting...', 'info', 1200);
+            setTimeout(()=>{ window.location.href='/team-owner/auction-room/'+expectedId; }, 400);
         } else {
             err.classList.add('show');
-            input.classList.add('error');
-            input.value = '';
-            input.focus();
+            inp.classList.add('err');
+            inp.value=''; inp.focus();
             btn.classList.remove('loading');
             btn.disabled = false;
-            showToast('Incorrect Auction ID. Please try again.', 'error');
+            toast('Wrong Auction ID', 'bad');
         }
-    }, 300);
+    }, 250);
 }
 
-// ============================================
-// PASSWORD MODAL
-// ============================================
-function openPwdModal() {
-    const modal = document.getElementById('pwdModal');
-    modal.classList.add('show');
+// Password Modal
+function openPwd() {
+    document.getElementById('pwdModal').classList.add('on');
     document.getElementById('pwdNew').focus();
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow='hidden';
+}
+function closePwd() {
+    document.getElementById('pwdModal').classList.remove('on');
+    document.getElementById('pwdNew').value='';
+    document.getElementById('pwdConfirm').value='';
+    document.getElementById('pwdNew').classList.remove('err');
+    document.getElementById('pwdConfirm').classList.remove('err');
+    document.getElementById('pwdMsg').textContent='';
+    document.getElementById('pwdMsg').className='modal-msg';
+    document.getElementById('pwdBtn').disabled=false;
+    document.body.style.overflow='';
+    document.getElementById('strBar').classList.remove('on');
+    document.getElementById('strFill').className='fill';
 }
 
-function closePwdModal() {
-    const modal = document.getElementById('pwdModal');
-    modal.classList.remove('show');
-    
-    // Reset form
-    document.getElementById('pwdNew').value = '';
-    document.getElementById('pwdConfirm').value = '';
-    document.getElementById('pwdNew').classList.remove('error');
-    document.getElementById('pwdConfirm').classList.remove('error');
-    document.getElementById('pwdMsg').textContent = '';
-    document.getElementById('pwdMsg').className = 'modal-message';
-    document.getElementById('pwdSubmitBtn').disabled = false;
-    document.getElementById('pwdSubmitBtn').classList.remove('loading');
-    document.getElementById('strengthBar').classList.remove('show');
-    document.getElementById('strengthFill').className = 'fill';
-    document.body.style.overflow = '';
-}
-
-// Password strength checker
-function checkStrength() {
+function checkStr() {
     const pwd = document.getElementById('pwdNew').value;
-    const bar = document.getElementById('strengthBar');
-    const fill = document.getElementById('strengthFill');
-    
-    if (!pwd) {
-        bar.classList.remove('show');
-        return;
-    }
-    
-    bar.classList.add('show');
-    
-    let strength = 0;
-    if (pwd.length >= 6) strength++;
-    if (pwd.length >= 10) strength++;
-    if (/[A-Z]/.test(pwd)) strength++;
-    if (/[0-9]/.test(pwd)) strength++;
-    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
-    
-    fill.className = 'fill';
-    if (strength <= 2) {
-        fill.classList.add('strength-weak');
-    } else if (strength <= 3) {
-        fill.classList.add('strength-medium');
-    } else {
-        fill.classList.add('strength-strong');
-    }
+    const bar = document.getElementById('strBar');
+    const fill = document.getElementById('strFill');
+    if(!pwd){ bar.classList.remove('on'); return; }
+    bar.classList.add('on');
+    let s=0;
+    if(pwd.length>=6)s++; if(pwd.length>=10)s++;
+    if(/[A-Z]/.test(pwd))s++; if(/[0-9]/.test(pwd))s++; if(/[^A-Za-z0-9]/.test(pwd))s++;
+    fill.className='fill ' + (s<=2?'str-w':s<=3?'str-m':'str-s');
 }
 
-async function submitPwd() {
-    const btn = document.getElementById('pwdSubmitBtn');
+async function savePwd() {
+    const btn = document.getElementById('pwdBtn');
     const msg = document.getElementById('pwdMsg');
-    const newPwd = document.getElementById('pwdNew').value.trim();
-    const confirm = document.getElementById('pwdConfirm').value.trim();
-    const newInput = document.getElementById('pwdNew');
-    const confirmInput = document.getElementById('pwdConfirm');
+    const n = document.getElementById('pwdNew').value.trim();
+    const c = document.getElementById('pwdConfirm').value.trim();
+    const ni = document.getElementById('pwdNew');
+    const ci = document.getElementById('pwdConfirm');
     
-    // Reset
-    msg.textContent = '';
-    msg.className = 'modal-message';
-    newInput.classList.remove('error');
-    confirmInput.classList.remove('error');
+    msg.textContent=''; msg.className='modal-msg';
+    ni.classList.remove('err'); ci.classList.remove('err');
     
-    // Validation
-    let hasError = false;
+    let bad=false;
+    if(!n || n.length<6){ msg.textContent='❌ Min 6 chars'; msg.classList.add('bad'); ni.classList.add('err'); bad=true; }
+    if(!c){ if(!bad){ msg.textContent='❌ Confirm password'; msg.classList.add('bad'); } ci.classList.add('err'); bad=true; }
+    if(n && c && n!==c){ msg.textContent='❌ Passwords mismatch'; msg.classList.add('bad'); ni.classList.add('err'); ci.classList.add('err'); bad=true; }
+    if(bad) return;
     
-    if (!newPwd) {
-        msg.textContent = '❌ Please enter a new password';
-        msg.classList.add('error');
-        newInput.classList.add('error');
-        hasError = true;
-    } else if (newPwd.length < 6) {
-        msg.textContent = '❌ Password must be at least 6 characters';
-        msg.classList.add('error');
-        newInput.classList.add('error');
-        hasError = true;
-    }
-    
-    if (!confirm) {
-        if (!hasError) {
-            msg.textContent = '❌ Please confirm your password';
-            msg.classList.add('error');
-        }
-        confirmInput.classList.add('error');
-        hasError = true;
-    }
-    
-    if (newPwd && confirm && newPwd !== confirm) {
-        msg.textContent = '❌ Passwords do not match';
-        msg.classList.add('error');
-        newInput.classList.add('error');
-        confirmInput.classList.add('error');
-        hasError = true;
-    }
-    
-    if (hasError) return;
-    
-    // Loading
-    btn.classList.add('loading');
-    btn.disabled = true;
-    
-    try {
-        const res = await fetch('/team-owner/change-password', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({new_password: newPwd, confirm_password: confirm})
+    btn.disabled=true;
+    try{
+        const r = await fetch('/team-owner/change-password', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({new_password:n, confirm_password:c})
         });
-        const data = await res.json();
-        
-        if (data.success) {
-            msg.textContent = '✅ ' + data.message;
-            msg.classList.add('success');
-            showToast('Password changed successfully!', 'success');
-            setTimeout(closePwdModal, 1500);
+        const d = await r.json();
+        if(d.success){
+            msg.textContent='✅ '+d.message; msg.classList.add('ok');
+            toast('Password changed!','good'); setTimeout(closePwd,1500);
         } else {
-            msg.textContent = '❌ ' + (data.message || 'Failed to change password');
-            msg.classList.add('error');
-            btn.classList.remove('loading');
-            btn.disabled = false;
+            msg.textContent='❌ '+(d.message||'Failed'); msg.classList.add('bad');
+            btn.disabled=false;
         }
-    } catch (e) {
-        msg.textContent = '❌ Network error. Please try again.';
-        msg.classList.add('error');
-        btn.classList.remove('loading');
-        btn.disabled = false;
+    } catch(e){
+        msg.textContent='❌ Network error'; msg.classList.add('bad');
+        btn.disabled=false;
     }
 }
 
-// ============================================
-// EVENT LISTENERS
-// ============================================
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePwdModal();
-});
-
-document.getElementById('pwdModal').addEventListener('click', function(e) {
-    if (e.target === this) closePwdModal();
-});
-
-// Prevent form submission on Enter in password fields (let it submit via button)
-document.getElementById('pwdConfirm').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        submitPwd();
-    }
-});
+// Events
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePwd(); });
+document.getElementById('pwdModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closePwd(); });
+document.getElementById('pwdConfirm').addEventListener('keypress', e=>{ if(e.key==='Enter'){ e.preventDefault(); savePwd(); }});
 </script>
 {% endblock %}
