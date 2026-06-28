@@ -2,263 +2,991 @@
 
 {% block content %}
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
-
+    /* ============================================
+       UNIFIED DESIGN SYSTEM — DASHBOARD
+       ============================================ */
     :root {
-        --cp: #7c4dff; --cp-l: #9e7bff; --cp-d: #5a2fd4;
-        --ib: #00d4ff; --ib-l: #6ee8ff;
-        --g: #22c55e; --g-l: #4ade80;
-        --gd: #f7b500; --gd-l: #ffe29a;
-        --bg-p: rgba(12,16,32,0.85);
-        --tp: #e8f0ff; --ts: #a0b0d0; --td: #7080a0;
+        --lava-red: #ff2a00; --lava-orange: #ff6b00; --lava-yellow: #ffcc00;
+        --cosmic-purple: #7c4dff; --cosmic-purple-light: #9e7bff; --cosmic-purple-dark: #5a2fd4;
+        --ice-blue: #00d4ff; --ice-blue-light: #6ee8ff; --ice-blue-dark: #0099cc;
+        --gold: #f7b500; --gold-light: #ffe29a; --gold-dark: #c49000;
+        --green: #22c55e; --green-light: #4ade80;
+        --bg-dark: #070b16; --bg-panel: rgba(12, 16, 32, 0.85);
+        --text-primary: #e8f0ff; --text-secondary: #a0b0d0; --text-dim: #7080a0;
+        
+        --radius-sm: 10px; --radius-md: 14px; --radius-lg: 20px; --radius-xl: 24px;
+        --shadow-sm: 0 4px 12px rgba(0,0,0,0.2);
+        --shadow-md: 0 8px 24px rgba(0,0,0,0.3);
+        --shadow-glow-purple: 0 0 30px rgba(124, 77, 255, 0.15);
+        --transition-fast: 0.2s ease;
+        --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .gp {
-        background: var(--bg-p); backdrop-filter: blur(24px);
-        border: 1px solid rgba(100,120,200,0.1); border-radius: 20px;
-        padding: 24px; position: relative; overflow: hidden;
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    .dash-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 16px;
     }
-    .gp::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    @media (min-width: 640px) {
+        .dash-container { padding: 24px; }
+    }
+    @media (min-width: 1024px) {
+        .dash-container { padding: 32px; }
+    }
+
+    /* ============================================
+       HEADER
+       ============================================ */
+    .dash-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .dash-header h1 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.5rem;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .dash-header h1 .emoji {
+        font-size: 1.8rem;
+        filter: drop-shadow(0 0 8px rgba(124, 77, 255, 0.4));
+    }
+    @media (min-width: 640px) {
+        .dash-header h1 { font-size: 1.8rem; }
+    }
+
+    /* ============================================
+       GLASS PANEL (Card Base)
+       ============================================ */
+    .glass-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all var(--transition-base);
+    }
+    .glass-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
         background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
+        opacity: 0.5;
+    }
+    @media (hover: hover) {
+        .glass-panel:hover {
+            border-color: rgba(124, 77, 255, 0.2);
+            box-shadow: var(--shadow-glow-purple);
+            transform: translateY(-2px);
+        }
     }
 
-    h1 { font-family: 'Space Grotesk'; font-size: 1.8rem; color: var(--tp); margin-bottom: 20px; }
-
-    .tg { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-
-    .tc { display: flex; flex-direction: column; gap: 12px; padding: 24px; }
-    .tc .lg { font-size: 0.75rem; color: var(--td); text-transform: uppercase; letter-spacing: 2px; }
-    .tc .nm { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--tp); }
-    
-    .st {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.75rem; font-weight: 600;
+    /* ============================================
+       TEAM GRID
+       ============================================ */
+    .team-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
-    .st-live { color: var(--g); }
-    .st-paused { color: #f59e0b; }
-    .st-pending { color: var(--td); }
-    .st-completed { color: var(--cp-l); }
-
-    .sr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0; }
-    .sm { text-align: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; }
-    .sm .v { font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; }
-    .sm .l { font-size: 0.65rem; color: var(--td); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-
-    .ct { display: flex; flex-wrap: wrap; gap: 6px; }
-    .ct span {
-        padding: 3px 10px; border-radius: 16px;
-        font-size: 0.7rem; font-weight: 600;
-        background: rgba(124,77,255,0.1); color: var(--cp-l);
-        border: 1px solid rgba(124,77,255,0.15);
+    @media (min-width: 640px) {
+        .team-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    }
+    @media (min-width: 1024px) {
+        .team-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
     }
 
-    .si {
-        display: flex; align-items: center; gap: 6px;
-        padding: 6px 12px; border-radius: 10px;
-        font-size: 0.75rem; font-weight: 600;
+    /* ============================================
+       TEAM CARD
+       ============================================ */
+    .team-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .team-card .league-tag {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 600;
+    }
+    .team-card .team-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    @media (min-width: 640px) {
+        .team-card .team-name { font-size: 1.5rem; }
+    }
+
+    /* ============================================
+       STATUS BADGE
+       ============================================ */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 20px;
+        width: fit-content;
+    }
+    .status-live {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.1);
+    }
+    .status-live .dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: pulse-dot 2s infinite;
+    }
+    .status-paused {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .status-pending {
+        background: rgba(100, 116, 139, 0.1);
+        color: var(--text-dim);
+        border: 1px solid rgba(100, 116, 139, 0.15);
+    }
+    .status-completed {
+        background: rgba(124, 77, 255, 0.1);
+        color: var(--cosmic-purple-light);
+        border: 1px solid rgba(124, 77, 255, 0.2);
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ============================================
+       SESSION ALLOCATION BADGE
+       ============================================ */
+    .session-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    .session-ok {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--green-light);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    .session-warn {
+        background: rgba(245, 158, 11, 0.1);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    /* ============================================
+       STATS ROW
+       ============================================ */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 4px 0;
+    }
+    .stat-box {
+        text-align: center;
+        padding: 12px 8px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: var(--radius-sm);
+    }
+    .stat-box .value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    .stat-box .label {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 1px;
         margin-top: 4px;
     }
-    .si-ok { background: rgba(34,197,94,0.1); color: var(--g); border: 1px solid rgba(34,197,94,0.2); }
-    .si-warn { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+    @media (min-width: 640px) {
+        .stat-box .value { font-size: 1.3rem; }
+        .stat-box .label { font-size: 0.65rem; }
+    }
 
-    .aid {
-        width: 100%; padding: 10px 14px; border-radius: 10px;
-        border: 1px solid rgba(124,77,255,0.25);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'JetBrains Mono'; font-size: 0.85rem;
-        letter-spacing: 2px; text-align: center; outline: none;
+    /* ============================================
+       CATEGORY TAGS
+       ============================================ */
+    .category-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .category-tags span {
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(124, 77, 255, 0.08);
+        color: var(--cosmic-purple-light);
+        border: 1px solid rgba(124, 77, 255, 0.12);
+    }
+
+    /* ============================================
+       AUCTION ID INPUT SECTION
+       ============================================ */
+    .auction-entry {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid rgba(100, 120, 200, 0.08);
+    }
+    .auction-id-label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-align: center;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .auction-id-input-wrapper {
+        display: flex;
+        gap: 8px;
         margin-bottom: 8px;
     }
-    .aid:focus { border-color: var(--cp-l); box-shadow: 0 0 12px rgba(124,77,255,0.15); }
-    .aid::placeholder { color: var(--td); font-family: 'Inter'; letter-spacing: normal; }
-    .aid.err { border-color: #ff2a00; animation: sh 0.4s; }
-    @keyframes sh { 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    .auction-id-input {
+        flex: 1;
+        padding: 12px 14px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(124, 77, 255, 0.25);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+        letter-spacing: 2px;
+        text-align: center;
+        outline: none;
+        transition: all var(--transition-fast);
+        -webkit-appearance: none;
+    }
+    .auction-id-input:focus {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 16px rgba(124, 77, 255, 0.15);
+    }
+    .auction-id-input::placeholder {
+        color: var(--text-dim);
+        font-family: 'Inter', sans-serif;
+        letter-spacing: normal;
+        font-size: 0.85rem;
+    }
+    .auction-id-input.error {
+        border-color: var(--lava-red);
+        animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+        25% { transform: translateX(-4px); }
+        75% { transform: translateX(4px); }
+    }
 
-    .ab {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 12px 20px; border-radius: 14px;
-        font-weight: 600; font-size: 0.85rem;
-        cursor: pointer; width: 100%; border: 1px solid;
-        text-decoration: none; transition: all 0.3s;
+    /* Copy button */
+    .copy-btn {
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(124, 77, 255, 0.25);
+        background: rgba(124, 77, 255, 0.08);
+        color: var(--cosmic-purple-light);
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
     }
-    .ab-e {
-        background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.05));
-        border-color: rgba(34,197,94,0.3); color: var(--g);
+    .copy-btn:hover {
+        background: rgba(124, 77, 255, 0.15);
+        border-color: var(--cosmic-purple-light);
     }
-    .ab-e:hover { border-color: var(--g); box-shadow: 0 0 20px rgba(34,197,94,0.2); transform: translateY(-2px); }
-    .ab-e:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .ab-v {
-        background: rgba(124,77,255,0.08);
-        border-color: rgba(124,77,255,0.25); color: var(--cp-l);
+    .copy-btn.copied {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: var(--green-light);
     }
-    .ab-v:hover { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.2); transform: translateY(-2px); }
-    .ab-d {
-        background: rgba(100,116,139,0.08);
-        border-color: rgba(100,116,139,0.15); color: var(--td);
+
+    .auction-error {
+        color: var(--lava-red);
+        font-size: 0.75rem;
+        text-align: center;
+        margin-top: -4px;
+        margin-bottom: 6px;
+        display: none;
+        font-weight: 500;
+    }
+    .auction-error.show { display: block; }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 20px;
+        border-radius: var(--radius-md);
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        width: 100%;
+        border: 1px solid;
+        text-decoration: none;
+        transition: all var(--transition-base);
+        font-family: 'Inter', sans-serif;
+        min-height: 48px;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
+        border-color: rgba(34, 197, 94, 0.3);
+        color: var(--green-light);
+    }
+    .btn-primary:hover:not(:disabled) {
+        border-color: var(--green-light);
+        box-shadow: 0 0 24px rgba(34, 197, 94, 0.2);
+        transform: translateY(-2px);
+    }
+    .btn-secondary {
+        background: rgba(124, 77, 255, 0.08);
+        border-color: rgba(124, 77, 255, 0.25);
+        color: var(--cosmic-purple-light);
+    }
+    .btn-secondary:hover:not(:disabled) {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 24px rgba(124, 77, 255, 0.15);
+        transform: translateY(-2px);
+    }
+    .btn-ghost {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.15);
+        color: var(--text-dim);
         cursor: not-allowed;
     }
-
-    .ae { font-size: 0.7rem; color: var(--td); text-align: center; margin-bottom: 6px; }
-    .aerr { color: #ff2a00; font-size: 0.7rem; text-align: center; margin-top: -4px; margin-bottom: 4px; display: none; }
-
-    .es { text-align: center; padding: 50px 20px; }
-    .es .i { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3; }
-    .es h3 { color: var(--ts); margin-bottom: 8px; font-family: 'Space Grotesk'; }
-    .es p { color: var(--td); font-size: 0.9rem; }
-
-    .pwd-input {
-        width: 100%; padding: 12px 14px; border-radius: 10px;
-        border: 1px solid rgba(124,77,255,0.25);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'Inter'; font-size: 0.9rem;
-        outline: none; margin-bottom: 12px;
-    }
-    .pwd-input:focus { border-color: var(--cp-l); box-shadow: 0 0 12px rgba(124,77,255,0.15); }
-    .pwd-input::placeholder { color: var(--td); }
-    .pwd-input.err { border-color: #ff2a00; animation: sh 0.4s; }
-
-    .pwd-label {
-        font-size: 0.8rem; color: var(--ts);
-        margin-bottom: 6px; display: block;
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        min-height: 40px;
+        width: auto;
     }
 
-    .header-row {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    /* Spinner */
+    .btn .spinner {
+        width: 16px; height: 16px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: none;
     }
-    .header-row h1 { margin: 0; }
+    .btn.loading .spinner { display: inline-block; }
+    .btn.loading .btn-text { opacity: 0.7; }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ============================================
+       CHANGE PASSWORD BUTTON (Header)
+       ============================================ */
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    /* ============================================
+       PASSWORD MODAL
+       ============================================ */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        transition: opacity var(--transition-base);
+    }
+    .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+    .modal-content {
+        background: var(--bg-panel);
+        border: 1px solid rgba(100, 120, 200, 0.2);
+        border-radius: var(--radius-xl);
+        width: 100%;
+        max-width: 420px;
+        padding: 28px;
+        position: relative;
+        transform: scale(0.95) translateY(10px);
+        transition: transform var(--transition-base);
+        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+    .modal-overlay.show .modal-content {
+        transform: scale(1) translateY(0);
+    }
+    .modal-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .modal-header h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: var(--text-primary);
+        font-size: 1.3rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .modal-header .subtitle {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        margin-top: 6px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+    .form-input {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(124, 77, 255, 0.25);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        font-size: 16px; /* Prevents iOS zoom */
+        outline: none;
+        transition: all var(--transition-fast);
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: var(--cosmic-purple-light);
+        box-shadow: 0 0 16px rgba(124, 77, 255, 0.12);
+    }
+    .form-input::placeholder {
+        color: var(--text-dim);
+    }
+    .form-input.error {
+        border-color: var(--lava-red);
+        animation: shake 0.4s ease;
+    }
+
+    /* Password strength bar */
+    .strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        margin-top: 8px;
+        background: rgba(100, 116, 139, 0.2);
+        overflow: hidden;
+        display: none;
+    }
+    .strength-bar.show { display: block; }
+    .strength-bar .fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: all var(--transition-base);
+        width: 0;
+    }
+    .strength-weak { background: var(--lava-red); width: 33%; }
+    .strength-medium { background: var(--gold); width: 66%; }
+    .strength-strong { background: var(--green); width: 100%; }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .modal-actions .btn { flex: 1; }
+
+    .modal-message {
+        text-align: center;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+        min-height: 20px;
+        font-weight: 500;
+    }
+    .modal-message.success { color: var(--green-light); }
+    .modal-message.error { color: var(--lava-red); }
+
+    /* ============================================
+       TOAST NOTIFICATION
+       ============================================ */
+    .toast-container {
+        position: fixed;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: none;
+    }
+    /* Mobile: bottom-center */
+    .toast-container {
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 32px);
+        max-width: 400px;
+    }
+    /* Desktop: top-right */
+    @media (min-width: 640px) {
+        .toast-container {
+            top: 20px;
+            right: 20px;
+            left: auto;
+            bottom: auto;
+            transform: none;
+            width: 360px;
+        }
+    }
+    .toast {
+        background: linear-gradient(135deg, rgba(12, 16, 32, 0.95), rgba(5, 8, 16, 0.98));
+        border: 1px solid rgba(124, 77, 255, 0.2);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        animation: toast-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: auto;
+        backdrop-filter: blur(12px);
+    }
+    .toast.success { border-color: rgba(34, 197, 94, 0.3); color: var(--green-light); }
+    .toast.error { border-color: rgba(255, 42, 0, 0.3); color: #ff6b6b; }
+    .toast.info { border-color: rgba(0, 212, 255, 0.3); color: var(--ice-blue-light); }
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .toast-out {
+        animation: toast-out 0.3s ease forwards;
+    }
+    @keyframes toast-out {
+        to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+    }
+
+    /* ============================================
+       EMPTY STATE
+       ============================================ */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .empty-state .icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.3;
+        animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    .empty-state h3 {
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+    }
+    .empty-state p {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        max-width: 400px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* ============================================
+       SKELETON LOADER
+       ============================================ */
+    .skeleton {
+        background: linear-gradient(90deg, rgba(100,120,200,0.08) 25%, rgba(100,120,200,0.15) 50%, rgba(100,120,200,0.08) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s infinite;
+        border-radius: var(--radius-sm);
+    }
+    @keyframes skeleton-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    .skeleton-text { height: 16px; margin-bottom: 8px; }
+    .skeleton-text.short { width: 60%; }
+    .skeleton-text.long { width: 90%; }
+    .skeleton-badge { height: 24px; width: 80px; margin-bottom: 12px; }
+    .skeleton-stats { height: 60px; margin-bottom: 12px; }
+    .skeleton-btn { height: 48px; }
+
+    /* ============================================
+       RESPONSIVE UTILITIES
+       ============================================ */
+    .hide-mobile { display: none; }
+    @media (min-width: 640px) {
+        .hide-mobile { display: inline-flex; }
+        .hide-desktop { display: none; }
+    }
 </style>
 
-<div class="header-row">
-    <h1>⚡ My Teams</h1>
-    <button type="button" class="ab ab-v" onclick="openPwdModal()" style="width: auto; padding: 8px 18px; font-size: 0.8rem;">
-        🔒 Change Password
-    </button>
-</div>
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
-<!-- Change Password Modal -->
-<div id="pwdModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
-    <div class="gp" style="width:90%; max-width:380px; padding:28px;">
-        <h3 style="font-family:'Space Grotesk'; color:var(--tp); margin-bottom:20px; text-align:center; font-size:1.2rem;">🔒 Change Password</h3>
-        
-        <label class="pwd-label">New Password</label>
-        <input type="password" id="pwdNew" class="pwd-input" placeholder="Enter new password">
-        
-        <label class="pwd-label">Confirm New Password</label>
-        <input type="password" id="pwdConfirm" class="pwd-input" placeholder="Re-enter new password">
-        
-        <div id="pwdMsg" style="color:#ff2a00; font-size:0.8rem; text-align:center; margin-bottom:12px; display:none;"></div>
-        
-        <div style="display:flex; gap:10px;">
-            <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Save</button>
-            <button type="button" class="ab ab-d" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
-        </div>
-    </div>
-</div>
-
-{% if teams %}
-<div class="tg" id="teamGrid">
-    {% for team in teams %}
-    <div class="gp tc">
-        <div class="lg">{{ team.league_name }}</div>
-        <div class="nm">{{ team.team_name }}</div>
-        
-        <div class="st st-{{ team.auction_status }}">
-            {% if team.auction_status == 'live' %}🔴{% elif team.auction_status == 'paused' %}⏸{% elif team.auction_status == 'completed' %}✓{% else %}○{% endif %}
-            {{ team.auction_status.upper() }}
-        </div>
-        
-        {% if team.your_sessions_count %}
-        <div class="si si-ok">✅ Allocated to {{ team.your_sessions_count }} session(s)</div>
-        {% else %}
-        <div class="si si-warn">⏳ Not allocated to any session yet</div>
-        {% endif %}
-        
-        <div class="sr">
-            <div class="sm">
-                <div class="v" style="color:var(--gd-l)">₹{{ "%.2f"|format(team.available) }}Cr</div>
-                <div class="l">Available</div>
-            </div>
-            <div class="sm">
-                <div class="v" style="color:var(--ib)">{{ team.squad_count }}</div>
-                <div class="l">Squad</div>
-            </div>
-            <div class="sm">
-                <div class="v" style="color:var(--cp-l)">{{ team.purse_limit|int }}</div>
-                <div class="l">Purse</div>
-            </div>
-        </div>
-        
-        <div class="ct">
-            <span>🏏 {{ team.batsmen }} Batsmen</span>
-            <span>🎯 {{ team.bowlers }} Bowlers</span>
-            <span>⚡ {{ team.all_rounders }} All-Rounders</span>
-            <span>🧤 {{ team.wicket_keepers }} Keepers</span>
-            <span>🌍 {{ team.overseas }} Overseas</span>
-        </div>
-        
-        {% if team.auction_status in ['live', 'paused'] %}
-        <div style="margin-top:auto;">
-            <div class="ae">Enter Auction ID: {{ team.auction_id }}</div>
-            <input type="number" class="aid" id="aid-{{ team.auction_id }}"
-                placeholder="Enter Auction ID ({{ team.auction_id }})" 
-                onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
-                inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            <div class="aerr" id="err-{{ team.auction_id }}">Wrong Auction ID</div>
-            <button type="button" class="ab ab-e" id="btn-{{ team.auction_id }}"
-                    onclick="eA({{ team.auction_id }})">
-                🚀 View Sessions →
+<div class="dash-container">
+    <!-- Header -->
+    <div class="dash-header">
+        <h1><span class="emoji">⚡</span> My Teams</h1>
+        <div class="header-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openPwdModal()">
+                <span>🔒</span>
+                <span class="hide-mobile">Change Password</span>
             </button>
         </div>
-        {% elif team.auction_status == 'completed' %}
-        <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="ab ab-v">
-            📊 View Results →
-        </a>
-        {% else %}
-        <div class="ab ab-d">⏳ Auction Not Started</div>
-        {% endif %}
     </div>
-    {% endfor %}
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="pwdModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><span>🔒</span> Change Password</h3>
+                <p class="subtitle">Secure your account</p>
+            </div>
+            
+            <div class="modal-message" id="pwdMsg"></div>
+            
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" id="pwdNew" class="form-input" placeholder="Min. 6 characters" oninput="checkStrength()">
+                <div class="strength-bar" id="strengthBar">
+                    <div class="fill" id="strengthFill"></div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" id="pwdConfirm" class="form-input" placeholder="Re-enter password">
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="submitPwd()" id="pwdSubmitBtn">
+                    <span class="spinner"></span>
+                    <span class="btn-text">Save Changes</span>
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closePwdModal()" style="background:rgba(100,116,139,0.1);color:var(--text-dim);">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if teams %}
+    <div class="team-grid" id="teamGrid">
+        {% for team in teams %}
+        <div class="glass-panel team-card">
+            <div class="league-tag">{{ team.league_name }}</div>
+            <div class="team-name">{{ team.team_name }}</div>
+            
+            <!-- Status -->
+            <div class="status-badge status-{{ team.auction_status }}">
+                {% if team.auction_status == 'live' %}
+                    <span class="dot"></span> Live
+                {% elif team.auction_status == 'paused' %}
+                    ⏸ Paused
+                {% elif team.auction_status == 'completed' %}
+                    ✓ Completed
+                {% else %}
+                    ○ Pending
+                {% endif %}
+            </div>
+            
+            <!-- Session Allocation -->
+            {% if team.your_sessions_count %}
+            <div class="session-badge session-ok">
+                ✅ Allocated to {{ team.your_sessions_count }} session{{ 's' if team.your_sessions_count > 1 else '' }}
+            </div>
+            {% else %}
+            <div class="session-badge session-warn">
+                ⏳ Not allocated to any session yet
+            </div>
+            {% endif %}
+            
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="value" style="color: var(--gold-light);">₹{{ "%.2f"|format(team.available) }}Cr</div>
+                    <div class="label">Available</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" style="color: var(--ice-blue);">{{ team.squad_count }}</div>
+                    <div class="label">Squad</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" style="color: var(--cosmic-purple-light);">{{ team.purse_limit|int }}</div>
+                    <div class="label">Purse</div>
+                </div>
+            </div>
+            
+            <!-- Categories -->
+            <div class="category-tags">
+                <span>🏏 {{ team.batsmen }} Batsmen</span>
+                <span>🎯 {{ team.bowlers }} Bowlers</span>
+                <span>⚡ {{ team.all_rounders }} All-Rounders</span>
+                <span>🧤 {{ team.wicket_keepers }} Keepers</span>
+                <span>🌍 {{ team.overseas }} Overseas</span>
+            </div>
+            
+            <!-- Action -->
+            {% if team.auction_status in ['live', 'paused'] %}
+            <div class="auction-entry">
+                <div class="auction-id-label">
+                    <span>🔑</span>
+                    <span>Auction ID: <strong style="color:var(--cosmic-purple-light);">{{ team.auction_id }}</strong></span>
+                </div>
+                <div class="auction-id-input-wrapper">
+                    <input 
+                        type="tel" 
+                        class="auction-id-input" 
+                        id="aid-{{ team.auction_id }}"
+                        placeholder="Enter Auction ID"
+                        inputmode="numeric"
+                        pattern="[0-9]*"
+                        autocomplete="off"
+                        onkeypress="if(event.key==='Enter')enterAuction({{ team.auction_id }})"
+                    >
+                    <button 
+                        type="button" 
+                        class="copy-btn" 
+                        onclick="copyAuctionId({{ team.auction_id }}, this)"
+                        title="Copy Auction ID"
+                    >
+                        📋
+                    </button>
+                </div>
+                <div class="auction-error" id="err-{{ team.auction_id }}">❌ Incorrect Auction ID</div>
+                <button 
+                    type="button" 
+                    class="btn btn-primary" 
+                    id="btn-{{ team.auction_id }}"
+                    onclick="enterAuction({{ team.auction_id }})"
+                >
+                    <span class="spinner"></span>
+                    <span class="btn-text">🚀 Enter Auction Room</span>
+                </button>
+            </div>
+            {% elif team.auction_status == 'completed' %}
+            <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="btn btn-secondary">
+                📊 View Results
+            </a>
+            {% else %}
+            <div class="btn btn-ghost">
+                ⏳ Auction Not Started
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="glass-panel empty-state">
+        <div class="icon">🏏</div>
+        <h3>No Teams Assigned</h3>
+        <p>You don't own any teams in active auctions. Contact your league administrator to get started.</p>
+    </div>
+    {% endif %}
 </div>
 
 <script>
-function eA(expectedId) {
+// ============================================
+// TOAST SYSTEM
+// ============================================
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// ============================================
+// AUCTION ID COPY
+// ============================================
+function copyAuctionId(auctionId, btn) {
+    navigator.clipboard.writeText(String(auctionId)).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = '✓';
+        showToast('Auction ID copied!', 'success', 2000);
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '📋';
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        const input = document.createElement('input');
+        input.value = auctionId;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Auction ID copied!', 'success', 2000);
+    });
+}
+
+// ============================================
+// ENTER AUCTION ROOM
+// ============================================
+function enterAuction(expectedId) {
     const input = document.getElementById('aid-' + expectedId);
     const btn = document.getElementById('btn-' + expectedId);
     const err = document.getElementById('err-' + expectedId);
     const val = input.value.trim();
     
-    btn.disabled = true;
-    err.style.display = 'none';
-    input.classList.remove('err');
+    // Reset states
+    err.classList.remove('show');
+    input.classList.remove('error');
     
-    if (val === String(expectedId)) {
-        window.location.href = '/team-owner/auction-room/' + expectedId;
-    } else {
-        err.style.display = 'block';
-        input.classList.add('err');
-        input.value = '';
-        input.focus();
-        btn.disabled = false;
-    }
+    // Loading state
+    btn.classList.add('loading');
+    btn.disabled = true;
+    
+    // Small delay for UX feedback
+    setTimeout(() => {
+        if (val === String(expectedId)) {
+            showToast('Redirecting to auction room...', 'info', 1500);
+            setTimeout(() => {
+                window.location.href = '/team-owner/auction-room/' + expectedId;
+            }, 500);
+        } else {
+            err.classList.add('show');
+            input.classList.add('error');
+            input.value = '';
+            input.focus();
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            showToast('Incorrect Auction ID. Please try again.', 'error');
+        }
+    }, 300);
 }
 
+// ============================================
+// PASSWORD MODAL
+// ============================================
 function openPwdModal() {
-    document.getElementById('pwdModal').style.display = 'flex';
+    const modal = document.getElementById('pwdModal');
+    modal.classList.add('show');
     document.getElementById('pwdNew').focus();
+    document.body.style.overflow = 'hidden';
 }
 
 function closePwdModal() {
-    document.getElementById('pwdModal').style.display = 'none';
+    const modal = document.getElementById('pwdModal');
+    modal.classList.remove('show');
+    
+    // Reset form
     document.getElementById('pwdNew').value = '';
     document.getElementById('pwdConfirm').value = '';
-    const msg = document.getElementById('pwdMsg');
-    msg.style.display = 'none';
-    msg.textContent = '';
+    document.getElementById('pwdNew').classList.remove('error');
+    document.getElementById('pwdConfirm').classList.remove('error');
+    document.getElementById('pwdMsg').textContent = '';
+    document.getElementById('pwdMsg').className = 'modal-message';
     document.getElementById('pwdSubmitBtn').disabled = false;
-    document.getElementById('pwdNew').classList.remove('err');
-    document.getElementById('pwdConfirm').classList.remove('err');
+    document.getElementById('pwdSubmitBtn').classList.remove('loading');
+    document.getElementById('strengthBar').classList.remove('show');
+    document.getElementById('strengthFill').className = 'fill';
+    document.body.style.overflow = '';
+}
+
+// Password strength checker
+function checkStrength() {
+    const pwd = document.getElementById('pwdNew').value;
+    const bar = document.getElementById('strengthBar');
+    const fill = document.getElementById('strengthFill');
+    
+    if (!pwd) {
+        bar.classList.remove('show');
+        return;
+    }
+    
+    bar.classList.add('show');
+    
+    let strength = 0;
+    if (pwd.length >= 6) strength++;
+    if (pwd.length >= 10) strength++;
+    if (/[A-Z]/.test(pwd)) strength++;
+    if (/[0-9]/.test(pwd)) strength++;
+    if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+    
+    fill.className = 'fill';
+    if (strength <= 2) {
+        fill.classList.add('strength-weak');
+    } else if (strength <= 3) {
+        fill.classList.add('strength-medium');
+    } else {
+        fill.classList.add('strength-strong');
+    }
 }
 
 async function submitPwd() {
@@ -266,29 +994,52 @@ async function submitPwd() {
     const msg = document.getElementById('pwdMsg');
     const newPwd = document.getElementById('pwdNew').value.trim();
     const confirm = document.getElementById('pwdConfirm').value.trim();
+    const newInput = document.getElementById('pwdNew');
+    const confirmInput = document.getElementById('pwdConfirm');
     
-    btn.disabled = true;
-    msg.style.display = 'none';
-    document.getElementById('pwdNew').classList.remove('err');
-    document.getElementById('pwdConfirm').classList.remove('err');
+    // Reset
+    msg.textContent = '';
+    msg.className = 'modal-message';
+    newInput.classList.remove('error');
+    confirmInput.classList.remove('error');
     
-    if (!newPwd || !confirm) {
-        msg.textContent = '❌ Both fields are required';
-        msg.style.display = 'block';
-        if (!newPwd) document.getElementById('pwdNew').classList.add('err');
-        if (!confirm) document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false;
-        return;
+    // Validation
+    let hasError = false;
+    
+    if (!newPwd) {
+        msg.textContent = '❌ Please enter a new password';
+        msg.classList.add('error');
+        newInput.classList.add('error');
+        hasError = true;
+    } else if (newPwd.length < 6) {
+        msg.textContent = '❌ Password must be at least 6 characters';
+        msg.classList.add('error');
+        newInput.classList.add('error');
+        hasError = true;
     }
     
-    if (newPwd !== confirm) {
+    if (!confirm) {
+        if (!hasError) {
+            msg.textContent = '❌ Please confirm your password';
+            msg.classList.add('error');
+        }
+        confirmInput.classList.add('error');
+        hasError = true;
+    }
+    
+    if (newPwd && confirm && newPwd !== confirm) {
         msg.textContent = '❌ Passwords do not match';
-        msg.style.display = 'block';
-        document.getElementById('pwdNew').classList.add('err');
-        document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false;
-        return;
+        msg.classList.add('error');
+        newInput.classList.add('error');
+        confirmInput.classList.add('error');
+        hasError = true;
     }
+    
+    if (hasError) return;
+    
+    // Loading
+    btn.classList.add('loading');
+    btn.disabled = true;
     
     try {
         const res = await fetch('/team-owner/change-password', {
@@ -299,37 +1050,41 @@ async function submitPwd() {
         const data = await res.json();
         
         if (data.success) {
-            msg.style.color = '#4ade80';
             msg.textContent = '✅ ' + data.message;
-            msg.style.display = 'block';
-            setTimeout(closePwdModal, 1200);
+            msg.classList.add('success');
+            showToast('Password changed successfully!', 'success');
+            setTimeout(closePwdModal, 1500);
         } else {
-            msg.style.color = '#ff2a00';
-            msg.textContent = '❌ ' + data.message;
-            msg.style.display = 'block';
+            msg.textContent = '❌ ' + (data.message || 'Failed to change password');
+            msg.classList.add('error');
+            btn.classList.remove('loading');
             btn.disabled = false;
         }
     } catch (e) {
-        msg.style.color = '#ff2a00';
-        msg.textContent = '❌ Something went wrong';
-        msg.style.display = 'block';
+        msg.textContent = '❌ Network error. Please try again.';
+        msg.classList.add('error');
+        btn.classList.remove('loading');
         btn.disabled = false;
     }
 }
 
+// ============================================
+// EVENT LISTENERS
+// ============================================
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closePwdModal();
 });
+
 document.getElementById('pwdModal').addEventListener('click', function(e) {
     if (e.target === this) closePwdModal();
 });
-</script>
 
-{% else %}
-<div class="es">
-    <div class="i">🏏</div>
-    <h3>No Teams Assigned</h3>
-    <p>You don't own any teams in active auctions. Contact an admin.</p>
-</div>
-{% endif %}
+// Prevent form submission on Enter in password fields (let it submit via button)
+document.getElementById('pwdConfirm').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        submitPwd();
+    }
+});
+</script>
 {% endblock %}
