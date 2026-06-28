@@ -13,14 +13,6 @@
         --tp: #e8f0ff; --ts: #a0b0d0; --td: #7080a0;
     }
 
-    /* ===== BASE ===== */
-    body { background: #070b16; }
-
-    /* ===== CONTAINER ===== */
-    .dash-wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
-    @media (min-width: 768px) { .dash-wrap { padding: 24px; } }
-    @media (min-width: 1200px) { .dash-wrap { padding: 32px; } }
-
     /* ===== HEADER ===== */
     .dash-head {
         display: flex; justify-content: space-between; align-items: center;
@@ -54,27 +46,15 @@
 
     /* ===== GRID ===== */
     .tg {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 16px;
+        display: grid; grid-template-columns: 1fr; gap: 16px;
     }
-    @media (min-width: 768px) {
-        .tg { grid-template-columns: repeat(2, 1fr); gap: 20px; }
-    }
-    @media (min-width: 1200px) {
-        .tg { grid-template-columns: repeat(3, 1fr); }
-    }
+    @media (min-width: 768px) { .tg { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+    @media (min-width: 1200px) { .tg { grid-template-columns: repeat(3, 1fr); } }
 
     /* ===== CARD CONTENT ===== */
     .tc { display: flex; flex-direction: column; gap: 14px; }
-    .tc .lg {
-        font-size: 0.8rem; color: var(--td); text-transform: uppercase;
-        letter-spacing: 2px; font-weight: 700;
-    }
-    .tc .nm {
-        font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700;
-        color: var(--tp); line-height: 1.2;
-    }
+    .tc .lg { font-size: 0.8rem; color: var(--td); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+    .tc .nm { font-family: 'Space Grotesk'; font-size: 1.5rem; font-weight: 700; color: var(--tp); line-height: 1.2; }
     @media (min-width: 768px) { .tc .nm { font-size: 1.4rem; } }
 
     /* ===== STATUS ===== */
@@ -83,54 +63,27 @@
         font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;
         padding: 5px 12px; border-radius: 30px; width: fit-content;
     }
-    .st-live {
-        background: rgba(34,197,94,0.15); color: var(--g);
-        border: 1px solid rgba(34,197,94,0.3);
-        box-shadow: 0 0 12px rgba(34,197,94,0.1);
-    }
-    .st-live::before {
-        content: ''; width: 7px; height: 7px; border-radius: 50%;
-        background: var(--g); box-shadow: 0 0 8px var(--g);
-        animation: pulse 2s infinite;
-    }
+    .st-live { background: rgba(34,197,94,0.15); color: var(--g); border: 1px solid rgba(34,197,94,0.3); box-shadow: 0 0 12px rgba(34,197,94,0.1); }
+    .st-live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--g); box-shadow: 0 0 8px var(--g); animation: pulse 2s infinite; }
     .st-paused { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
     .st-pending { background: rgba(100,116,139,0.12); color: var(--td); border: 1px solid rgba(100,116,139,0.2); }
     .st-completed { background: rgba(124,77,255,0.12); color: var(--cp-l); border: 1px solid rgba(124,77,255,0.25); }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 
-    .si {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 12px; border-radius: 10px;
-        font-size: 0.8rem; font-weight: 600;
-    }
+    .si { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; }
     .si-ok { background: rgba(34,197,94,0.1); color: var(--g); border: 1px solid rgba(34,197,94,0.2); }
     .si-warn { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
 
-    /* ===== STATS — ALWAYS 3 COLUMNS ===== */
-    .sr {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin: 8px 0;
-    }
-    .sm {
-        text-align: center; padding: 16px 8px;
-        background: rgba(0,0,0,0.25); border-radius: 14px;
-        border: 1px solid rgba(100,120,200,0.06);
-    }
+    /* ===== STATS ===== */
+    .sr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0; }
+    .sm { text-align: center; padding: 16px 8px; background: rgba(0,0,0,0.25); border-radius: 14px; border: 1px solid rgba(100,120,200,0.06); }
     .sm .v { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; }
     .sm .l { font-size: 0.65rem; color: var(--td); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 600; }
     @media (min-width: 768px) { .sm { padding: 14px 8px; } .sm .v { font-size: 1.2rem; } }
 
     /* ===== CATEGORIES ===== */
     .ct { display: flex; flex-wrap: wrap; gap: 8px; }
-    .ct span {
-        padding: 5px 12px; border-radius: 20px;
-        font-size: 0.8rem; font-weight: 600;
-        background: rgba(124,77,255,0.08); color: var(--cp-l);
-        border: 1px solid rgba(124,77,255,0.15);
-        white-space: nowrap;
-    }
+    .ct span { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: rgba(124,77,255,0.08); color: var(--cp-l); border: 1px solid rgba(124,77,255,0.15); white-space: nowrap; }
     @media (min-width: 768px) { .ct span { font-size: 0.75rem; padding: 4px 10px; } }
 
     /* ===== AUCTION ENTRY ===== */
@@ -140,11 +93,9 @@
     .aid-wrap { display: flex; gap: 10px; margin-bottom: 10px; }
     .aid {
         flex: 1; padding: 14px 16px; border-radius: 12px;
-        border: 2px solid rgba(124,77,255,0.2);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'JetBrains Mono'; font-size: 1.1rem;
-        letter-spacing: 2px; text-align: center; outline: none;
-        -webkit-appearance: none;
+        border: 2px solid rgba(124,77,255,0.2); background: rgba(0,0,0,0.3);
+        color: var(--tp); font-family: 'JetBrains Mono'; font-size: 1.1rem;
+        letter-spacing: 2px; text-align: center; outline: none; -webkit-appearance: none;
     }
     .aid:focus { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.15); }
     .aid::placeholder { color: var(--td); font-family: 'Inter'; letter-spacing: normal; font-size: 0.9rem; }
@@ -152,11 +103,9 @@
     @keyframes sh { 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
     .copy-btn {
-        padding: 14px 16px; border-radius: 12px;
-        border: 2px solid rgba(124,77,255,0.2);
-        background: rgba(124,77,255,0.08); color: var(--cp-l);
-        cursor: pointer; font-size: 1.1rem; transition: all 0.2s;
-        display: flex; align-items: center; justify-content: center;
+        padding: 14px 16px; border-radius: 12px; border: 2px solid rgba(124,77,255,0.2);
+        background: rgba(124,77,255,0.08); color: var(--cp-l); cursor: pointer;
+        font-size: 1.1rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
         min-width: 52px; flex-shrink: 0;
     }
     .copy-btn:active { transform: scale(0.95); }
@@ -168,54 +117,33 @@
     /* ===== BUTTONS ===== */
     .ab {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 16px 20px; border-radius: 14px;
-        font-weight: 700; font-size: 1rem;
-        cursor: pointer; width: 100%; border: 2px solid;
-        text-decoration: none; transition: all 0.3s;
-        min-height: 56px;
+        padding: 16px 20px; border-radius: 14px; font-weight: 700; font-size: 1rem;
+        cursor: pointer; width: 100%; border: 2px solid; text-decoration: none; transition: all 0.3s; min-height: 56px;
     }
-    .ab-e {
-        background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
-        border-color: rgba(34,197,94,0.3); color: var(--g-l);
-    }
+    .ab-e { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05)); border-color: rgba(34,197,94,0.3); color: var(--g-l); }
     .ab-e:hover { border-color: var(--g-l); box-shadow: 0 0 24px rgba(34,197,94,0.2); transform: translateY(-2px); }
     .ab-e:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .ab-v {
-        background: rgba(124,77,255,0.08);
-        border-color: rgba(124,77,255,0.25); color: var(--cp-l);
-    }
+    .ab-v { background: rgba(124,77,255,0.08); border-color: rgba(124,77,255,0.25); color: var(--cp-l); }
     .ab-v:hover { border-color: var(--cp-l); box-shadow: 0 0 24px rgba(124,77,255,0.2); transform: translateY(-2px); }
-    .ab-d {
-        background: rgba(100,116,139,0.06);
-        border-color: rgba(100,116,139,0.15); color: var(--td);
-        cursor: not-allowed; font-weight: 600;
-    }
+    .ab-d { background: rgba(100,116,139,0.06); border-color: rgba(100,116,139,0.15); color: var(--td); cursor: not-allowed; font-weight: 600; }
 
     /* ===== MODAL ===== */
     .modal-bg {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.8); backdrop-filter: blur(16px);
-        z-index: 9999; align-items: center; justify-content: center;
-        padding: 20px;
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(16px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-bg.on { display: flex; }
     .modal-box {
         background: var(--bg-p); border: 1px solid rgba(100,120,200,0.2);
-        border-radius: 24px; width: 100%; max-width: 400px;
-        padding: 32px; position: relative;
+        border-radius: 24px; width: 100%; max-width: 400px; padding: 32px;
         box-shadow: 0 30px 100px rgba(0,0,0,0.6);
     }
-    .modal-box h3 {
-        font-family: 'Space Grotesk'; color: var(--tp);
-        text-align: center; font-size: 1.3rem; margin-bottom: 24px;
-    }
+    .modal-box h3 { font-family: 'Space Grotesk'; color: var(--tp); text-align: center; font-size: 1.3rem; margin-bottom: 24px; }
 
     .pwd-label { font-size: 0.85rem; color: var(--ts); margin-bottom: 8px; display: block; font-weight: 500; }
     .pwd-input {
-        width: 100%; padding: 16px 18px; border-radius: 14px;
-        border: 2px solid rgba(124,77,255,0.2);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'Inter'; font-size: 16px;
+        width: 100%; padding: 16px 18px; border-radius: 14px; border: 2px solid rgba(124,77,255,0.2);
+        background: rgba(0,0,0,0.3); color: var(--tp); font-family: 'Inter'; font-size: 16px;
         outline: none; margin-bottom: 16px; box-sizing: border-box;
     }
     .pwd-input:focus { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.12); }
@@ -228,7 +156,7 @@
     .modal-btns { display: flex; gap: 12px; }
     .modal-btns .ab { font-size: 0.95rem; padding: 14px; min-height: 52px; }
 
-    /* ===== EMPTY STATE ===== */
+    /* ===== EMPTY ===== */
     .es { text-align: center; padding: 80px 24px; background: var(--bg-p); border-radius: 24px; border: 1px solid rgba(100,120,200,0.1); }
     .es .i { font-size: 5rem; margin-bottom: 24px; opacity: 0.25; animation: bob 3s ease-in-out infinite; }
     @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
@@ -237,23 +165,17 @@
 
     /* ===== TOAST ===== */
     .toast-box {
-        position: fixed; bottom: 20px; left: 50%;
-        transform: translateX(-50%); z-index: 10000;
-        width: calc(100% - 32px); max-width: 400px;
-        display: flex; flex-direction: column; gap: 10px;
-        pointer-events: none;
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        z-index: 10000; width: calc(100% - 32px); max-width: 400px;
+        display: flex; flex-direction: column; gap: 10px; pointer-events: none;
     }
-    @media (min-width: 768px) {
-        .toast-box { top: 20px; right: 20px; left: auto; bottom: auto; transform: none; }
-    }
+    @media (min-width: 768px) { .toast-box { top: 20px; right: 20px; left: auto; bottom: auto; transform: none; } }
     .toast {
         background: linear-gradient(135deg, rgba(12,16,32,0.97), rgba(5,8,16,0.99));
         border: 1px solid rgba(124,77,255,0.25); border-radius: 16px;
         padding: 16px 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-        display: flex; align-items: center; gap: 10px;
-        font-size: 0.95rem; font-weight: 500; color: var(--tp);
-        animation: popin 0.35s ease; pointer-events: auto;
-        backdrop-filter: blur(12px);
+        display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 500;
+        animation: popin 0.35s ease; pointer-events: auto; backdrop-filter: blur(12px);
     }
     .toast.good { border-color: rgba(34,197,94,0.3); color: var(--g-l); }
     .toast.bad { border-color: rgba(255,42,0,0.3); color: #ff6b6b; }
@@ -265,7 +187,7 @@
 <!-- Toast -->
 <div class="toast-box" id="toastBox"></div>
 
-<div class="dash-wrap">
+<div>
     <!-- Header -->
     <div class="dash-head">
         <h1>⚡ My Teams</h1>
@@ -300,7 +222,7 @@
             
             <div class="d-flex flex-wrap gap-2">
                 <div class="st st-{{ team.auction_status }}">
-                    {% if team.auction_status == 'live' %}{% elif team.auction_status == 'paused' %}⏸{% elif team.auction_status == 'completed' %}✓{% else %}○{% endif %}
+                    {% if team.auction_status == 'live' %}<span class="dot"></span>{% elif team.auction_status == 'paused' %}⏸{% elif team.auction_status == 'completed' %}✓{% else %}○{% endif %}
                     {{ team.auction_status.upper() }}
                 </div>
                 {% if team.your_sessions_count %}
@@ -369,7 +291,6 @@
 </div>
 
 <script>
-// Toast
 function toast(msg, type='good', t=3000) {
     const box = document.getElementById('toastBox');
     const el = document.createElement('div');
@@ -380,7 +301,6 @@ function toast(msg, type='good', t=3000) {
     setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),250); }, t);
 }
 
-// Copy
 function copyId(id, btn) {
     navigator.clipboard.writeText(String(id)).then(()=>{
         btn.classList.add('copied'); btn.innerHTML='✓';
@@ -393,7 +313,6 @@ function copyId(id, btn) {
     });
 }
 
-// Enter Auction
 function eA(expectedId) {
     const input = document.getElementById('aid-' + expectedId);
     const btn = document.getElementById('btn-' + expectedId);
@@ -418,7 +337,6 @@ function eA(expectedId) {
     }, 250);
 }
 
-// Modal
 function openPwdModal() {
     document.getElementById('pwdModal').classList.add('on');
     document.getElementById('pwdNew').focus();
