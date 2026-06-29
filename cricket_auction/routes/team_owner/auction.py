@@ -591,7 +591,7 @@ def save_willing_price():
 
 @bp.route('/auction/teams_squad')
 def get_teams_squad():
-    """Get all teams squad data for modal — session_team_players is source of truth"""
+    """Get all teams squad data for modal — ALL sessions, not just current"""
     active_session_id = request.args.get('session_id') or session.get('active_session_id')
     
     if not active_session_id:
@@ -601,9 +601,9 @@ def get_teams_squad():
     cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
-        # Get auction config
+        # Get auction config from the active session's auction
         cursor.execute(
-            "SELECT squad_size, purse_limit, overseas_limit FROM auctions WHERE id = (SELECT auction_id FROM auction_sessions WHERE id = %s)",
+            "SELECT a.squad_size, a.purse_limit, a.overseas_limit FROM auctions a JOIN auction_sessions s ON s.auction_id = a.id WHERE s.id = %s",
             (active_session_id,)
         )
         auction_config = cursor.fetchone() or {'squad_size': 18, 'purse_limit': 100, 'overseas_limit': 8}
@@ -617,19 +617,21 @@ def get_teams_squad():
         
         result = []
         for team in all_teams:
-            # Get squad players for THIS session only
+            # Get squad players from ALL sessions (like squad page)
             cursor.execute("""
                 SELECT stp.purchase_price,
-                       p.player_name, p.category, p.overseas
+                       p.player_name, p.category, p.overseas,
+                       s.session_name
                 FROM session_team_players stp
                 JOIN session_players sp ON stp.session_player_id = sp.id
                 JOIN players p ON sp.player_id = p.id
-                WHERE stp.team_id = %s AND sp.session_id = %s
+                JOIN auction_sessions s ON sp.session_id = s.id
+                WHERE stp.team_id = %s
                 ORDER BY stp.purchased_at ASC
-            """, (team['id'], active_session_id))
+            """, (team['id'],))
             squad_players = cursor.fetchall()
             
-            # Compute stats from actual data
+            # Compute stats from ALL sessions
             squad_count = len(squad_players)
             spent = sum(float(p['purchase_price'] or 0) for p in squad_players)
             overseas_count = sum(1 for p in squad_players if p['overseas'])
@@ -656,6 +658,8 @@ def get_teams_squad():
         db.close()
     
     return jsonify({'teams': result})
+
+
 # ==================== BIDDING ====================
 
 @bp.route('/auction/bid', methods=['POST'])
