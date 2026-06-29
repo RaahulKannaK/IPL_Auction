@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cricket Auction Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,9 +25,12 @@
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             position: relative;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Lava Background */
+        /* ============================================================
+           LAVA BACKGROUND
+           ============================================================ */
         .lava-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 0; pointer-events: none; overflow: hidden;
@@ -54,7 +59,9 @@
             50% { transform: translate(50px,-40px) scale(1.15); opacity: 0.12; }
         }
 
-        /* Ember Particles */
+        /* ============================================================
+           EMBER PARTICLES
+           ============================================================ */
         .ember-particles {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 1; overflow: hidden;
@@ -72,7 +79,38 @@
             100% { opacity: 0; transform: translateY(-15vh) scale(0); }
         }
 
-        /* Navigation */
+        /* ============================================================
+           DEBUG OVERLAY (width display)
+           ============================================================ */
+        #debug-overlay {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--cosmic-purple);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--ice-blue-light);
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            min-width: 180px;
+        }
+        #debug-overlay .debug-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        #debug-overlay .debug-row:last-child { margin-bottom: 0; }
+        #debug-overlay .debug-label { color: var(--text-dim); }
+        #debug-overlay .debug-value { color: var(--gold-light); font-weight: 600; }
+
+        /* ============================================================
+           NAVIGATION (Desktop Default)
+           ============================================================ */
         nav {
             background: rgba(7, 11, 22, 0.8);
             backdrop-filter: blur(20px);
@@ -97,6 +135,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
         nav a:hover {
             color: var(--cosmic-purple-light);
@@ -136,6 +175,77 @@
         .role-team_owner { background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
         .role-viewer { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
 
+        /* Hamburger Button (hidden on desktop) */
+        .hamburger-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .hamburger-btn:hover { background: rgba(124, 77, 255, 0.15); }
+        .hamburger-btn:active { background: rgba(124, 77, 255, 0.25); }
+
+        /* Mobile Nav Overlay */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(7, 11, 22, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            flex-direction: column;
+            padding: 80px 24px 24px;
+            overflow-y: auto;
+        }
+        .mobile-nav-overlay.open { display: flex; }
+        .mobile-nav-overlay .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .mobile-nav-overlay a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .mobile-nav-overlay a:hover, .mobile-nav-overlay a.active {
+            background: rgba(124, 77, 255, 0.15);
+            color: var(--cosmic-purple-light);
+        }
+        .mobile-nav-overlay .mobile-nav-separator {
+            height: 1px;
+            background: rgba(100, 120, 200, 0.15);
+            margin: 12px 0;
+        }
+        .mobile-nav-overlay .mobile-nav-header {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 8px 20px;
+            margin-top: 8px;
+        }
+
         /* Auction Context Badge */
         .auction-context {
             display: inline-flex;
@@ -156,23 +266,22 @@
             text-decoration: none;
             margin-left: 8px;
         }
-        .auction-context .exit:hover {
-            color: #ef4444;
-        }
+        .auction-context .exit:hover { color: #ef4444; }
 
-        /* Container — FLUID, no constraints */
+        /* ============================================================
+           CONTAINER
+           ============================================================ */
         .container {
-            width: 100%;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 0;
+            padding: 30px;
             position: relative;
             z-index: 2;
-            container-type: inline-size;
-            container-name: main;
         }
 
-
-        /* Flash Messages */
+        /* ============================================================
+           FLASH MESSAGES
+           ============================================================ */
         .flash {
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(127, 29, 29, 0.1));
             border: 1px solid rgba(239, 68, 68, 0.25);
@@ -201,7 +310,9 @@
             to { transform: translateY(0); opacity: 1; }
         }
 
-        /* Login Page */
+        /* ============================================================
+           LOGIN PAGE
+           ============================================================ */
         .login-box {
             max-width: 420px;
             margin: 80px auto;
@@ -260,6 +371,7 @@
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
+            min-height: 48px;
         }
         .login-box button::before {
             content: '';
@@ -274,11 +386,384 @@
             box-shadow: 0 15px 35px rgba(124, 77, 255, 0.3);
         }
 
-        /* Scrollbar */
+        /* ============================================================
+           RESPONSIVE CARDS (for table replacement on mobile)
+           ============================================================ */
+        .responsive-card {
+            display: none;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(100, 120, 200, 0.1);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 14px;
+            transition: all 0.3s;
+        }
+        .responsive-card:hover {
+            border-color: rgba(124, 77, 255, 0.2);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .responsive-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .responsive-card .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .responsive-card .card-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .responsive-card .card-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(100, 120, 200, 0.08);
+        }
+        .responsive-card .card-row:last-child { border-bottom: none; }
+        .responsive-card .card-label {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        .responsive-card .card-value {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           COLLAPSIBLE SECTIONS (mobile)
+           ============================================================ */
+        .collapsible-section {
+            border: 1px solid rgba(100, 120, 200, 0.1);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: rgba(12, 16, 32, 0.6);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .collapsible-header:hover { background: rgba(12, 16, 32, 0.8); }
+        .collapsible-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .collapsible-header .chevron {
+            transition: transform 0.3s;
+            color: var(--text-dim);
+            font-size: 1.2rem;
+        }
+        .collapsible-section.collapsed .chevron { transform: rotate(-90deg); }
+        .collapsible-body {
+            padding: 16px 20px;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            max-height: 2000px;
+            overflow: hidden;
+        }
+        .collapsible-section.collapsed .collapsible-body {
+            max-height: 0;
+            padding: 0 20px;
+        }
+
+        /* ============================================================
+           TOUCH-FRIENDLY BUTTONS
+           ============================================================ */
+        .btn-touch {
+            min-height: 48px;
+            min-width: 48px;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-touch:active { transform: scale(0.97); }
+
+        /* ============================================================
+           SCROLLBAR
+           ============================================================ */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--cosmic-purple-light); }
+
+        /* ============================================================
+           TABLE STYLES (desktop default)
+           ============================================================ */
+        .responsive-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 120, 200, 0.1);
+        }
+        .responsive-table th {
+            background: rgba(124, 77, 255, 0.1);
+            color: var(--cosmic-purple-light);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+        }
+        .responsive-table td {
+            padding: 16px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(100, 120, 200, 0.05);
+            font-size: 0.9rem;
+        }
+        .responsive-table tr:hover td {
+            background: rgba(124, 77, 255, 0.04);
+        }
+        .responsive-table tr:last-child td { border-bottom: none; }
+
+        /* ============================================================
+           GRID LAYOUTS
+           ============================================================ */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+
+        /* ============================================================
+           STAT CARDS
+           ============================================================ */
+        .stat-card {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(100, 120, 200, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            border-color: rgba(124, 77, 255, 0.2);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+        }
+        .stat-card .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--ice-blue-light);
+            margin-bottom: 6px;
+        }
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        /* ============================================================
+           ============================================================
+           LAPTOP / DESKTOP (1024px and up)
+           ============================================================
+           ============================================================ */
+        @media (min-width: 1024px) {
+            /* Keep existing multi-column layouts */
+            .grid-2 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(3, 1fr); }
+            .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+            /* Full tables visible */
+            .responsive-table { display: table; }
+            .responsive-card { display: none !important; }
+
+            /* Sidebar-style nav stays horizontal */
+            nav { padding: 16px 30px; }
+        }
+
+        /* ============================================================
+           ============================================================
+           TABLET (768px - 1023px)
+           ============================================================
+           ============================================================ */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .container { padding: 20px; }
+
+            /* Reduce grid columns */
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+            /* Slightly smaller stat cards */
+            .stat-card { padding: 20px; }
+            .stat-card .stat-value { font-size: 1.8rem; }
+
+            /* Tables still visible but compact */
+            .responsive-table th, .responsive-table td { padding: 12px; font-size: 0.85rem; }
+            .responsive-card { display: none !important; }
+
+            /* Nav wraps more */
+            nav { padding: 12px 20px; }
+            nav a { padding: 8px 14px; font-size: 0.85rem; }
+        }
+
+        /* ============================================================
+           ============================================================
+           MOBILE (up to 767px)
+           ============================================================
+           ============================================================ */
+        @media (max-width: 767px) {
+            /* Container */
+            .container { padding: 16px; max-width: 100%; }
+
+            /* Lava blobs smaller on mobile */
+            .lava-blob:nth-child(1) { width: 300px; height: 300px; opacity: 0.05; }
+            .lava-blob:nth-child(2) { width: 250px; height: 250px; opacity: 0.05; }
+            .lava-blob:nth-child(3) { width: 200px; height: 200px; opacity: 0.04; }
+
+            /* Fewer ember particles */
+            .ember { display: none; }
+            .ember:nth-child(-n+10) { display: block; }
+
+            /* ===== NAVIGATION: Hamburger Menu ===== */
+            nav {
+                padding: 12px 16px;
+                flex-wrap: nowrap;
+                justify-content: space-between;
+            }
+            nav .nav-links-desktop { display: none; }
+            .hamburger-btn { display: flex; align-items: center; justify-content: center; }
+
+            /* Auction context badge in mobile nav bar */
+            .auction-context {
+                margin-left: 0;
+                padding: 4px 10px;
+                font-size: 0.75rem;
+                max-width: 140px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .auction-context .exit { display: none; }
+
+            .nav-user {
+                margin-left: 0;
+                gap: 8px;
+            }
+            .nav-user a { display: none; }
+            .role-badge { padding: 4px 10px; font-size: 0.65rem; }
+
+            /* ===== SINGLE COLUMN LAYOUT ===== */
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            /* ===== STAT CARDS ===== */
+            .stat-card { padding: 18px; }
+            .stat-card .stat-value { font-size: 1.6rem; }
+            .stat-card .stat-label { font-size: 0.8rem; }
+
+            /* ===== TABLES → CARDS ===== */
+            .responsive-table { display: none !important; }
+            .responsive-card { display: block; }
+
+            /* ===== LOGIN BOX ===== */
+            .login-box {
+                margin: 40px 16px;
+                padding: 28px;
+                border-radius: 20px;
+            }
+            .login-box h2 { font-size: 1.4rem; margin-bottom: 24px; }
+            .login-box input {
+                padding: 14px 16px;
+                font-size: 1rem;
+                margin-bottom: 14px;
+                border-radius: 12px;
+            }
+            .login-box button {
+                padding: 14px;
+                font-size: 1rem;
+                min-height: 48px;
+            }
+
+            /* ===== FLASH MESSAGES ===== */
+            .flash {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+                border-radius: 12px;
+                margin-bottom: 16px;
+            }
+
+            /* ===== TOUCH-FRIENDLY ===== */
+            .btn-touch {
+                width: 100%;
+                min-height: 52px;
+                font-size: 1.05rem;
+            }
+
+            /* ===== COLLAPSIBLE SECTIONS ===== */
+            .collapsible-section { margin-bottom: 12px; }
+            .collapsible-header { padding: 14px 16px; }
+            .collapsible-header h3 { font-size: 0.95rem; }
+            .collapsible-body { padding: 14px 16px; }
+
+            /* ===== FORM ELEMENTS ===== */
+            input, select, textarea {
+                font-size: 16px !important; /* Prevents iOS zoom */
+                padding: 14px 16px !important;
+                min-height: 48px;
+            }
+            button, [role="button"] {
+                min-height: 48px;
+                min-width: 48px;
+            }
+
+            /* ===== SCROLLBAR HIDDEN ON MOBILE ===== */
+            ::-webkit-scrollbar { width: 3px; }
+
+            /* ===== REDUCED FONT SIZES ===== */
+            body { font-size: 0.95rem; }
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.3rem; }
+            h3 { font-size: 1.1rem; }
+        }
+
+        /* ============================================================
+           VERY SMALL MOBILE (up to 374px)
+           ============================================================ */
+        @media (max-width: 374px) {
+            .container { padding: 12px; }
+            .login-box { margin: 24px 12px; padding: 20px; }
+            .login-box h2 { font-size: 1.2rem; }
+            .stat-card .stat-value { font-size: 1.4rem; }
+            nav { padding: 10px 12px; }
+        }
+
+        /* ============================================================
+           LANDSCAPE MOBILE
+           ============================================================ */
+        @media (max-width: 767px) and (orientation: landscape) {
+            .grid-2 { grid-template-columns: repeat(2, 1fr); }
+            .stat-card { padding: 14px; }
+            .stat-card .stat-value { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>
@@ -288,57 +773,96 @@
         <div class="lava-blob"></div>
         <div class="lava-blob"></div>
     </div>
-    
+
     <!-- Ember Particles -->
     <div class="ember-particles" id="emberContainer"></div>
 
+    <!-- Debug Overlay (shows width, device type, breakpoint) -->
+    <div id="debug-overlay">
+        <div class="debug-row">
+            <span class="debug-label">Width:</span>
+            <span class="debug-value" id="debug-width">--</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">Height:</span>
+            <span class="debug-value" id="debug-height">--</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">Device:</span>
+            <span class="debug-value" id="debug-device">--</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">Breakpoint:</span>
+            <span class="debug-value" id="debug-breakpoint">--</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">DPR:</span>
+            <span class="debug-value" id="debug-dpr">--</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">Orientation:</span>
+            <span class="debug-value" id="debug-orientation">--</span>
+        </div>
+    </div>
+
     {% if session.get('user_id') %}
+    <!-- Desktop Navigation Bar -->
     <nav>
-        <!-- ========== ADMIN ========== -->
-        {% if session.role == 'admin' %}
-            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
-            <a href="/admin/teams" {% if request.path.startswith('/admin/teams') %}class="active"{% endif %}>👥 Teams</a>
-            <a href="/admin/players" {% if request.path.startswith('/admin/players') %}class="active"{% endif %}>🏏 Players</a>
-            <a href="/admin/sessions" {% if request.path.startswith('/admin/sessions') %}class="active"{% endif %}>📅 Sessions</a>
-            <a href="/admin/reports" {% if request.path.startswith('/admin/reports') %}class="active"{% endif %}>📊 Reports</a>
-            {% if session.get('active_auction_id') %}
-                <span class="nav-separator"></span>
-                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
-            {% endif %}
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
 
-        <!-- ========== AUCTIONEER ========== -->
-        {% elif session.role == 'auctioneer' %}
-            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
-            {% if session.get('active_auction_id') %}
-                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
-                <a href="/auction/history" {% if request.path.startswith('/auction/history') %}class="active"{% endif %}>📜 History</a>
-            {% endif %}
+        <div class="nav-links-desktop">
+            <!-- ========== ADMIN ========== -->
+            {% if session.role == 'admin' %}
+                <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+                <a href="/admin/teams" {% if request.path.startswith('/admin/teams') %}class="active"{% endif %}>👥 Teams</a>
+                <a href="/admin/players" {% if request.path.startswith('/admin/players') %}class="active"{% endif %}>🏏 Players</a>
+                <a href="/admin/sessions" {% if request.path.startswith('/admin/sessions') %}class="active"{% endif %}>📅 Sessions</a>
+                <a href="/admin/reports" {% if request.path.startswith('/admin/reports') %}class="active"{% endif %}>📊 Reports</a>
+                {% if session.get('active_auction_id') %}
+                    <span class="nav-separator"></span>
+                    <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                {% endif %}
 
-        <!-- ========== TEAM OWNER (includes owner) ========== -->
-        {% elif session.role in ['team_owner',  'team_owner'] %}
-            <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
-            {% if session.get('active_auction_id') %}
-                <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
-                <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
-                <span class="nav-separator"></span>
-                <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
-            {% endif %}
+            <!-- ========== AUCTIONEER ========== -->
+            {% elif session.role == 'auctioneer' %}
+                <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+                {% if session.get('active_auction_id') %}
+                    <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                    <a href="/auction/history" {% if request.path.startswith('/auction/history') %}class="active"{% endif %}>📜 History</a>
+                {% endif %}
 
-        <!-- ========== VIEWER ========== -->
-        {% elif session.role == 'viewer' %}
-            <a href="/viewer/dashboard" {% if request.path == '/viewer/dashboard' %}class="active"{% endif %}>👁️ Dashboard</a>
-            {% if session.get('active_auction_id') %}
-                <a href="/viewer/teams" {% if request.path.startswith('/viewer/teams') %}class="active"{% endif %}>👥 Teams</a>
-                <span class="nav-separator"></span>
-                <a href="/viewer/auction" {% if request.path.startswith('/viewer/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            <!-- ========== TEAM OWNER ========== -->
+            {% elif session.role in ['team_owner', 'owner'] %}
+                <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
+                {% if session.get('active_auction_id') %}
+                    <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
+                    <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
+                    <span class="nav-separator"></span>
+                    <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                {% endif %}
+
+            <!-- ========== VIEWER ========== -->
+            {% elif session.role == 'viewer' %}
+                <a href="/viewer/dashboard" {% if request.path == '/viewer/dashboard' %}class="active"{% endif %}>👁️ Dashboard</a>
+                {% if session.get('active_auction_id') %}
+                    <a href="/viewer/teams" {% if request.path.startswith('/viewer/teams') %}class="active"{% endif %}>👥 Teams</a>
+                    <span class="nav-separator"></span>
+                    <a href="/viewer/auction" {% if request.path.startswith('/viewer/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                {% endif %}
             {% endif %}
-        {% endif %}
-        
+        </div>
+
         <!-- Auction Context Badge -->
         {% if session.get('active_league_name') %}
-            <div class="auction-context" style="margin-left: auto;">
+            <div class="auction-context">
                 🔸 {{ session.active_league_name }}
-                {% if session.role in ['team_owner',  'team_owner'] %}
+                {% if session.role in ['team_owner', 'owner'] %}
                     <a href="/team-owner/exit-auction" class="exit">✕ Exit</a>
                 {% elif session.role == 'viewer' %}
                     <a href="/viewer/exit-auction" class="exit">✕ Exit</a>
@@ -347,14 +871,62 @@
                 {% endif %}
             </div>
         {% endif %}
-        
+
         <div class="nav-user">
             <span class="role-badge role-{{ session.role }}">{{ session.role.replace('_', ' ') }}</span>
             <a href="/logout" style="padding: 8px 16px; font-size: 0.85rem;">🚪 Logout ({{ session.username }})</a>
         </div>
     </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay">
+        <button class="close-btn" id="closeNavBtn" aria-label="Close menu">&times;</button>
+
+        {% if session.role == 'admin' %}
+            <div class="mobile-nav-header">Admin</div>
+            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+            <a href="/admin/teams" {% if request.path.startswith('/admin/teams') %}class="active"{% endif %}>👥 Teams</a>
+            <a href="/admin/players" {% if request.path.startswith('/admin/players') %}class="active"{% endif %}>🏏 Players</a>
+            <a href="/admin/sessions" {% if request.path.startswith('/admin/sessions') %}class="active"{% endif %}>📅 Sessions</a>
+            <a href="/admin/reports" {% if request.path.startswith('/admin/reports') %}class="active"{% endif %}>📊 Reports</a>
+            {% if session.get('active_auction_id') %}
+                <div class="mobile-nav-separator"></div>
+                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+
+        {% elif session.role == 'auctioneer' %}
+            <div class="mobile-nav-header">Auctioneer</div>
+            <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+                <a href="/auction/history" {% if request.path.startswith('/auction/history') %}class="active"{% endif %}>📜 History</a>
+            {% endif %}
+
+        {% elif session.role in ['team_owner', 'owner'] %}
+            <div class="mobile-nav-header">Team Owner</div>
+            <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
+                <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
+                <div class="mobile-nav-separator"></div>
+                <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+
+        {% elif session.role == 'viewer' %}
+            <div class="mobile-nav-header">Viewer</div>
+            <a href="/viewer/dashboard" {% if request.path == '/viewer/dashboard' %}class="active"{% endif %}>👁️ Dashboard</a>
+            {% if session.get('active_auction_id') %}
+                <a href="/viewer/teams" {% if request.path.startswith('/viewer/teams') %}class="active"{% endif %}>👥 Teams</a>
+                <div class="mobile-nav-separator"></div>
+                <a href="/viewer/auction" {% if request.path.startswith('/viewer/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
+            {% endif %}
+        {% endif %}
+
+        <div class="mobile-nav-separator"></div>
+        <a href="/logout">🚪 Logout ({{ session.username }})</a>
+    </div>
     {% endif %}
-    
+
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -369,16 +941,262 @@
     </div>
 
     <script>
-        // Generate ember particles
-        const emberContainer = document.getElementById('emberContainer');
-        for (let i = 0; i < 30; i++) {
-            const ember = document.createElement('div');
-            ember.className = 'ember';
-            ember.style.left = Math.random() * 100 + '%';
-            ember.style.animationDelay = (Math.random() * 18) + 's';
-            ember.style.animationDuration = (12 + Math.random() * 10) + 's';
-            emberContainer.appendChild(ember);
+        // ============================================================
+        // DEVICE DETECTION & DEBUG OVERLAY
+        // ============================================================
+
+        function checkDevice() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            const orientation = window.matchMedia('(orientation: portrait)').matches ? 'Portrait' : 'Landscape';
+
+            let device, breakpoint;
+
+            if (width <= 767) {
+                device = 'Mobile';
+                breakpoint = '< 768px';
+            } else if (width >= 768 && width <= 1023) {
+                device = 'Tablet';
+                breakpoint = '768px - 1023px';
+            } else {
+                device = 'Desktop';
+                breakpoint = '>= 1024px';
+            }
+
+            // Update debug overlay
+            const debugOverlay = document.getElementById('debug-overlay');
+            if (debugOverlay) {
+                document.getElementById('debug-width').textContent = width + 'px';
+                document.getElementById('debug-height').textContent = height + 'px';
+                document.getElementById('debug-device').textContent = device;
+                document.getElementById('debug-breakpoint').textContent = breakpoint;
+                document.getElementById('debug-dpr').textContent = dpr + 'x';
+                document.getElementById('debug-orientation').textContent = orientation;
+            }
+
+            // Log to console for browser dev tools
+            console.log('[DeviceCheck]', {
+                width: width + 'px',
+                height: height + 'px',
+                device: device,
+                breakpoint: breakpoint,
+                dpr: dpr + 'x',
+                orientation: orientation,
+                timestamp: new Date().toLocaleTimeString()
+            });
+
+            return device;
         }
+
+        // Show debug overlay with keyboard shortcut: Ctrl+Shift+D
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                const overlay = document.getElementById('debug-overlay');
+                if (overlay) {
+                    overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
+                    console.log('[Debug] Overlay toggled:', overlay.style.display);
+                }
+            }
+        });
+
+        // Also show debug overlay on load if URL has ?debug=1
+        if (window.location.search.includes('debug=1')) {
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('debug-overlay').style.display = 'block';
+            });
+        }
+
+        // Run on load and resize
+        window.addEventListener('resize', checkDevice);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(checkDevice, 300); // Delay for orientation change to settle
+        });
+        checkDevice(); // Initial call
+
+        // ============================================================
+        // HAMBURGER MENU
+        // ============================================================
+
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const closeNavBtn = document.getElementById('closeNavBtn');
+        const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+
+        if (hamburgerBtn && mobileNavOverlay) {
+            hamburgerBtn.addEventListener('click', function() {
+                mobileNavOverlay.classList.add('open');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+                console.log('[Nav] Mobile menu opened');
+            });
+        }
+
+        if (closeNavBtn && mobileNavOverlay) {
+            closeNavBtn.addEventListener('click', function() {
+                mobileNavOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+                console.log('[Nav] Mobile menu closed');
+            });
+        }
+
+        // Close mobile nav when clicking a link
+        if (mobileNavOverlay) {
+            mobileNavOverlay.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    mobileNavOverlay.classList.remove('open');
+                    document.body.style.overflow = '';
+                });
+            });
+        }
+
+        // Close mobile nav on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && mobileNavOverlay && mobileNavOverlay.classList.contains('open')) {
+                mobileNavOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+                console.log('[Nav] Mobile menu closed via Escape');
+            }
+        });
+
+        // ============================================================
+        // COLLAPSIBLE SECTIONS (auto-init for mobile)
+        // ============================================================
+
+        function initCollapsibleSections() {
+            const headers = document.querySelectorAll('.collapsible-header');
+            headers.forEach(function(header) {
+                header.addEventListener('click', function() {
+                    const section = this.closest('.collapsible-section');
+                    section.classList.toggle('collapsed');
+                    console.log('[Collapsible] Toggled section:', section.dataset.name || 'unnamed');
+                });
+            });
+        }
+
+        // Auto-collapse secondary sections on mobile
+        function autoCollapseMobile() {
+            if (window.innerWidth <= 767) {
+                const secondarySections = document.querySelectorAll('.collapsible-section[data-priority="secondary"]');
+                secondarySections.forEach(function(section) {
+                    section.classList.add('collapsed');
+                });
+                console.log('[Collapsible] Auto-collapsed', secondarySections.length, 'secondary sections on mobile');
+            }
+        }
+
+        // Initialize on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initCollapsibleSections();
+            autoCollapseMobile();
+            console.log('[Init] Collapsible sections initialized');
+        });
+
+        // Re-evaluate on resize
+        window.addEventListener('resize', function() {
+            autoCollapseMobile();
+        });
+
+        // ============================================================
+        // TABLE → CARD CONVERSION (for child pages)
+        // Usage in child templates: add data-responsive-table to <table>
+        // ============================================================
+
+        function convertTableToCards(tableSelector) {
+            const tables = document.querySelectorAll(tableSelector || 'table[data-responsive-table]');
+            tables.forEach(function(table) {
+                const headers = Array.from(table.querySelectorAll('thead th')).map(function(th) {
+                    return th.textContent.trim();
+                });
+                const rows = table.querySelectorAll('tbody tr');
+                const container = document.createElement('div');
+                container.className = 'responsive-cards-container';
+                container.dataset.sourceTable = table.id || 'unnamed';
+
+                rows.forEach(function(row) {
+                    const cells = row.querySelectorAll('td');
+                    const card = document.createElement('div');
+                    card.className = 'responsive-card';
+
+                    let cardHTML = '<div class="card-header">';
+                    if (cells[0]) {
+                        cardHTML += '<span class="card-title">' + cells[0].textContent.trim() + '</span>';
+                    }
+                    cardHTML += '</div>';
+
+                    for (let i = 1; i < cells.length; i++) {
+                        if (headers[i]) {
+                            cardHTML += '<div class="card-row">';
+                            cardHTML += '<span class="card-label">' + headers[i] + '</span>';
+                            cardHTML += '<span class="card-value">' + cells[i].innerHTML + '</span>';
+                            cardHTML += '</div>';
+                        }
+                    }
+
+                    card.innerHTML = cardHTML;
+                    container.appendChild(card);
+                });
+
+                table.parentNode.insertBefore(container, table.nextSibling);
+                console.log('[Table→Card] Converted table to', rows.length, 'cards');
+            });
+        }
+
+        // Auto-convert on mobile
+        function handleResponsiveTables() {
+            if (window.innerWidth <= 767) {
+                convertTableToCards();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', handleResponsiveTables);
+
+        // ============================================================
+        // EMBER PARTICLES
+        // ============================================================
+
+        const emberContainer = document.getElementById('emberContainer');
+        if (emberContainer) {
+            const isMobile = window.innerWidth <= 767;
+            const count = isMobile ? 10 : 30; // Fewer particles on mobile
+
+            for (let i = 0; i < count; i++) {
+                const ember = document.createElement('div');
+                ember.className = 'ember';
+                ember.style.left = Math.random() * 100 + '%';
+                ember.style.animationDelay = (Math.random() * 18) + 's';
+                ember.style.animationDuration = (12 + Math.random() * 10) + 's';
+                emberContainer.appendChild(ember);
+            }
+            console.log('[Embers] Generated', count, 'particles (mobile:', isMobile, ')');
+        }
+
+        // ============================================================
+        // TOUCH FEEDBACK
+        // ============================================================
+
+        document.querySelectorAll('button, a, .btn-touch').forEach(function(el) {
+            el.addEventListener('touchstart', function() {
+                this.style.opacity = '0.7';
+            }, { passive: true });
+            el.addEventListener('touchend', function() {
+                this.style.opacity = '';
+            }, { passive: true });
+        });
+
+        // ============================================================
+        // DOUBLE-TAP PREVENTION (mobile zoom fix)
+        // ============================================================
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        console.log('[Init] Cricket Auction Platform responsive JS loaded');
     </script>
 </body>
 </html>
