@@ -80,7 +80,7 @@
         }
 
         /* ============================================================
-           DEBUG OVERLAY (width display)
+           DEBUG OVERLAY
            ============================================================ */
         #debug-overlay {
             position: fixed;
@@ -109,65 +109,88 @@
         #debug-overlay .debug-value { color: var(--gold-light); font-weight: 600; }
 
         /* ============================================================
-           NAVIGATION (Desktop Default)
+           NAVIGATION - DESKTOP DEFAULT (horizontal)
            ============================================================ */
-        nav {
+        .main-nav {
             background: rgba(7, 11, 22, 0.8);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(100, 120, 200, 0.1);
-            padding: 16px 30px;
+            padding: 12px 24px;
             display: flex;
-            gap: 8px;
             align-items: center;
-            flex-wrap: wrap;
+            gap: 4px;
             position: sticky;
             top: 0;
             z-index: 100;
+            min-height: 64px;
         }
-        nav a {
+        .main-nav .nav-brand {
+            display: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-right: 12px;
+        }
+        .main-nav .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            flex-wrap: wrap;
+        }
+        .main-nav a {
             color: var(--text-dim);
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.9rem;
-            padding: 10px 20px;
-            border-radius: 12px;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 10px;
             transition: all 0.3s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             white-space: nowrap;
         }
-        nav a:hover {
+        .main-nav a:hover {
             color: var(--cosmic-purple-light);
             background: rgba(124, 77, 255, 0.08);
-            box-shadow: 0 0 20px rgba(124, 77, 255, 0.1);
         }
-        nav a.active {
+        .main-nav a.active {
             color: var(--ice-blue-light);
             background: rgba(0, 212, 255, 0.08);
             border: 1px solid rgba(0, 212, 255, 0.15);
         }
         .nav-separator {
             width: 1px;
-            height: 24px;
+            height: 20px;
             background: rgba(100, 120, 200, 0.15);
-            margin: 0 8px;
+            margin: 0 6px;
+            flex-shrink: 0;
         }
-        .nav-user {
-            margin-left: auto;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
+        .nav-right {
             display: flex;
             align-items: center;
             gap: 12px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .nav-user {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .role-badge {
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
+            white-space: nowrap;
         }
         .role-owner { background: rgba(247, 181, 0, 0.15); color: var(--gold); border: 1px solid rgba(247, 181, 0, 0.2); }
         .role-admin { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
@@ -175,17 +198,52 @@
         .role-team_owner { background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
         .role-viewer { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
 
+        /* Auction Context Badge */
+        .auction-context {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(247, 181, 0, 0.1);
+            border: 1px solid rgba(247, 181, 0, 0.2);
+            color: var(--gold-light);
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .auction-context .exit {
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-decoration: none;
+            margin-left: 4px;
+        }
+        .auction-context .exit:hover { color: #ef4444; }
+
+        /* Logout link */
+        .logout-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .logout-link:hover { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+
         /* Hamburger Button (hidden on desktop) */
         .hamburger-btn {
             display: none;
             background: none;
             border: none;
             color: var(--text-primary);
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             cursor: pointer;
             padding: 8px;
             border-radius: 8px;
             transition: background 0.2s;
+            flex-shrink: 0;
         }
         .hamburger-btn:hover { background: rgba(124, 77, 255, 0.15); }
         .hamburger-btn:active { background: rgba(124, 77, 255, 0.25); }
@@ -195,11 +253,12 @@
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(7, 11, 22, 0.95);
+            background: rgba(7, 11, 22, 0.98);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 200;
             flex-direction: column;
-            padding: 80px 24px 24px;
+            padding: 70px 20px 24px;
             overflow-y: auto;
         }
         .mobile-nav-overlay.open { display: flex; }
@@ -210,18 +269,23 @@
             background: none;
             border: none;
             color: var(--text-primary);
-            font-size: 1.8rem;
+            font-size: 2rem;
             cursor: pointer;
             padding: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .mobile-nav-overlay a {
             color: var(--text-primary);
             text-decoration: none;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            padding: 16px 20px;
-            border-radius: 14px;
-            margin-bottom: 8px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -234,39 +298,34 @@
         .mobile-nav-overlay .mobile-nav-separator {
             height: 1px;
             background: rgba(100, 120, 200, 0.15);
-            margin: 12px 0;
+            margin: 10px 0;
         }
         .mobile-nav-overlay .mobile-nav-header {
             color: var(--text-dim);
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            padding: 8px 20px;
-            margin-top: 8px;
+            padding: 8px 18px;
+            margin-top: 6px;
         }
-
-        /* Auction Context Badge */
-        .auction-context {
-            display: inline-flex;
+        .mobile-nav-overlay .mobile-user-info {
+            margin-top: auto;
+            padding: 20px 18px;
+            border-top: 1px solid rgba(100, 120, 200, 0.1);
+        }
+        .mobile-nav-overlay .mobile-role-badge {
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .mobile-nav-overlay .mobile-logout {
+            color: #ef4444;
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background: rgba(247, 181, 0, 0.1);
-            border: 1px solid rgba(247, 181, 0, 0.2);
-            color: var(--gold-light);
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-left: 10px;
         }
-        .auction-context .exit {
-            color: var(--text-dim);
-            font-size: 0.75rem;
-            text-decoration: none;
-            margin-left: 8px;
-        }
-        .auction-context .exit:hover { color: #ef4444; }
 
         /* ============================================================
            CONTAINER
@@ -274,7 +333,7 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 30px;
+            padding: 24px;
             position: relative;
             z-index: 2;
         }
@@ -286,14 +345,15 @@
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(127, 29, 29, 0.1));
             border: 1px solid rgba(239, 68, 68, 0.25);
             color: #fca5a5;
-            padding: 14px 24px;
-            border-radius: 14px;
-            margin-bottom: 25px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 10px;
             animation: flashSlide 0.4s ease;
+            font-size: 0.9rem;
         }
         .flash-success {
             background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 78, 59, 0.1));
@@ -318,7 +378,7 @@
             margin: 80px auto;
             background: var(--bg-panel);
             backdrop-filter: blur(24px);
-            padding: 45px;
+            padding: 40px;
             border-radius: 24px;
             border: 1px solid rgba(100, 120, 200, 0.1);
             position: relative;
@@ -334,10 +394,10 @@
         }
         .login-box h2 {
             text-align: center;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
             color: var(--text-primary);
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
         }
         .login-box input {
@@ -347,7 +407,7 @@
             padding: 14px 18px;
             border-radius: 14px;
             width: 100%;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             font-size: 1rem;
             outline: none;
             transition: all 0.3s;
@@ -387,7 +447,7 @@
         }
 
         /* ============================================================
-           RESPONSIVE CARDS (for table replacement on mobile)
+           RESPONSIVE CARDS
            ============================================================ */
         .responsive-card {
             display: none;
@@ -439,7 +499,7 @@
         }
 
         /* ============================================================
-           COLLAPSIBLE SECTIONS (mobile)
+           COLLAPSIBLE SECTIONS
            ============================================================ */
         .collapsible-section {
             border: 1px solid rgba(100, 120, 200, 0.1);
@@ -509,7 +569,7 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--cosmic-purple-light); }
 
         /* ============================================================
-           TABLE STYLES (desktop default)
+           TABLE STYLES
            ============================================================ */
         .responsive-table {
             width: 100%;
@@ -527,12 +587,12 @@
             text-transform: uppercase;
             font-size: 0.75rem;
             letter-spacing: 1px;
-            padding: 16px;
+            padding: 14px;
             text-align: left;
             border-bottom: 1px solid rgba(100, 120, 200, 0.1);
         }
         .responsive-table td {
-            padding: 16px;
+            padding: 14px;
             color: var(--text-secondary);
             border-bottom: 1px solid rgba(100, 120, 200, 0.05);
             font-size: 0.9rem;
@@ -545,9 +605,9 @@
         /* ============================================================
            GRID LAYOUTS
            ============================================================ */
-        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 
         /* ============================================================
            STAT CARDS
@@ -559,6 +619,7 @@
             border-radius: 20px;
             padding: 24px;
             transition: all 0.3s;
+            text-align: center;
         }
         .stat-card:hover {
             border-color: rgba(124, 77, 255, 0.2);
@@ -566,16 +627,53 @@
             box-shadow: 0 12px 32px rgba(0,0,0,0.3);
         }
         .stat-card .stat-value {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 800;
             font-family: 'Space Grotesk', sans-serif;
-            color: var(--ice-blue-light);
             margin-bottom: 6px;
         }
         .stat-card .stat-label {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-dim);
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ============================================================
+           SUB-NAV (page-level navigation)
+           ============================================================ */
+        .sub-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .sub-nav a, .sub-nav button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid rgba(100, 120, 200, 0.15);
+            background: rgba(12, 16, 32, 0.6);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .sub-nav a:hover, .sub-nav button:hover {
+            border-color: rgba(124, 77, 255, 0.3);
+            color: var(--cosmic-purple-light);
+            background: rgba(124, 77, 255, 0.08);
+        }
+        .sub-nav a.active, .sub-nav button.active {
+            border-color: rgba(0, 212, 255, 0.3);
+            color: var(--ice-blue-light);
+            background: rgba(0, 212, 255, 0.08);
         }
 
         /* ============================================================
@@ -584,17 +682,12 @@
            ============================================================
            ============================================================ */
         @media (min-width: 1024px) {
-            /* Keep existing multi-column layouts */
+            .container { padding: 30px; }
             .grid-2 { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: repeat(3, 1fr); }
             .grid-4 { grid-template-columns: repeat(4, 1fr); }
-
-            /* Full tables visible */
             .responsive-table { display: table; }
             .responsive-card { display: none !important; }
-
-            /* Sidebar-style nav stays horizontal */
-            nav { padding: 16px 30px; }
         }
 
         /* ============================================================
@@ -604,23 +697,15 @@
            ============================================================ */
         @media (min-width: 768px) and (max-width: 1023px) {
             .container { padding: 20px; }
-
-            /* Reduce grid columns */
             .grid-4 { grid-template-columns: repeat(2, 1fr); }
             .grid-3 { grid-template-columns: repeat(2, 1fr); }
             .grid-2 { grid-template-columns: repeat(2, 1fr); }
-
-            /* Slightly smaller stat cards */
             .stat-card { padding: 20px; }
-            .stat-card .stat-value { font-size: 1.8rem; }
-
-            /* Tables still visible but compact */
+            .stat-card .stat-value { font-size: 1.6rem; }
             .responsive-table th, .responsive-table td { padding: 12px; font-size: 0.85rem; }
             .responsive-card { display: none !important; }
-
-            /* Nav wraps more */
-            nav { padding: 12px 20px; }
-            nav a { padding: 8px 14px; font-size: 0.85rem; }
+            .main-nav { padding: 12px 20px; }
+            .main-nav a { padding: 8px 14px; font-size: 0.8rem; }
         }
 
         /* ============================================================
@@ -630,55 +715,64 @@
            ============================================================ */
         @media (max-width: 767px) {
             /* Container */
-            .container { padding: 16px; max-width: 100%; }
+            .container { padding: 14px; max-width: 100%; }
 
-            /* Lava blobs smaller on mobile */
+            /* Lava blobs smaller */
             .lava-blob:nth-child(1) { width: 300px; height: 300px; opacity: 0.05; }
             .lava-blob:nth-child(2) { width: 250px; height: 250px; opacity: 0.05; }
             .lava-blob:nth-child(3) { width: 200px; height: 200px; opacity: 0.04; }
 
             /* Fewer ember particles */
             .ember { display: none; }
-            .ember:nth-child(-n+10) { display: block; }
+            .ember:nth-child(-n+8) { display: block; }
 
             /* ===== NAVIGATION: Hamburger Menu ===== */
-            nav {
-                padding: 12px 16px;
-                flex-wrap: nowrap;
-                justify-content: space-between;
+            .main-nav {
+                padding: 10px 14px;
+                min-height: 56px;
             }
-            nav .nav-links-desktop { display: none; }
+            .main-nav .nav-brand { display: block; }
+            .main-nav .nav-links { display: none; }
+            .main-nav .nav-right { display: none; }
             .hamburger-btn { display: flex; align-items: center; justify-content: center; }
 
-            /* Auction context badge in mobile nav bar */
+            /* Auction context in mobile header */
             .auction-context {
-                margin-left: 0;
+                margin-left: auto;
+                margin-right: 8px;
                 padding: 4px 10px;
                 font-size: 0.75rem;
-                max-width: 140px;
+                max-width: 160px;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
             .auction-context .exit { display: none; }
 
-            .nav-user {
-                margin-left: 0;
-                gap: 8px;
-            }
-            .nav-user a { display: none; }
-            .role-badge { padding: 4px 10px; font-size: 0.65rem; }
-
             /* ===== SINGLE COLUMN LAYOUT ===== */
             .grid-2, .grid-3, .grid-4 {
                 grid-template-columns: 1fr;
-                gap: 14px;
+                gap: 12px;
             }
 
-            /* ===== STAT CARDS ===== */
-            .stat-card { padding: 18px; }
-            .stat-card .stat-value { font-size: 1.6rem; }
-            .stat-card .stat-label { font-size: 0.8rem; }
+            /* ===== STAT CARDS COMPACT ===== */
+            .stat-card {
+                padding: 16px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                text-align: left;
+            }
+            .stat-card .stat-value {
+                font-size: 1.4rem;
+                margin-bottom: 0;
+                order: 2;
+            }
+            .stat-card .stat-label {
+                font-size: 0.7rem;
+                order: 1;
+            }
 
             /* ===== TABLES → CARDS ===== */
             .responsive-table { display: none !important; }
@@ -686,29 +780,29 @@
 
             /* ===== LOGIN BOX ===== */
             .login-box {
-                margin: 40px 16px;
-                padding: 28px;
-                border-radius: 20px;
+                margin: 30px 12px;
+                padding: 24px;
+                border-radius: 18px;
             }
-            .login-box h2 { font-size: 1.4rem; margin-bottom: 24px; }
+            .login-box h2 { font-size: 1.3rem; margin-bottom: 20px; }
             .login-box input {
                 padding: 14px 16px;
-                font-size: 1rem;
-                margin-bottom: 14px;
+                font-size: 16px;
+                margin-bottom: 12px;
                 border-radius: 12px;
             }
             .login-box button {
                 padding: 14px;
                 font-size: 1rem;
-                min-height: 48px;
+                min-height: 52px;
             }
 
             /* ===== FLASH MESSAGES ===== */
             .flash {
-                padding: 12px 16px;
-                font-size: 0.9rem;
-                border-radius: 12px;
-                margin-bottom: 16px;
+                padding: 10px 14px;
+                font-size: 0.85rem;
+                border-radius: 10px;
+                margin-bottom: 14px;
             }
 
             /* ===== TOUCH-FRIENDLY ===== */
@@ -718,7 +812,7 @@
                 font-size: 1.05rem;
             }
 
-            /* ===== COLLAPSIBLE SECTIONS ===== */
+            /* ===== COLLAPSIBLE ===== */
             .collapsible-section { margin-bottom: 12px; }
             .collapsible-header { padding: 14px 16px; }
             .collapsible-header h3 { font-size: 0.95rem; }
@@ -726,7 +820,7 @@
 
             /* ===== FORM ELEMENTS ===== */
             input, select, textarea {
-                font-size: 16px !important; /* Prevents iOS zoom */
+                font-size: 16px !important;
                 padding: 14px 16px !important;
                 min-height: 48px;
             }
@@ -735,25 +829,38 @@
                 min-width: 48px;
             }
 
-            /* ===== SCROLLBAR HIDDEN ON MOBILE ===== */
+            /* ===== SUB-NAV ===== */
+            .sub-nav {
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+            .sub-nav a, .sub-nav button {
+                padding: 10px 14px;
+                font-size: 0.85rem;
+                flex: 1;
+                justify-content: center;
+            }
+
+            /* ===== SCROLLBAR ===== */
             ::-webkit-scrollbar { width: 3px; }
 
             /* ===== REDUCED FONT SIZES ===== */
             body { font-size: 0.95rem; }
-            h1 { font-size: 1.5rem; }
-            h2 { font-size: 1.3rem; }
-            h3 { font-size: 1.1rem; }
+            h1 { font-size: 1.4rem; }
+            h2 { font-size: 1.2rem; }
+            h3 { font-size: 1.05rem; }
         }
 
         /* ============================================================
            VERY SMALL MOBILE (up to 374px)
            ============================================================ */
         @media (max-width: 374px) {
-            .container { padding: 12px; }
-            .login-box { margin: 24px 12px; padding: 20px; }
-            .login-box h2 { font-size: 1.2rem; }
-            .stat-card .stat-value { font-size: 1.4rem; }
-            nav { padding: 10px 12px; }
+            .container { padding: 10px; }
+            .login-box { margin: 20px 10px; padding: 18px; }
+            .login-box h2 { font-size: 1.1rem; }
+            .stat-card .stat-value { font-size: 1.2rem; }
+            .main-nav { padding: 8px 10px; }
+            .auction-context { max-width: 120px; font-size: 0.7rem; }
         }
 
         /* ============================================================
@@ -761,8 +868,17 @@
            ============================================================ */
         @media (max-width: 767px) and (orientation: landscape) {
             .grid-2 { grid-template-columns: repeat(2, 1fr); }
-            .stat-card { padding: 14px; }
-            .stat-card .stat-value { font-size: 1.4rem; }
+            .stat-card {
+                padding: 12px;
+                flex-direction: column;
+                text-align: center;
+            }
+            .stat-card .stat-value {
+                font-size: 1.3rem;
+                order: 1;
+                margin-bottom: 4px;
+            }
+            .stat-card .stat-label { order: 2; font-size: 0.65rem; }
         }
     </style>
 </head>
@@ -777,7 +893,7 @@
     <!-- Ember Particles -->
     <div class="ember-particles" id="emberContainer"></div>
 
-    <!-- Debug Overlay (shows width, device type, breakpoint) -->
+    <!-- Debug Overlay -->
     <div id="debug-overlay">
         <div class="debug-row">
             <span class="debug-label">Width:</span>
@@ -807,16 +923,18 @@
 
     {% if session.get('user_id') %}
     <!-- Desktop Navigation Bar -->
-    <nav>
+    <nav class="main-nav">
         <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <line x1="3" y1="12" x2="21" y2="12"></line>
                 <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
         </button>
 
-        <div class="nav-links-desktop">
+        <div class="nav-brand">🏏 Auction</div>
+
+        <div class="nav-links">
             <!-- ========== ADMIN ========== -->
             {% if session.role == 'admin' %}
                 <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
@@ -840,9 +958,9 @@
             <!-- ========== TEAM OWNER ========== -->
             {% elif session.role in ['team_owner', 'owner'] %}
                 <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
+                <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
+                <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
                 {% if session.get('active_auction_id') %}
-                    <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
-                    <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
                     <span class="nav-separator"></span>
                     <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
                 {% endif %}
@@ -863,18 +981,20 @@
             <div class="auction-context">
                 🔸 {{ session.active_league_name }}
                 {% if session.role in ['team_owner', 'owner'] %}
-                    <a href="/team-owner/exit-auction" class="exit">✕ Exit</a>
+                    <a href="/team-owner/exit-auction" class="exit">✕</a>
                 {% elif session.role == 'viewer' %}
-                    <a href="/viewer/exit-auction" class="exit">✕ Exit</a>
+                    <a href="/viewer/exit-auction" class="exit">✕</a>
                 {% elif session.role in ['admin', 'auctioneer'] %}
-                    <a href="/admin/exit-auction" class="exit">✕ Exit</a>
+                    <a href="/admin/exit-auction" class="exit">✕</a>
                 {% endif %}
             </div>
         {% endif %}
 
-        <div class="nav-user">
-            <span class="role-badge role-{{ session.role }}">{{ session.role.replace('_', ' ') }}</span>
-            <a href="/logout" style="padding: 8px 16px; font-size: 0.85rem;">🚪 Logout ({{ session.username }})</a>
+        <div class="nav-right">
+            <div class="nav-user">
+                <span class="role-badge role-{{ session.role }}">{{ session.role.replace('_', ' ') }}</span>
+                <a href="/logout" class="logout-link">🚪 Logout ({{ session.username }})</a>
+            </div>
         </div>
     </nav>
 
@@ -905,9 +1025,9 @@
         {% elif session.role in ['team_owner', 'owner'] %}
             <div class="mobile-nav-header">Team Owner</div>
             <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
+            <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
+            <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
             {% if session.get('active_auction_id') %}
-                <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
-                <a href="/team-owner/playing11" {% if request.path.startswith('/team-owner/playing11') %}class="active"{% endif %}>⭐ Playing XI</a>
                 <div class="mobile-nav-separator"></div>
                 <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
             {% endif %}
@@ -923,7 +1043,12 @@
         {% endif %}
 
         <div class="mobile-nav-separator"></div>
-        <a href="/logout">🚪 Logout ({{ session.username }})</a>
+        
+        <div class="mobile-user-info">
+            <span class="role-badge mobile-role-badge role-{{ session.role }}">{{ session.role.replace('_', ' ') }}</span>
+            <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">{{ session.username }}</div>
+            <a href="/logout" class="mobile-logout">🚪 Logout</a>
+        </div>
     </div>
     {% endif %}
 
@@ -975,45 +1100,41 @@
                 document.getElementById('debug-orientation').textContent = orientation;
             }
 
-            // Log to console for browser dev tools
             console.log('[DeviceCheck]', {
                 width: width + 'px',
                 height: height + 'px',
                 device: device,
                 breakpoint: breakpoint,
                 dpr: dpr + 'x',
-                orientation: orientation,
-                timestamp: new Date().toLocaleTimeString()
+                orientation: orientation
             });
 
             return device;
         }
 
-        // Show debug overlay with keyboard shortcut: Ctrl+Shift+D
+        // Show debug overlay: Ctrl+Shift+D
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.shiftKey && e.key === 'D') {
                 e.preventDefault();
                 const overlay = document.getElementById('debug-overlay');
                 if (overlay) {
                     overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
-                    console.log('[Debug] Overlay toggled:', overlay.style.display);
                 }
             }
         });
 
-        // Also show debug overlay on load if URL has ?debug=1
+        // Auto-show if ?debug=1
         if (window.location.search.includes('debug=1')) {
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('debug-overlay').style.display = 'block';
             });
         }
 
-        // Run on load and resize
         window.addEventListener('resize', checkDevice);
         window.addEventListener('orientationchange', function() {
-            setTimeout(checkDevice, 300); // Delay for orientation change to settle
+            setTimeout(checkDevice, 300);
         });
-        checkDevice(); // Initial call
+        checkDevice();
 
         // ============================================================
         // HAMBURGER MENU
@@ -1026,8 +1147,7 @@
         if (hamburgerBtn && mobileNavOverlay) {
             hamburgerBtn.addEventListener('click', function() {
                 mobileNavOverlay.classList.add('open');
-                document.body.style.overflow = 'hidden'; // Prevent background scroll
-                console.log('[Nav] Mobile menu opened');
+                document.body.style.overflow = 'hidden';
             });
         }
 
@@ -1035,11 +1155,9 @@
             closeNavBtn.addEventListener('click', function() {
                 mobileNavOverlay.classList.remove('open');
                 document.body.style.overflow = '';
-                console.log('[Nav] Mobile menu closed');
             });
         }
 
-        // Close mobile nav when clicking a link
         if (mobileNavOverlay) {
             mobileNavOverlay.querySelectorAll('a').forEach(function(link) {
                 link.addEventListener('click', function() {
@@ -1049,106 +1167,37 @@
             });
         }
 
-        // Close mobile nav on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && mobileNavOverlay && mobileNavOverlay.classList.contains('open')) {
                 mobileNavOverlay.classList.remove('open');
                 document.body.style.overflow = '';
-                console.log('[Nav] Mobile menu closed via Escape');
             }
         });
 
         // ============================================================
-        // COLLAPSIBLE SECTIONS (auto-init for mobile)
+        // COLLAPSIBLE SECTIONS
         // ============================================================
 
         function initCollapsibleSections() {
-            const headers = document.querySelectorAll('.collapsible-header');
-            headers.forEach(function(header) {
+            document.querySelectorAll('.collapsible-header').forEach(function(header) {
                 header.addEventListener('click', function() {
-                    const section = this.closest('.collapsible-section');
-                    section.classList.toggle('collapsed');
-                    console.log('[Collapsible] Toggled section:', section.dataset.name || 'unnamed');
+                    this.closest('.collapsible-section').classList.toggle('collapsed');
                 });
             });
         }
 
-        // Auto-collapse secondary sections on mobile
         function autoCollapseMobile() {
             if (window.innerWidth <= 767) {
-                const secondarySections = document.querySelectorAll('.collapsible-section[data-priority="secondary"]');
-                secondarySections.forEach(function(section) {
-                    section.classList.add('collapsed');
+                document.querySelectorAll('.collapsible-section[data-priority="secondary"]').forEach(function(s) {
+                    s.classList.add('collapsed');
                 });
-                console.log('[Collapsible] Auto-collapsed', secondarySections.length, 'secondary sections on mobile');
             }
         }
 
-        // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', function() {
             initCollapsibleSections();
             autoCollapseMobile();
-            console.log('[Init] Collapsible sections initialized');
         });
-
-        // Re-evaluate on resize
-        window.addEventListener('resize', function() {
-            autoCollapseMobile();
-        });
-
-        // ============================================================
-        // TABLE → CARD CONVERSION (for child pages)
-        // Usage in child templates: add data-responsive-table to <table>
-        // ============================================================
-
-        function convertTableToCards(tableSelector) {
-            const tables = document.querySelectorAll(tableSelector || 'table[data-responsive-table]');
-            tables.forEach(function(table) {
-                const headers = Array.from(table.querySelectorAll('thead th')).map(function(th) {
-                    return th.textContent.trim();
-                });
-                const rows = table.querySelectorAll('tbody tr');
-                const container = document.createElement('div');
-                container.className = 'responsive-cards-container';
-                container.dataset.sourceTable = table.id || 'unnamed';
-
-                rows.forEach(function(row) {
-                    const cells = row.querySelectorAll('td');
-                    const card = document.createElement('div');
-                    card.className = 'responsive-card';
-
-                    let cardHTML = '<div class="card-header">';
-                    if (cells[0]) {
-                        cardHTML += '<span class="card-title">' + cells[0].textContent.trim() + '</span>';
-                    }
-                    cardHTML += '</div>';
-
-                    for (let i = 1; i < cells.length; i++) {
-                        if (headers[i]) {
-                            cardHTML += '<div class="card-row">';
-                            cardHTML += '<span class="card-label">' + headers[i] + '</span>';
-                            cardHTML += '<span class="card-value">' + cells[i].innerHTML + '</span>';
-                            cardHTML += '</div>';
-                        }
-                    }
-
-                    card.innerHTML = cardHTML;
-                    container.appendChild(card);
-                });
-
-                table.parentNode.insertBefore(container, table.nextSibling);
-                console.log('[Table→Card] Converted table to', rows.length, 'cards');
-            });
-        }
-
-        // Auto-convert on mobile
-        function handleResponsiveTables() {
-            if (window.innerWidth <= 767) {
-                convertTableToCards();
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', handleResponsiveTables);
 
         // ============================================================
         // EMBER PARTICLES
@@ -1156,9 +1205,7 @@
 
         const emberContainer = document.getElementById('emberContainer');
         if (emberContainer) {
-            const isMobile = window.innerWidth <= 767;
-            const count = isMobile ? 10 : 30; // Fewer particles on mobile
-
+            const count = window.innerWidth <= 767 ? 8 : 30;
             for (let i = 0; i < count; i++) {
                 const ember = document.createElement('div');
                 ember.className = 'ember';
@@ -1167,7 +1214,6 @@
                 ember.style.animationDuration = (12 + Math.random() * 10) + 's';
                 emberContainer.appendChild(ember);
             }
-            console.log('[Embers] Generated', count, 'particles (mobile:', isMobile, ')');
         }
 
         // ============================================================
@@ -1183,10 +1229,7 @@
             }, { passive: true });
         });
 
-        // ============================================================
-        // DOUBLE-TAP PREVENTION (mobile zoom fix)
-        // ============================================================
-
+        // Double-tap prevention
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function(e) {
             const now = Date.now();
@@ -1196,7 +1239,7 @@
             lastTouchEnd = now;
         }, { passive: false });
 
-        console.log('[Init] Cricket Auction Platform responsive JS loaded');
+        console.log('[Init] Responsive base loaded');
     </script>
 </body>
 </html>
