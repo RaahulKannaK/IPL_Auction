@@ -626,7 +626,7 @@ def get_teams_squad():
         for team in all_teams:
             cursor.execute("""
                 SELECT stp.purchase_price,
-                       p.player_name, p.category, p.overseas, p.role
+                       p.player_name, p.category, p.overseas
                 FROM session_team_players stp
                 JOIN session_players sp ON stp.session_player_id = sp.id
                 JOIN players p ON sp.player_id = p.id
