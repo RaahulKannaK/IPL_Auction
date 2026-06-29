@@ -601,25 +601,48 @@ def get_teams_squad():
     cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
-        # Get auction config for squad_size, overseas_limit, purse_limit
+        # Get auction config
         cursor.execute(
             "SELECT squad_size, purse_limit, overseas_limit FROM auctions WHERE id = (SELECT auction_id FROM auction_sessions WHERE id = %s)",
             (active_session_id,)
         )
         auction_config = cursor.fetchone() or {'squad_size': 18, 'purse_limit': 100, 'overseas_limit': 8}
         
+        # Get all teams with computed stats from session_team_players
         cursor.execute("""
-            SELECT t.id, t.team_name, t.owner_id, t.purse_limit, t.spent,
-                   (SELECT COUNT(*) FROM session_team_players stp 
-                    JOIN session_players sp ON stp.session_player_id = sp.id 
-                    WHERE stp.team_id = t.id AND sp.session_id = %s) as squad_count,
-                   (SELECT COUNT(*) FROM session_team_players stp 
-                    JOIN session_players sp ON stp.session_player_id = sp.id 
-                    JOIN players p ON sp.player_id = p.id 
-                    WHERE stp.team_id = t.id AND p.overseas = TRUE AND sp.session_id = %s) as overseas_count
+            SELECT 
+                t.id,
+                t.team_name,
+                t.owner_id,
+                t.purse_limit,
+                COALESCE(spent_data.session_spent, 0) as spent,
+                COALESCE(squad_data.squad_count, 0) as squad_count,
+                COALESCE(os_data.overseas_count, 0) as overseas_count
             FROM teams t
+            LEFT JOIN (
+                SELECT stp.team_id, SUM(stp.purchase_price) as session_spent
+                FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                WHERE sp.session_id = %s
+                GROUP BY stp.team_id
+            ) spent_data ON spent_data.team_id = t.id
+            LEFT JOIN (
+                SELECT stp.team_id, COUNT(*) as squad_count
+                FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                WHERE sp.session_id = %s
+                GROUP BY stp.team_id
+            ) squad_data ON squad_data.team_id = t.id
+            LEFT JOIN (
+                SELECT stp.team_id, COUNT(*) as overseas_count
+                FROM session_team_players stp
+                JOIN session_players sp ON stp.session_player_id = sp.id
+                JOIN players p ON sp.player_id = p.id
+                WHERE sp.session_id = %s AND p.overseas = TRUE
+                GROUP BY stp.team_id
+            ) os_data ON os_data.team_id = t.id
             WHERE t.auction_id = (SELECT auction_id FROM auction_sessions WHERE id = %s)
-        """, (active_session_id, active_session_id, active_session_id))
+        """, (active_session_id, active_session_id, active_session_id, active_session_id))
         all_teams = cursor.fetchall()
         
         result = []
@@ -631,6 +654,7 @@ def get_teams_squad():
                 JOIN session_players sp ON stp.session_player_id = sp.id
                 JOIN players p ON sp.player_id = p.id
                 WHERE stp.team_id = %s AND sp.session_id = %s
+                ORDER BY stp.purchased_at ASC
             """, (team['id'], active_session_id))
             squad_players = cursor.fetchall()
             
