@@ -602,7 +602,10 @@ def get_teams_squad():
     
     try:
         # Get auction config for squad_size, overseas_limit, purse_limit
-        cursor.execute(""SELECT squad_size, purse_limit, overseas_limit FROM auctions WHERE id = (SELECT auction_id FROM auction_sessions WHERE id = %s)"", (active_session_id,))
+        cursor.execute(
+            "SELECT squad_size, purse_limit, overseas_limit FROM auctions WHERE id = (SELECT auction_id FROM auction_sessions WHERE id = %s)",
+            (active_session_id,)
+        )
         auction_config = cursor.fetchone() or {'squad_size': 18, 'purse_limit': 100, 'overseas_limit': 8}
         
         cursor.execute("""
@@ -636,14 +639,13 @@ def get_teams_squad():
             team['overseas_limit'] = auction_config['overseas_limit']
             team['purse_limit'] = float(team['purse_limit'] or auction_config['purse_limit'])
             team['spent'] = float(team['spent'] or 0)
-            team['is_your_team'] = False  # Will be set below if user logged in
+            team['is_your_team'] = False
             result.append(team)
         
         # Mark user's own team
         user_id = session.get('user_id')
         if user_id:
             for team in result:
-                # Simple owner check - adjust if you have owner_ids JSON
                 if team.get('owner_id') == user_id:
                     team['is_your_team'] = True
         
