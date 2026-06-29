@@ -360,10 +360,43 @@
         color: var(--text-secondary); font-size: 0.9rem;
     }
     .squad-table tr:hover td { background: rgba(124, 77, 255, 0.03); }
+    .squad-sno { font-family: 'JetBrains Mono'; color: var(--text-dim); font-size: 0.85rem; width: 40px; }
     .squad-pname { font-weight: 600; color: var(--text-primary); }
     .squad-price { font-family: 'JetBrains Mono'; color: var(--gold-light); font-weight: 600; }
-    .squad-willing { font-family: 'JetBrains Mono'; color: var(--cosmic-purple-light); font-weight: 600; }
-    .squad-na { color: var(--text-dim); font-style: italic; font-size: 0.8rem; }
+    .squad-role { color: var(--ice-blue-light); font-size: 0.8rem; }
+    .squad-cat { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .squad-cat-batsman { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+    .squad-cat-bowler { background: rgba(255, 42, 0, 0.12); color: #ff6b6b; }
+    .squad-cat-all_rounder { background: rgba(184, 255, 106, 0.12); color: #b8ff6a; }
+    .squad-cat-wicket_keeper { background: rgba(247, 181, 0, 0.12); color: var(--gold-light); }
+    .squad-os { color: var(--cosmic-purple-light); font-size: 0.8rem; }
+    .squad-empty { color: var(--text-dim); font-style: italic; font-size: 0.85rem; text-align: center; padding: 20px; }
+
+    .squad-purse {
+        font-family: 'JetBrains Mono';
+        font-size: 0.85rem;
+        color: var(--green-light);
+        background: rgba(34, 197, 94, 0.1);
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    .squad-purse-spent {
+        color: var(--gold-light);
+        background: rgba(247, 181, 0, 0.1);
+        border-color: rgba(247, 181, 0, 0.2);
+    }
+    .squad-purse-remaining {
+        color: var(--ice-blue-light);
+        background: rgba(0, 212, 255, 0.1);
+        border-color: rgba(0, 212, 255, 0.2);
+    }
+    .squad-summary {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
     .empty-squad { text-align: center; padding: 30px; color: var(--text-dim); font-style: italic; }
 
     /* ===== WILLING PRICE MODAL ===== */
@@ -1876,7 +1909,7 @@ function openSquadModal() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (!data.teams || data.teams.length === 0) {
-            body.innerHTML = '<div class="empty-squad">No squads yet</div>';
+            body.innerHTML = '<div class="squad-empty">No squads yet</div>';
             return;
         }
 
@@ -1884,28 +1917,58 @@ function openSquadModal() {
         data.teams.forEach(function(team) {
             var isYourTeam = team.is_your_team;
             var yourBadge = isYourTeam ? '<span class="squad-your-badge">YOUR TEAM</span>' : '';
+            
+            // Team purse info
+            var totalPurse = team.purse_limit || 100;
+            var spent = team.spent || 0;
+            var remaining = totalPurse - spent;
+            var squadCount = team.squad_count || 0;
+            var squadLimit = team.squad_size || 18;
+            var overseasCount = team.overseas_count || 0;
+            var overseasLimit = team.overseas_limit || 8;
 
             var squadHtml = '';
             if (!team.squad_players || team.squad_players.length === 0) {
-                squadHtml = '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px;">No players yet</td></tr>';
+                squadHtml = '<tr><td colspan="6" class="squad-empty">No players bought yet</td></tr>';
             } else {
-                team.squad_players.forEach(function(p) {
-                    var willing = p.willing_price ? '₹' + parseFloat(p.willing_price).toFixed(2) + 'Cr' : '<span class="squad-na">Not set</span>';
-                    var reserve = (p.willing_price && p.willing_price > p.purchase_price)
-                        ? '₹' + ((p.willing_price - p.purchase_price) * 0.20).toFixed(2) + 'Cr'
-                        : '<span class="squad-na">—</span>';
-                    squadHtml += '<tr><td class="squad-pname">' + p.player_name + '</td><td class="squad-price">₹' + parseFloat(p.purchase_price).toFixed(2) + 'Cr</td><td class="squad-willing">' + willing + '</td><td style="color:#f59e0b;font-family:\'JetBrains Mono\';font-weight:600;">' + reserve + '</td></tr>';
+                team.squad_players.forEach(function(p, idx) {
+                    var osBadge = p.overseas ? '<span class="squad-os">🌍 OS</span>' : '';
+                    var catClass = 'squad-cat-' + (p.category || 'batsman');
+                    squadHtml += '<tr>' +
+                        '<td class="squad-sno">' + (idx + 1) + '</td>' +
+                        '<td class="squad-pname">' + p.player_name + ' ' + osBadge + '</td>' +
+                        '<td class="squad-role">' + (p.role || p.category || '—') + '</td>' +
+                        '<td><span class="squad-cat ' + catClass + '">' + (p.category || '—').replace('_', ' ').toUpperCase() + '</span></td>' +
+                        '<td class="squad-price">₹' + parseFloat(p.purchase_price).toFixed(2) + 'Cr</td>' +
+                    '</tr>';
                 });
             }
 
-            html += '<div class="squad-team-card"><div class="squad-team-header"><span class="squad-team-name">' + team.team_name + '</span>' + yourBadge + '</div><table class="squad-table"><thead><tr><th>Player</th><th>Bought</th><th>Willing</th><th>Reserve (20%)</th></tr></thead><tbody>' + squadHtml + '</tbody></table></div>';
+            html += '<div class="squad-team-card">' +
+                '<div class="squad-team-header">' +
+                    '<div>' +
+                        '<span class="squad-team-name">' + team.team_name + '</span> ' + yourBadge +
+                        '<div class="squad-summary">' +
+                            '<span class="squad-purse">💰 Total: ₹' + totalPurse.toFixed(2) + 'Cr</span>' +
+                            '<span class="squad-purse squad-purse-spent">📉 Spent: ₹' + spent.toFixed(2) + 'Cr</span>' +
+                            '<span class="squad-purse squad-purse-remaining">📈 Left: ₹' + remaining.toFixed(2) + 'Cr</span>' +
+                            '<span class="squad-purse" style="color:var(--ice-blue-light);background:rgba(0,212,255,0.1);border-color:rgba(0,212,255,0.2);">👥 Squad: ' + squadCount + '/' + squadLimit + '</span>' +
+                            '<span class="squad-purse" style="color:var(--cosmic-purple-light);background:rgba(124,77,255,0.1);border-color:rgba(124,77,255,0.2);">🌍 OS: ' + overseasCount + '/' + overseasLimit + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<table class="squad-table">' +
+                    '<thead><tr><th>S.No</th><th>Player</th><th>Role</th><th>Category</th><th>Bought</th></tr></thead>' +
+                    '<tbody>' + squadHtml + '</tbody>' +
+                '</table>' +
+            '</div>';
         });
 
         body.innerHTML = html;
     })
     .catch(function(err) {
         console.error('Squad load error:', err);
-        body.innerHTML = '<div class="empty-squad">Failed to load squads</div>';
+        body.innerHTML = '<div class="squad-empty">Failed to load squads</div>';
     });
 }
 

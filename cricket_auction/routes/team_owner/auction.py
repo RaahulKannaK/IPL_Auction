@@ -601,21 +601,29 @@ def get_teams_squad():
     cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
+        # Get auction config for squad_size, overseas_limit, purse_limit
+        cursor.execute(""SELECT squad_size, purse_limit, overseas_limit FROM auctions WHERE id = (SELECT auction_id FROM auction_sessions WHERE id = %s)"", (active_session_id,))
+        auction_config = cursor.fetchone() or {'squad_size': 18, 'purse_limit': 100, 'overseas_limit': 8}
+        
         cursor.execute("""
-            SELECT t.id, t.team_name, t.owner_id,
+            SELECT t.id, t.team_name, t.owner_id, t.purse_limit, t.spent,
                    (SELECT COUNT(*) FROM session_team_players stp 
                     JOIN session_players sp ON stp.session_player_id = sp.id 
-                    WHERE stp.team_id = t.id AND sp.session_id = %s) as squad_count
+                    WHERE stp.team_id = t.id AND sp.session_id = %s) as squad_count,
+                   (SELECT COUNT(*) FROM session_team_players stp 
+                    JOIN session_players sp ON stp.session_player_id = sp.id 
+                    JOIN players p ON sp.player_id = p.id 
+                    WHERE stp.team_id = t.id AND p.overseas = TRUE AND sp.session_id = %s) as overseas_count
             FROM teams t
             WHERE t.auction_id = (SELECT auction_id FROM auction_sessions WHERE id = %s)
-        """, (active_session_id, active_session_id))
+        """, (active_session_id, active_session_id, active_session_id))
         all_teams = cursor.fetchall()
         
         result = []
         for team in all_teams:
             cursor.execute("""
-                SELECT stp.purchase_price, stp.willing_price,
-                       p.player_name, p.category, p.overseas, sp.base_price
+                SELECT stp.purchase_price,
+                       p.player_name, p.category, p.overseas, p.role
                 FROM session_team_players stp
                 JOIN session_players sp ON stp.session_player_id = sp.id
                 JOIN players p ON sp.player_id = p.id
@@ -624,14 +632,26 @@ def get_teams_squad():
             squad_players = cursor.fetchall()
             
             team['squad_players'] = squad_players
+            team['squad_size'] = auction_config['squad_size']
+            team['overseas_limit'] = auction_config['overseas_limit']
+            team['purse_limit'] = float(team['purse_limit'] or auction_config['purse_limit'])
+            team['spent'] = float(team['spent'] or 0)
+            team['is_your_team'] = False  # Will be set below if user logged in
             result.append(team)
+        
+        # Mark user's own team
+        user_id = session.get('user_id')
+        if user_id:
+            for team in result:
+                # Simple owner check - adjust if you have owner_ids JSON
+                if team.get('owner_id') == user_id:
+                    team['is_your_team'] = True
         
     finally:
         cursor.close()
         db.close()
     
     return jsonify({'teams': result})
-
 
 # ==================== BIDDING ====================
 
