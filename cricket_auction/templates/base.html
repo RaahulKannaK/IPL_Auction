@@ -109,7 +109,7 @@
         #debug-overlay .debug-value { color: var(--gold-light); font-weight: 600; }
 
         /* ============================================================
-           NAVIGATION - DESKTOP DEFAULT (horizontal)
+           NAVIGATION - DESKTOP DEFAULT
            ============================================================ */
         .main-nav {
             background: rgba(7, 11, 22, 0.8);
@@ -198,7 +198,6 @@
         .role-team_owner { background: rgba(124, 77, 255, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(124, 77, 255, 0.2); }
         .role-viewer { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
 
-        /* Auction Context Badge */
         .auction-context {
             display: inline-flex;
             align-items: center;
@@ -220,7 +219,6 @@
         }
         .auction-context .exit:hover { color: #ef4444; }
 
-        /* Logout link */
         .logout-link {
             color: var(--text-dim);
             text-decoration: none;
@@ -232,7 +230,6 @@
         }
         .logout-link:hover { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
 
-        /* Hamburger Button (hidden on desktop) */
         .hamburger-btn {
             display: none;
             background: none;
@@ -246,9 +243,7 @@
             flex-shrink: 0;
         }
         .hamburger-btn:hover { background: rgba(124, 77, 255, 0.15); }
-        .hamburger-btn:active { background: rgba(124, 77, 255, 0.25); }
 
-        /* Mobile Nav Overlay */
         .mobile-nav-overlay {
             display: none;
             position: fixed;
@@ -641,7 +636,7 @@
         }
 
         /* ============================================================
-           SUB-NAV (page-level navigation)
+           SUB-NAV
            ============================================================ */
         .sub-nav {
             display: flex;
@@ -677,9 +672,123 @@
         }
 
         /* ============================================================
-           ============================================================
+           AUCTION COMPACT LAYOUT (for auction room pages)
+           ============================================================ */
+        .auction-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(100, 120, 200, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .auction-panel::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 10%; bottom: 10%; width: 3px;
+            border-radius: 0 4px 4px 0;
+        }
+        .auction-panel.purple::before { background: linear-gradient(to bottom, var(--cosmic-purple), var(--cosmic-purple-light)); }
+        .auction-panel.gold::before { background: linear-gradient(to bottom, var(--gold), var(--gold-light)); }
+        .auction-panel.cyan::before { background: linear-gradient(to bottom, var(--ice-blue), var(--ice-blue-light)); }
+        .auction-panel .panel-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .auction-panel .panel-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .auction-panel .panel-sub {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .bid-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .bid-btn {
+            background: rgba(12, 16, 32, 0.8);
+            border: 1px solid rgba(100, 120, 200, 0.15);
+            color: var(--text-secondary);
+            padding: 14px 8px;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .bid-btn:hover {
+            border-color: var(--cosmic-purple);
+            color: var(--cosmic-purple-light);
+            background: rgba(124, 77, 255, 0.08);
+        }
+        .bid-btn:active { transform: scale(0.95); }
+        .bid-btn.custom {
+            border-color: rgba(247, 181, 0, 0.3);
+            color: var(--gold-light);
+        }
+        .bid-btn.custom:hover {
+            border-color: var(--gold);
+            background: rgba(247, 181, 0, 0.08);
+        }
+
+        .place-bid-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
+            border: 1px solid rgba(34,197,94,0.3);
+            color: var(--g);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 1px;
+        }
+        .place-bid-btn:hover {
+            background: linear-gradient(135deg, rgba(34,197,94,0.25), rgba(34,197,94,0.1));
+            box-shadow: 0 0 24px rgba(34,197,94,0.2);
+            transform: translateY(-2px);
+        }
+        .place-bid-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .place-bid-btn.skip {
+            background: rgba(100, 116, 139, 0.08);
+            border-color: rgba(100, 116, 139, 0.2);
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+        .place-bid-btn.skip:hover {
+            background: rgba(100, 116, 139, 0.15);
+            box-shadow: none;
+        }
+
+        /* ============================================================
            LAPTOP / DESKTOP (1024px and up)
-           ============================================================
            ============================================================ */
         @media (min-width: 1024px) {
             .container { padding: 30px; }
@@ -691,9 +800,7 @@
         }
 
         /* ============================================================
-           ============================================================
            TABLET (768px - 1023px)
-           ============================================================
            ============================================================ */
         @media (min-width: 768px) and (max-width: 1023px) {
             .container { padding: 20px; }
@@ -706,16 +813,16 @@
             .responsive-card { display: none !important; }
             .main-nav { padding: 12px 20px; }
             .main-nav a { padding: 8px 14px; font-size: 0.8rem; }
+            .auction-panel { padding: 20px; }
+            .auction-panel .panel-value { font-size: 1.5rem; }
         }
 
         /* ============================================================
-           ============================================================
            MOBILE (up to 767px)
-           ============================================================
            ============================================================ */
         @media (max-width: 767px) {
             /* Container */
-            .container { padding: 14px; max-width: 100%; }
+            .container { padding: 12px; max-width: 100%; }
 
             /* Lava blobs smaller */
             .lava-blob:nth-child(1) { width: 300px; height: 300px; opacity: 0.05; }
@@ -724,54 +831,93 @@
 
             /* Fewer ember particles */
             .ember { display: none; }
-            .ember:nth-child(-n+8) { display: block; }
+            .ember:nth-child(-n+6) { display: block; }
 
-            /* ===== NAVIGATION: Hamburger Menu ===== */
+            /* ===== NAVIGATION ===== */
             .main-nav {
-                padding: 10px 14px;
-                min-height: 56px;
+                padding: 10px 12px;
+                min-height: 52px;
             }
-            .main-nav .nav-brand { display: block; }
+            .main-nav .nav-brand { display: block; font-size: 1rem; }
             .main-nav .nav-links { display: none; }
             .main-nav .nav-right { display: none; }
             .hamburger-btn { display: flex; align-items: center; justify-content: center; }
 
-            /* Auction context in mobile header */
             .auction-context {
                 margin-left: auto;
-                margin-right: 8px;
-                padding: 4px 10px;
-                font-size: 0.75rem;
-                max-width: 160px;
+                margin-right: 6px;
+                padding: 3px 10px;
+                font-size: 0.7rem;
+                max-width: 140px;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
             }
             .auction-context .exit { display: none; }
 
             /* ===== SINGLE COLUMN LAYOUT ===== */
             .grid-2, .grid-3, .grid-4 {
                 grid-template-columns: 1fr;
-                gap: 12px;
+                gap: 10px;
             }
 
             /* ===== STAT CARDS COMPACT ===== */
             .stat-card {
-                padding: 16px;
-                border-radius: 16px;
+                padding: 14px;
+                border-radius: 14px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 text-align: left;
             }
             .stat-card .stat-value {
-                font-size: 1.4rem;
+                font-size: 1.3rem;
                 margin-bottom: 0;
                 order: 2;
             }
             .stat-card .stat-label {
-                font-size: 0.7rem;
+                font-size: 0.65rem;
                 order: 1;
+            }
+
+            /* ===== AUCTION PANELS COMPACT ===== */
+            .auction-panel {
+                padding: 16px;
+                border-radius: 16px;
+            }
+            .auction-panel::before { width: 2px; }
+            .auction-panel .panel-label {
+                font-size: 0.6rem;
+                letter-spacing: 2px;
+                margin-bottom: 6px;
+            }
+            .auction-panel .panel-value {
+                font-size: 1.4rem;
+            }
+            .auction-panel .panel-sub {
+                font-size: 0.8rem;
+            }
+
+            /* ===== BID BUTTONS COMPACT ===== */
+            .bid-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            .bid-btn {
+                padding: 12px 4px;
+                font-size: 0.85rem;
+                border-radius: 10px;
+                min-height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .place-bid-btn {
+                padding: 14px;
+                font-size: 1rem;
+                min-height: 52px;
+                border-radius: 12px;
             }
 
             /* ===== TABLES → CARDS ===== */
@@ -780,7 +926,7 @@
 
             /* ===== LOGIN BOX ===== */
             .login-box {
-                margin: 30px 12px;
+                margin: 24px 10px;
                 padding: 24px;
                 border-radius: 18px;
             }
@@ -802,7 +948,7 @@
                 padding: 10px 14px;
                 font-size: 0.85rem;
                 border-radius: 10px;
-                margin-bottom: 14px;
+                margin-bottom: 12px;
             }
 
             /* ===== TOUCH-FRIENDLY ===== */
@@ -813,42 +959,43 @@
             }
 
             /* ===== COLLAPSIBLE ===== */
-            .collapsible-section { margin-bottom: 12px; }
-            .collapsible-header { padding: 14px 16px; }
-            .collapsible-header h3 { font-size: 0.95rem; }
-            .collapsible-body { padding: 14px 16px; }
+            .collapsible-section { margin-bottom: 10px; }
+            .collapsible-header { padding: 12px 14px; }
+            .collapsible-header h3 { font-size: 0.9rem; }
+            .collapsible-body { padding: 12px 14px; }
 
             /* ===== FORM ELEMENTS ===== */
             input, select, textarea {
                 font-size: 16px !important;
-                padding: 14px 16px !important;
-                min-height: 48px;
+                padding: 12px 14px !important;
+                min-height: 44px;
             }
             button, [role="button"] {
-                min-height: 48px;
-                min-width: 48px;
+                min-height: 44px;
+                min-width: 44px;
             }
 
             /* ===== SUB-NAV ===== */
             .sub-nav {
-                gap: 8px;
-                margin-bottom: 16px;
+                gap: 6px;
+                margin-bottom: 14px;
             }
             .sub-nav a, .sub-nav button {
-                padding: 10px 14px;
-                font-size: 0.85rem;
+                padding: 8px 12px;
+                font-size: 0.8rem;
                 flex: 1;
                 justify-content: center;
+                min-height: 40px;
             }
 
             /* ===== SCROLLBAR ===== */
             ::-webkit-scrollbar { width: 3px; }
 
             /* ===== REDUCED FONT SIZES ===== */
-            body { font-size: 0.95rem; }
-            h1 { font-size: 1.4rem; }
-            h2 { font-size: 1.2rem; }
-            h3 { font-size: 1.05rem; }
+            body { font-size: 0.9rem; }
+            h1 { font-size: 1.3rem; }
+            h2 { font-size: 1.15rem; }
+            h3 { font-size: 1rem; }
         }
 
         /* ============================================================
@@ -856,11 +1003,15 @@
            ============================================================ */
         @media (max-width: 374px) {
             .container { padding: 10px; }
-            .login-box { margin: 20px 10px; padding: 18px; }
+            .login-box { margin: 16px 8px; padding: 18px; }
             .login-box h2 { font-size: 1.1rem; }
-            .stat-card .stat-value { font-size: 1.2rem; }
+            .stat-card .stat-value { font-size: 1.15rem; }
             .main-nav { padding: 8px 10px; }
-            .auction-context { max-width: 120px; font-size: 0.7rem; }
+            .auction-context { max-width: 110px; font-size: 0.65rem; }
+            .auction-panel { padding: 14px; }
+            .auction-panel .panel-value { font-size: 1.2rem; }
+            .bid-btn { font-size: 0.8rem; padding: 10px 2px; }
+            .bid-grid { gap: 6px; }
         }
 
         /* ============================================================
@@ -874,11 +1025,13 @@
                 text-align: center;
             }
             .stat-card .stat-value {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
                 order: 1;
                 margin-bottom: 4px;
             }
-            .stat-card .stat-label { order: 2; font-size: 0.65rem; }
+            .stat-card .stat-label { order: 2; font-size: 0.6rem; }
+            .auction-panel { padding: 14px; }
+            .auction-panel .panel-value { font-size: 1.3rem; }
         }
     </style>
 </head>
@@ -935,7 +1088,6 @@
         <div class="nav-brand">🏏 Auction</div>
 
         <div class="nav-links">
-            <!-- ========== ADMIN ========== -->
             {% if session.role == 'admin' %}
                 <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
                 <a href="/admin/teams" {% if request.path.startswith('/admin/teams') %}class="active"{% endif %}>👥 Teams</a>
@@ -947,7 +1099,6 @@
                     <a href="/admin/auction" {% if request.path.startswith('/admin/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
                 {% endif %}
 
-            <!-- ========== AUCTIONEER ========== -->
             {% elif session.role == 'auctioneer' %}
                 <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
                 {% if session.get('active_auction_id') %}
@@ -955,7 +1106,6 @@
                     <a href="/auction/history" {% if request.path.startswith('/auction/history') %}class="active"{% endif %}>📜 History</a>
                 {% endif %}
 
-            <!-- ========== TEAM OWNER ========== -->
             {% elif session.role in ['team_owner', 'owner'] %}
                 <a href="/team-owner/dashboard" {% if request.path == '/team-owner/dashboard' %}class="active"{% endif %}>⚡ My Dashboard</a>
                 <a href="/team-owner/squad" {% if request.path.startswith('/team-owner/squad') %}class="active"{% endif %}>👥 My Squad</a>
@@ -965,7 +1115,6 @@
                     <a href="/team-owner/auction" {% if request.path.startswith('/team-owner/auction') %}class="active"{% endif %}>🔨 Auction Room</a>
                 {% endif %}
 
-            <!-- ========== VIEWER ========== -->
             {% elif session.role == 'viewer' %}
                 <a href="/viewer/dashboard" {% if request.path == '/viewer/dashboard' %}class="active"{% endif %}>👁️ Dashboard</a>
                 {% if session.get('active_auction_id') %}
@@ -976,7 +1125,6 @@
             {% endif %}
         </div>
 
-        <!-- Auction Context Badge -->
         {% if session.get('active_league_name') %}
             <div class="auction-context">
                 🔸 {{ session.active_league_name }}
@@ -1089,7 +1237,6 @@
                 breakpoint = '>= 1024px';
             }
 
-            // Update debug overlay
             const debugOverlay = document.getElementById('debug-overlay');
             if (debugOverlay) {
                 document.getElementById('debug-width').textContent = width + 'px';
@@ -1100,30 +1247,18 @@
                 document.getElementById('debug-orientation').textContent = orientation;
             }
 
-            console.log('[DeviceCheck]', {
-                width: width + 'px',
-                height: height + 'px',
-                device: device,
-                breakpoint: breakpoint,
-                dpr: dpr + 'x',
-                orientation: orientation
-            });
-
+            console.log('[DeviceCheck]', { width: width + 'px', height: height + 'px', device, breakpoint, dpr: dpr + 'x', orientation });
             return device;
         }
 
-        // Show debug overlay: Ctrl+Shift+D
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.shiftKey && e.key === 'D') {
                 e.preventDefault();
                 const overlay = document.getElementById('debug-overlay');
-                if (overlay) {
-                    overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
-                }
+                if (overlay) overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
             }
         });
 
-        // Auto-show if ?debug=1
         if (window.location.search.includes('debug=1')) {
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('debug-overlay').style.display = 'block';
@@ -1131,9 +1266,7 @@
         }
 
         window.addEventListener('resize', checkDevice);
-        window.addEventListener('orientationchange', function() {
-            setTimeout(checkDevice, 300);
-        });
+        window.addEventListener('orientationchange', function() { setTimeout(checkDevice, 300); });
         checkDevice();
 
         // ============================================================
@@ -1150,14 +1283,12 @@
                 document.body.style.overflow = 'hidden';
             });
         }
-
         if (closeNavBtn && mobileNavOverlay) {
             closeNavBtn.addEventListener('click', function() {
                 mobileNavOverlay.classList.remove('open');
                 document.body.style.overflow = '';
             });
         }
-
         if (mobileNavOverlay) {
             mobileNavOverlay.querySelectorAll('a').forEach(function(link) {
                 link.addEventListener('click', function() {
@@ -1166,7 +1297,6 @@
                 });
             });
         }
-
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && mobileNavOverlay && mobileNavOverlay.classList.contains('open')) {
                 mobileNavOverlay.classList.remove('open');
@@ -1185,7 +1315,6 @@
                 });
             });
         }
-
         function autoCollapseMobile() {
             if (window.innerWidth <= 767) {
                 document.querySelectorAll('.collapsible-section[data-priority="secondary"]').forEach(function(s) {
@@ -1193,7 +1322,6 @@
                 });
             }
         }
-
         document.addEventListener('DOMContentLoaded', function() {
             initCollapsibleSections();
             autoCollapseMobile();
@@ -1205,7 +1333,7 @@
 
         const emberContainer = document.getElementById('emberContainer');
         if (emberContainer) {
-            const count = window.innerWidth <= 767 ? 8 : 30;
+            const count = window.innerWidth <= 767 ? 6 : 30;
             for (let i = 0; i < count; i++) {
                 const ember = document.createElement('div');
                 ember.className = 'ember';
@@ -1220,22 +1348,15 @@
         // TOUCH FEEDBACK
         // ============================================================
 
-        document.querySelectorAll('button, a, .btn-touch').forEach(function(el) {
-            el.addEventListener('touchstart', function() {
-                this.style.opacity = '0.7';
-            }, { passive: true });
-            el.addEventListener('touchend', function() {
-                this.style.opacity = '';
-            }, { passive: true });
+        document.querySelectorAll('button, a, .btn-touch, .bid-btn, .place-bid-btn').forEach(function(el) {
+            el.addEventListener('touchstart', function() { this.style.opacity = '0.7'; }, { passive: true });
+            el.addEventListener('touchend', function() { this.style.opacity = ''; }, { passive: true });
         });
 
-        // Double-tap prevention
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function(e) {
             const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
+            if (now - lastTouchEnd <= 300) e.preventDefault();
             lastTouchEnd = now;
         }, { passive: false });
 
