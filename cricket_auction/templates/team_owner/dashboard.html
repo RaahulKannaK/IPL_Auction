@@ -1,335 +1,518 @@
 {% extends "base.html" %}
-
 {% block content %}
+
+<!-- ============================================
+     TEAM OWNER DASHBOARD
+     ============================================ -->
+
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
-
-    :root {
-        --cp: #7c4dff; --cp-l: #9e7bff; --cp-d: #5a2fd4;
-        --ib: #00d4ff; --ib-l: #6ee8ff;
-        --g: #22c55e; --g-l: #4ade80;
-        --gd: #f7b500; --gd-l: #ffe29a;
-        --bg-p: rgba(12,16,32,0.85);
-        --tp: #e8f0ff; --ts: #a0b0d0; --td: #7080a0;
+    /* Dashboard-specific styles */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 16px;
     }
-
-    .gp {
-        background: var(--bg-p); backdrop-filter: blur(24px);
-        border: 1px solid rgba(100,120,200,0.1); border-radius: 20px;
-        padding: 24px; position: relative; overflow: hidden;
+    .dashboard-header h1 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
     }
-    .gp::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(124,77,255,0.4), rgba(0,212,255,0.3), rgba(247,181,0,0.3), transparent);
-    }
-
-    h1 { font-family: 'Space Grotesk'; font-size: 1.8rem; color: var(--tp); margin-bottom: 20px; }
-
-    .tg { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-
-    .tc { display: flex; flex-direction: column; gap: 12px; padding: 24px; }
-    .tc .lg { font-size: 0.75rem; color: var(--td); text-transform: uppercase; letter-spacing: 2px; }
-    .tc .nm { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--tp); }
-    
-    .st {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.75rem; font-weight: 600;
-    }
-    .st-live { color: var(--g); }
-    .st-paused { color: #f59e0b; }
-    .st-pending { color: var(--td); }
-    .st-completed { color: var(--cp-l); }
-
-    .sr { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0; }
-    .sm { text-align: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; }
-    .sm .v { font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: 700; }
-    .sm .l { font-size: 0.65rem; color: var(--td); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-
-    .ct { display: flex; flex-wrap: wrap; gap: 6px; }
-    .ct span {
-        padding: 3px 10px; border-radius: 16px;
-        font-size: 0.7rem; font-weight: 600;
-        background: rgba(124,77,255,0.1); color: var(--cp-l);
-        border: 1px solid rgba(124,77,255,0.15);
-    }
-
-    .si {
-        display: flex; align-items: center; gap: 6px;
-        padding: 6px 12px; border-radius: 10px;
-        font-size: 0.75rem; font-weight: 600;
+    .dashboard-header .subtitle {
+        color: var(--text-dim);
+        font-size: 0.95rem;
         margin-top: 4px;
     }
-    .si-ok { background: rgba(34,197,94,0.1); color: var(--g); border: 1px solid rgba(34,197,94,0.2); }
-    .si-warn { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
 
-    .aid {
-        width: 100%; padding: 10px 14px; border-radius: 10px;
-        border: 1px solid rgba(124,77,255,0.25);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'JetBrains Mono'; font-size: 0.85rem;
-        letter-spacing: 2px; text-align: center; outline: none;
+    /* Auction Selection Cards */
+    .auction-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+    .auction-card {
+        background: var(--bg-panel);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 28px;
+        transition: all 0.3s;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .auction-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, var(--cosmic-purple), var(--ice-blue), var(--gold));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .auction-card:hover {
+        border-color: rgba(124, 77, 255, 0.3);
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .auction-card:hover::before { opacity: 1; }
+    .auction-card.active {
+        border-color: rgba(0, 212, 255, 0.3);
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+    }
+    .auction-card.active::before {
+        opacity: 1;
+        background: linear-gradient(90deg, var(--ice-blue), var(--cosmic-purple));
+    }
+    .auction-card .auction-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
         margin-bottom: 8px;
     }
-    .aid:focus { border-color: var(--cp-l); box-shadow: 0 0 12px rgba(124,77,255,0.15); }
-    .aid::placeholder { color: var(--td); font-family: 'Inter'; letter-spacing: normal; }
-    .aid.err { border-color: #ff2a00; animation: sh 0.4s; }
-    @keyframes sh { 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    .auction-card .auction-meta {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+    }
+    .auction-card .auction-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .status-live {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    .status-upcoming {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .status-completed {
+        background: rgba(100, 116, 139, 0.15);
+        color: #64748b;
+        border: 1px solid rgba(100, 116, 139, 0.2);
+    }
+    .auction-card .enter-btn {
+        margin-top: 20px;
+        width: 100%;
+        padding: 14px;
+        border-radius: 14px;
+        border: none;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        color: white;
+        font-weight: 700;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+    }
+    .auction-card .enter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(124, 77, 255, 0.3);
+    }
+    .auction-card.active .enter-btn {
+        background: linear-gradient(135deg, var(--ice-blue), var(--ice-blue-dark));
+    }
 
-    .ab {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        padding: 12px 20px; border-radius: 14px;
-        font-weight: 600; font-size: 0.85rem;
-        cursor: pointer; width: 100%; border: 1px solid;
-        text-decoration: none; transition: all 0.3s;
+    /* No Auctions State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-dim);
     }
-    .ab-e {
-        background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.05));
-        border-color: rgba(34,197,94,0.3); color: var(--g);
+    .empty-state .empty-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
     }
-    .ab-e:hover { border-color: var(--g); box-shadow: 0 0 20px rgba(34,197,94,0.2); transform: translateY(-2px); }
-    .ab-e:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .ab-v {
-        background: rgba(124,77,255,0.08);
-        border-color: rgba(124,77,255,0.25); color: var(--cp-l);
-    }
-    .ab-v:hover { border-color: var(--cp-l); box-shadow: 0 0 20px rgba(124,77,255,0.2); transform: translateY(-2px); }
-    .ab-d {
-        background: rgba(100,116,139,0.08);
-        border-color: rgba(100,116,139,0.15); color: var(--td);
-        cursor: not-allowed;
+    .empty-state h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.4rem;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
     }
 
-    .ae { font-size: 0.7rem; color: var(--td); text-align: center; margin-bottom: 6px; }
-    .aerr { color: #ff2a00; font-size: 0.7rem; text-align: center; margin-top: -4px; margin-bottom: 4px; display: none; }
-
-    .es { text-align: center; padding: 50px 20px; }
-    .es .i { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3; }
-    .es h3 { color: var(--ts); margin-bottom: 8px; font-family: 'Space Grotesk'; }
-    .es p { color: var(--td); font-size: 0.9rem; }
-
-    .pwd-input {
-        width: 100%; padding: 12px 14px; border-radius: 10px;
-        border: 1px solid rgba(124,77,255,0.25);
-        background: rgba(0,0,0,0.3); color: var(--tp);
-        font-family: 'Inter'; font-size: 0.9rem;
-        outline: none; margin-bottom: 12px;
+    /* Quick Stats */
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
     }
-    .pwd-input:focus { border-color: var(--cp-l); box-shadow: 0 0 12px rgba(124,77,255,0.15); }
-    .pwd-input::placeholder { color: var(--td); }
-    .pwd-input.err { border-color: #ff2a00; animation: sh 0.4s; }
-
-    .pwd-label {
-        font-size: 0.8rem; color: var(--ts);
-        margin-bottom: 6px; display: block;
+    .quick-stat {
+        background: var(--bg-panel);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+    }
+    .quick-stat .value {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--ice-blue-light);
+    }
+    .quick-stat .label {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    .header-row {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        margin-top: 30px;
     }
-    .header-row h1 { margin: 0; }
+    .section-header h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* My Team Preview */
+    .team-preview {
+        background: var(--bg-panel);
+        border: 1px solid rgba(100, 120, 200, 0.1);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 30px;
+    }
+    .team-preview .team-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .team-preview .team-name {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+    .team-preview .squad-count {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+    }
+
+    /* Mini player list */
+    .mini-players {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    .mini-player {
+        min-width: 80px;
+        text-align: center;
+    }
+    .mini-player .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--cosmic-purple), var(--cosmic-purple-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin: 0 auto 8px;
+    }
+    .mini-player .name {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+    }
+    .mini-player .price {
+        font-size: 0.7rem;
+        color: var(--gold);
+        font-weight: 600;
+    }
+
+    /* ============================================
+       RESPONSIVE: TABLET (768px - 1023px)
+       ============================================ */
+    @media (min-width: 768px) and (max-width: 1023px) {
+        .auction-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .quick-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .dashboard-header h1 {
+            font-size: 1.6rem;
+        }
+    }
+
+    /* ============================================
+       RESPONSIVE: MOBILE (up to 767px)
+       ============================================ */
+    @media (max-width: 767px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .dashboard-header h1 {
+            font-size: 1.4rem;
+        }
+        .auction-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .auction-card {
+            padding: 20px;
+            border-radius: 16px;
+        }
+        .auction-card .auction-name {
+            font-size: 1.1rem;
+        }
+        .auction-card .enter-btn {
+            padding: 12px;
+            font-size: 0.9rem;
+            min-height: 48px;
+        }
+        .quick-stats {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .quick-stat {
+            padding: 16px;
+        }
+        .quick-stat .value {
+            font-size: 1.4rem;
+        }
+        .quick-stat .label {
+            font-size: 0.7rem;
+        }
+        .section-header {
+            margin-top: 20px;
+            margin-bottom: 14px;
+        }
+        .section-header h2 {
+            font-size: 1.1rem;
+        }
+        .team-preview {
+            padding: 18px;
+            border-radius: 16px;
+        }
+        .mini-player .avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+    }
 </style>
 
-<div class="header-row">
-    <h1>⚡ My Teams</h1>
-    <button type="button" class="ab ab-v" onclick="openPwdModal()" style="width: auto; padding: 8px 18px; font-size: 0.8rem;">
-        🔒 Change Password
-    </button>
-</div>
-
-<!-- Change Password Modal -->
-<div id="pwdModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
-    <div class="gp" style="width:90%; max-width:380px; padding:28px;">
-        <h3 style="font-family:'Space Grotesk'; color:var(--tp); margin-bottom:20px; text-align:center; font-size:1.2rem;">🔒 Change Password</h3>
-        
-        <label class="pwd-label">New Password</label>
-        <input type="password" id="pwdNew" class="pwd-input" placeholder="Enter new password">
-        
-        <label class="pwd-label">Confirm New Password</label>
-        <input type="password" id="pwdConfirm" class="pwd-input" placeholder="Re-enter new password">
-        
-        <div id="pwdMsg" style="color:#ff2a00; font-size:0.8rem; text-align:center; margin-bottom:12px; display:none;"></div>
-        
-        <div style="display:flex; gap:10px;">
-            <button type="button" class="ab ab-e" onclick="submitPwd()" id="pwdSubmitBtn" style="flex:1;">Save</button>
-            <button type="button" class="ab ab-d" onclick="closePwdModal()" style="flex:1; cursor:pointer;">Cancel</button>
-        </div>
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <div>
+        <h1>⚡ My Dashboard</h1>
+        <div class="subtitle">Welcome back, {{ session.username }} | Team: {{ team.name if team else 'Not Assigned' }}</div>
     </div>
 </div>
 
-{% if teams %}
-<div class="tg" id="teamGrid">
-    {% for team in teams %}
-    <div class="gp tc">
-        <div class="lg">{{ team.league_name }}</div>
-        <div class="nm">{{ team.team_name }}</div>
-        
-        <div class="st st-{{ team.auction_status }}">
-            {% if team.auction_status == 'live' %}🔴{% elif team.auction_status == 'paused' %}⏸{% elif team.auction_status == 'completed' %}✓{% else %}○{% endif %}
-            {{ team.auction_status.upper() }}
+<!-- Quick Stats -->
+<div class="quick-stats">
+    <div class="quick-stat">
+        <div class="value">₹{{ team.purse_remaining if team else '0' }}Cr</div>
+        <div class="label">Purse Left</div>
+    </div>
+    <div class="quick-stat">
+        <div class="value">{{ team.players_bought if team else '0' }}/{{ team.max_players if team else '18' }}</div>
+        <div class="label">Squad</div>
+    </div>
+    <div class="quick-stat">
+        <div class="value">{{ team.overseas_count if team else '0' }}/{{ team.max_overseas if team else '8' }}</div>
+        <div class="label">Overseas</div>
+    </div>
+    <div class="quick-stat">
+        <div class="value">₹{{ team.total_spent if team else '0' }}Cr</div>
+        <div class="label">Spent</div>
+    </div>
+</div>
+
+<!-- My Team Preview (if has team) -->
+{% if team and team.players %}
+<div class="team-preview">
+    <div class="team-header">
+        <span class="team-name">👥 {{ team.name }}</span>
+        <span class="squad-count">{{ team.players|length }} players</span>
+    </div>
+    <div class="mini-players">
+        {% for player in team.players[:8] %}
+        <div class="mini-player">
+            <div class="avatar">{{ player.name[0] }}</div>
+            <div class="name" title="{{ player.name }}">{{ player.name }}</div>
+            <div class="price">₹{{ player.price }}Cr</div>
         </div>
-        
-        {% if team.your_sessions_count %}
-        <div class="si si-ok">✅ Allocated to {{ team.your_sessions_count }} session(s)</div>
-        {% else %}
-        <div class="si si-warn">⏳ Not allocated to any session yet</div>
+        {% endfor %}
+        {% if team.players|length > 8 %}
+        <div class="mini-player">
+            <div class="avatar" style="background: rgba(100,120,200,0.2);">+{{ team.players|length - 8 }}</div>
+            <div class="name">More</div>
+        </div>
         {% endif %}
-        
-        <div class="sr">
-            <div class="sm">
-                <div class="v" style="color:var(--gd-l)">₹{{ "%.2f"|format(team.available) }}Cr</div>
-                <div class="l">Available</div>
-            </div>
-            <div class="sm">
-                <div class="v" style="color:var(--ib)">{{ team.squad_count }}</div>
-                <div class="l">Squad</div>
-            </div>
-            <div class="sm">
-                <div class="v" style="color:var(--cp-l)">{{ team.purse_limit|int }}</div>
-                <div class="l">Purse</div>
-            </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Available Auctions Section -->
+<div class="section-header">
+    <h2>🏆 Available Auctions</h2>
+</div>
+
+{% if auctions %}
+<div class="auction-grid">
+    {% for auction in auctions %}
+    <div class="auction-card {% if auction.id == session.get('active_auction_id') %}active{% endif %}"
+         onclick="enterAuction({{ auction.id }})">
+
+        <div class="auction-name">{{ auction.name }}</div>
+        <div class="auction-meta">
+            📅 {{ auction.date }} &nbsp;|&nbsp; 🏏 {{ auction.format }} &nbsp;|&nbsp; 💰 Purse: ₹{{ auction.purse }}Cr
         </div>
-        
-        <div class="ct">
-            <span>🏏 {{ team.batsmen }} Batsmen</span>
-            <span>🎯 {{ team.bowlers }} Bowlers</span>
-            <span>⚡ {{ team.all_rounders }} All-Rounders</span>
-            <span>🧤 {{ team.wicket_keepers }} Keepers</span>
-            <span>🌍 {{ team.overseas }} Overseas</span>
-        </div>
-        
-        {% if team.auction_status in ['live', 'paused'] %}
-        <div style="margin-top:auto;">
-            <div class="ae">Enter Auction ID: {{ team.auction_id }}</div>
-            <input type="number" class="aid" id="aid-{{ team.auction_id }}"
-                placeholder="Enter Auction ID ({{ team.auction_id }})" 
-                onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
-                inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            <div class="aerr" id="err-{{ team.auction_id }}">Wrong Auction ID</div>
-            <button type="button" class="ab ab-e" id="btn-{{ team.auction_id }}"
-                    onclick="eA({{ team.auction_id }})">
-                🚀 View Sessions →
-            </button>
-        </div>
-        {% elif team.auction_status == 'completed' %}
-        <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="ab ab-v">
-            📊 View Results →
-        </a>
+
+        {% if auction.status == 'live' %}
+            <span class="auction-status status-live">● Live</span>
+        {% elif auction.status == 'upcoming' %}
+            <span class="auction-status status-upcoming">⏳ Upcoming</span>
         {% else %}
-        <div class="ab ab-d">⏳ Auction Not Started</div>
+            <span class="auction-status status-completed">✓ Completed</span>
+        {% endif %}
+
+        <!-- ============================================
+             KEY FIX: Go to SESSIONS page first, NOT auction room
+             ============================================ -->
+        {% if auction.status == 'live' %}
+            <button class="enter-btn btn-touch" onclick="event.stopPropagation(); enterAuction({{ auction.id }})">
+                🚀 Enter Auction
+            </button>
+        {% elif auction.status == 'upcoming' %}
+            <button class="enter-btn btn-touch" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="event.stopPropagation(); enterAuction({{ auction.id }})">
+                👁️ View Sessions
+            </button>
+        {% else %}
+            <button class="enter-btn btn-touch" style="background: linear-gradient(135deg, #64748b, #475569);" onclick="event.stopPropagation(); viewResults({{ auction.id }})">
+                📊 View Results
+            </button>
         {% endif %}
     </div>
     {% endfor %}
 </div>
-
-<script>
-function eA(expectedId) {
-    const input = document.getElementById('aid-' + expectedId);
-    const btn = document.getElementById('btn-' + expectedId);
-    const err = document.getElementById('err-' + expectedId);
-    const val = input.value.trim();
-    
-    btn.disabled = true;
-    err.style.display = 'none';
-    input.classList.remove('err');
-    
-    if (val === String(expectedId)) {
-        window.location.href = '/team-owner/auction-room/' + expectedId;
-    } else {
-        err.style.display = 'block';
-        input.classList.add('err');
-        input.value = '';
-        input.focus();
-        btn.disabled = false;
-    }
-}
-
-function openPwdModal() {
-    document.getElementById('pwdModal').style.display = 'flex';
-    document.getElementById('pwdNew').focus();
-}
-
-function closePwdModal() {
-    document.getElementById('pwdModal').style.display = 'none';
-    document.getElementById('pwdNew').value = '';
-    document.getElementById('pwdConfirm').value = '';
-    const msg = document.getElementById('pwdMsg');
-    msg.style.display = 'none';
-    msg.textContent = '';
-    document.getElementById('pwdSubmitBtn').disabled = false;
-    document.getElementById('pwdNew').classList.remove('err');
-    document.getElementById('pwdConfirm').classList.remove('err');
-}
-
-async function submitPwd() {
-    const btn = document.getElementById('pwdSubmitBtn');
-    const msg = document.getElementById('pwdMsg');
-    const newPwd = document.getElementById('pwdNew').value.trim();
-    const confirm = document.getElementById('pwdConfirm').value.trim();
-    
-    btn.disabled = true;
-    msg.style.display = 'none';
-    document.getElementById('pwdNew').classList.remove('err');
-    document.getElementById('pwdConfirm').classList.remove('err');
-    
-    if (!newPwd || !confirm) {
-        msg.textContent = '❌ Both fields are required';
-        msg.style.display = 'block';
-        if (!newPwd) document.getElementById('pwdNew').classList.add('err');
-        if (!confirm) document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false;
-        return;
-    }
-    
-    if (newPwd !== confirm) {
-        msg.textContent = '❌ Passwords do not match';
-        msg.style.display = 'block';
-        document.getElementById('pwdNew').classList.add('err');
-        document.getElementById('pwdConfirm').classList.add('err');
-        btn.disabled = false;
-        return;
-    }
-    
-    try {
-        const res = await fetch('/team-owner/change-password', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({new_password: newPwd, confirm_password: confirm})
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            msg.style.color = '#4ade80';
-            msg.textContent = '✅ ' + data.message;
-            msg.style.display = 'block';
-            setTimeout(closePwdModal, 1200);
-        } else {
-            msg.style.color = '#ff2a00';
-            msg.textContent = '❌ ' + data.message;
-            msg.style.display = 'block';
-            btn.disabled = false;
-        }
-    } catch (e) {
-        msg.style.color = '#ff2a00';
-        msg.textContent = '❌ Something went wrong';
-        msg.style.display = 'block';
-        btn.disabled = false;
-    }
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePwdModal();
-});
-document.getElementById('pwdModal').addEventListener('click', function(e) {
-    if (e.target === this) closePwdModal();
-});
-</script>
-
 {% else %}
-<div class="es">
-    <div class="i">🏏</div>
-    <h3>No Teams Assigned</h3>
-    <p>You don't own any teams in active auctions. Contact an admin.</p>
+<div class="empty-state">
+    <div class="empty-icon">🏏</div>
+    <h3>No Auctions Available</h3>
+    <p>Check back later for upcoming auctions.</p>
 </div>
 {% endif %}
+
+<!-- Recent Activity -->
+{% if recent_bids %}
+<div class="section-header">
+    <h2>📜 Recent Bids</h2>
+</div>
+<div class="responsive-table-wrapper">
+    <table class="responsive-table" data-responsive-table>
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bid in recent_bids %}
+            <tr>
+                <td>{{ bid.player_name }}</td>
+                <td style="color: var(--gold); font-weight: 600;">₹{{ bid.amount }}Cr</td>
+                <td>
+                    {% if bid.won %}
+                        <span style="color: #22c55e;">✓ Won</span>
+                    {% else %}
+                        <span style="color: #ef4444;">✗ Lost</span>
+                    {% endif %}
+                </td>
+                <td style="color: var(--text-dim); font-size: 0.85rem;">{{ bid.time }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+    // ============================================
+    // KEY FIX: Navigate to SESSIONS page first
+    // ============================================
+
+    /**
+     * Enter an auction - goes to SESSIONS selection page first
+     * This ensures user picks a session before entering the auction room
+     */
+    function enterAuction(auctionId) {
+        console.log('[Dashboard] Entering auction', auctionId, '-> Redirecting to sessions page');
+
+        // FIXED: Go to sessions page first, NOT directly to auction room
+        // The user must select a session before accessing the auction
+        window.location.href = '/team-owner/sessions/' + auctionId;
+
+        // Alternative routes based on role (uncomment if needed):
+        // if ('{{ session.role }}' === 'admin') {
+        //     window.location.href = '/admin/sessions/' + auctionId;
+        // } else if ('{{ session.role }}' === 'auctioneer') {
+        //     window.location.href = '/auctioneer/sessions/' + auctionId;
+        // } else if ('{{ session.role }}' === 'viewer') {
+        //     window.location.href = '/viewer/sessions/' + auctionId;
+        // } else {
+        //     window.location.href = '/team-owner/sessions/' + auctionId;
+        // }
+    }
+
+    /**
+     * View completed auction results
+     */
+    function viewResults(auctionId) {
+        console.log('[Dashboard] Viewing results for auction', auctionId);
+        window.location.href = '/team-owner/auction/' + auctionId + '/results';
+    }
+
+    // ============================================
+    // Auto-refresh active auction status
+    // ============================================
+    setInterval(function() {
+        // Optional: Poll for auction status updates
+        // fetch('/api/auction-status').then(r => r.json()).then(data => { ... });
+    }, 30000); // Every 30 seconds
+</script>
+
 {% endblock %}
