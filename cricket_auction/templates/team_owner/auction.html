@@ -572,6 +572,329 @@
         text-align: center;
         font-weight: 600;
     }
+
+    /* ============================================================
+       MOBILE RESPONSIVE OVERRIDES (max-width: 767px)
+       ============================================================ */
+    @media (max-width: 767px) {
+        .auction-wrapper { padding: 12px; }
+
+        /* Header compact */
+        .auction-header { margin-bottom: 14px; gap: 10px; }
+        .auction-title h1 { font-size: 1.3rem; }
+        .auction-title p { font-size: 0.8rem; }
+        .live-status { padding: 6px 14px; font-size: 0.7rem; gap: 6px; }
+        .live-dot { width: 8px; height: 8px; }
+        .session-badge { padding: 6px 12px; font-size: 0.75rem; }
+        .sync-indicator { padding: 4px 10px; font-size: 0.7rem; }
+
+        /* Session nav compact */
+        .session-nav { gap: 6px; margin-bottom: 14px; }
+        .session-chip { padding: 6px 12px; font-size: 0.75rem; }
+
+        /* Team stats bar - 2x2 grid on mobile */
+        .my-team-bar {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .team-stat-card { padding: 12px; border-radius: 12px; }
+        .team-stat-card .val { font-size: 1.1rem; }
+        .team-stat-card .lbl { font-size: 0.6rem; margin-top: 4px; }
+
+        /* Display grid - single column, compact */
+        .display-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .display-card {
+            padding: 16px 14px;
+            border-radius: 14px;
+        }
+        .display-card .label {
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .display-card .value {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+        .display-card .sublabel {
+            font-size: 0.75rem;
+        }
+        .bid-value-gold {
+            font-size: 1.6rem;
+        }
+
+        /* Glass panel compact */
+        .glass-panel {
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+        .glass-panel::before { opacity: 0.3; }
+        .corner { width: 10px; height: 10px; }
+        .corner-tl, .corner-tr, .corner-bl, .corner-br {
+            top: 10px; bottom: 10px; left: 10px; right: 10px;
+        }
+
+        /* Bid controls compact */
+        .bid-controls {
+            max-width: 100%;
+            margin-bottom: 16px;
+        }
+        .quick-bids {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .quick-bid-chip {
+            padding: 12px 2px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quick-bid-chip.base-bid {
+            grid-column: span 2;
+            font-size: 0.75rem;
+        }
+
+        .main-bid-btn {
+            padding: 14px;
+            font-size: 1rem;
+            min-height: 52px;
+            border-radius: 12px;
+            letter-spacing: 1px;
+        }
+
+        .skip-section {
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .skip-btn {
+            padding: 10px 20px;
+            font-size: 0.85rem;
+            border-radius: 10px;
+        }
+        .skip-counter {
+            font-size: 0.8rem;
+        }
+
+        /* History compact */
+        .history-section { margin-top: 14px; }
+        .history-title {
+            font-size: 0.7rem;
+            margin-bottom: 10px;
+        }
+        .history-panel { max-height: 160px; }
+        .history-item {
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+        }
+        .history-bidder { font-size: 0.85rem; }
+        .history-amount { font-size: 0.85rem; }
+
+        /* Players section compact */
+        .players-section { margin-top: 20px; }
+        .players-header {
+            margin-bottom: 14px;
+            gap: 10px;
+        }
+        .players-header h2 {
+            font-size: 1.1rem;
+        }
+        .filter-bar { gap: 6px; }
+        .filter-btn {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+        .players-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .player-card {
+            padding: 14px;
+            border-radius: 12px;
+        }
+        .player-card .p-name {
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+        }
+        .player-card .p-meta {
+            margin-bottom: 6px;
+        }
+        .cat-badge {
+            padding: 2px 8px;
+            font-size: 0.6rem;
+        }
+        .player-card .p-price {
+            font-size: 0.8rem;
+        }
+        .player-card .p-status {
+            font-size: 0.7rem;
+            margin-top: 6px;
+        }
+
+        /* Nav bar compact */
+        .nav-bar {
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .nav-link, .view-squad-btn {
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            border-radius: 10px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Session warning compact */
+        .session-warning {
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            margin-bottom: 14px;
+        }
+
+        /* Section title compact */
+        .section-title {
+            font-size: 1rem;
+            margin-bottom: 14px;
+        }
+
+        /* Modals compact */
+        .modal-content {
+            border-radius: 16px;
+            max-height: 90vh;
+        }
+        .modal-header {
+            padding: 16px 20px;
+        }
+        .modal-header h2 {
+            font-size: 1.1rem;
+        }
+        .modal-body {
+            padding: 16px 20px;
+        }
+        .squad-team-card {
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .squad-team-name {
+            font-size: 1rem;
+        }
+        .squad-table th, .squad-table td {
+            padding: 8px;
+            font-size: 0.8rem;
+        }
+
+        /* Willing modal compact */
+        .willing-modal-content {
+            border-radius: 16px;
+        }
+        .willing-modal-header {
+            padding: 18px 20px;
+        }
+        .willing-modal-header h2 {
+            font-size: 1.1rem;
+        }
+        .willing-modal-body {
+            padding: 20px;
+        }
+        .willing-player-info {
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+        .willing-player-info .player-name {
+            font-size: 1.1rem;
+        }
+        .willing-input {
+            padding: 14px 16px;
+            font-size: 1.2rem;
+        }
+        .willing-btn-skip, .willing-btn-save {
+            padding: 12px 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Sold toast compact */
+        .sold-toast {
+            top: 70px;
+            right: 10px;
+            left: 10px;
+            padding: 16px 20px;
+            border-radius: 14px;
+        }
+        .sold-toast h3 {
+            font-size: 1rem;
+        }
+        .sold-toast p {
+            font-size: 0.85rem;
+        }
+
+        /* Final call & countdown compact */
+        .final-call-panel {
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .final-call-panel h3 {
+            font-size: 0.9rem;
+        }
+        .final-call-panel .timer {
+            font-size: 2rem;
+        }
+        .countdown-display {
+            padding: 20px;
+            margin-bottom: 14px;
+        }
+        .countdown-value {
+            font-size: 3rem;
+        }
+    }
+
+    /* ============================================================
+       VERY SMALL MOBILE (max-width: 374px)
+       ============================================================ */
+    @media (max-width: 374px) {
+        .auction-wrapper { padding: 10px; }
+        .auction-title h1 { font-size: 1.1rem; }
+        .display-card .value { font-size: 1.1rem; }
+        .bid-value-gold { font-size: 1.4rem; }
+        .quick-bid-chip { font-size: 0.75rem; padding: 10px 2px; }
+        .main-bid-btn { font-size: 0.95rem; padding: 12px; }
+        .players-grid { grid-template-columns: 1fr; }
+        .team-stat-card .val { font-size: 1rem; }
+    }
+
+    /* ============================================================
+       LANDSCAPE MOBILE
+       ============================================================ */
+    @media (max-width: 767px) and (orientation: landscape) {
+        .display-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .display-card {
+            padding: 14px 10px;
+        }
+        .display-card .value {
+            font-size: 1.2rem;
+        }
+        .my-team-bar {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .team-stat-card {
+            padding: 10px;
+        }
+        .team-stat-card .val {
+            font-size: 1rem;
+        }
+    }
 </style>
 
 <div class="auction-wrapper">
@@ -1382,8 +1705,6 @@ async function placeBid() {
             updatePurseDisplay();
             clearActiveChips();
             
-            // TRIGGER BOT COUNTER-BID CHECK
-            console.log('>>> check_auto =', data.check_auto);
             if (data.check_auto === true) {
                 console.log('>>> Triggering bot check...');
                 setTimeout(function() {
