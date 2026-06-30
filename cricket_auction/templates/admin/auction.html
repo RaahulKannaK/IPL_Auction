@@ -591,16 +591,12 @@
                 {% endif %}
             </p>
         </div>
-        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             {% if current_session %}
-            <div class="session-badge">
-                ⏰ {{ current_session.start_time }} - {{ current_session.end_time }}
+            <div class="session-badge" id="sessionInfoBadge">
+                ⏰ {{ current_session.session_name }} — {{ current_session.start_time.strftime('%d %b, %I %p')|default(current_session.start_time) }} to {{ current_session.end_time.strftime('%I %p')|default(current_session.end_time) }}
             </div>
             {% endif %}
-            <div class="sync-indicator sync-active" id="syncIndicator">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
-                Live Sync
-            </div>
             <div class="live-status status-live" id="roomStatus">
                 <div class="live-dot"></div> LIVE
             </div>

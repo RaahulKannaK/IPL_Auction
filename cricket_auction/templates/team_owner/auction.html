@@ -62,15 +62,6 @@
         font-weight: 600; font-size: 0.85rem;
     }
 
-    .sync-indicator {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 20px;
-        font-size: 0.75rem; font-weight: 600;
-        transition: all 0.3s;
-    }
-    .sync-active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
-    .sync-pending { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
-
     /* ===== SESSION NAV ===== */
     .session-nav { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     .session-chip {
@@ -86,7 +77,6 @@
         background: rgba(124, 77, 255, 0.15);
         border-color: var(--cosmic-purple); color: var(--cosmic-purple-light);
     }
-    .session-chip .time { font-family: 'JetBrains Mono'; font-size: 0.75rem; opacity: 0.7; }
 
     /* ===== MAIN DISPLAY GRID ===== */
     .display-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
@@ -620,7 +610,6 @@
         .live-status { padding: 6px 14px; font-size: 0.7rem; gap: 6px; }
         .live-dot { width: 8px; height: 8px; }
         .session-badge { padding: 6px 12px; font-size: 0.75rem; }
-        .sync-indicator { padding: 4px 10px; font-size: 0.7rem; }
 
         /* Session nav compact */
         .session-nav { gap: 6px; margin-bottom: 14px; }
@@ -974,16 +963,12 @@
                 {% endif %}
             </p>
         </div>
-        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             {% if current_session %}
-            <div class="session-badge">
-                ⏰ {{ current_session.start_time }} - {{ current_session.end_time }}
+            <div class="session-badge" id="sessionInfoBadge">
+                ⏰ {{ current_session.session_name }} — {{ current_session.start_time_formatted|default(current_session.start_time) }} to {{ current_session.end_time_formatted|default(current_session.end_time) }}
             </div>
             {% endif %}
-            <div class="sync-indicator sync-active" id="syncIndicator">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: inline-block;"></span>
-                Live Sync
-            </div>
             <div class="live-status status-live" id="roomStatus">
                 <div class="live-dot"></div> LIVE
             </div>
@@ -997,7 +982,6 @@
         <a href="/team_owner/session/{{ sess.id }}/join" 
            class="session-chip {% if session_id == sess.id %}active{% endif %}">
             {{ sess.session_name }}
-            <span class="time">{{ sess.start_time }}</span>
         </a>
         {% endfor %}
     </div>
@@ -1432,7 +1416,6 @@ async function pollOnce() {
         var bidChanged = Math.abs((data.current_bid || 0) - AUCTION.state.currentBid) > 0.001;
         var bidderChanged = (data.current_bidder || null) !== AUCTION.state.currentBidder;
         var skipChanged = (data.skip_count || 0) !== AUCTION.state.skipCount;
-
         if (!playerChanged && !bidChanged && !bidderChanged && !skipChanged) {
             isPolling = false;
             return;
@@ -1935,7 +1918,6 @@ function openSquadModal() {
             var isYourTeam = team.is_your_team;
             var yourBadge = isYourTeam ? '<span class="squad-your-badge">YOUR TEAM</span>' : '';
             
-            // Team purse info
             var totalPurse = team.purse_limit || 100;
             var spent = team.spent || 0;
             var remaining = totalPurse - spent;
@@ -1957,6 +1939,7 @@ function openSquadModal() {
                         '<td class="squad-role">' + (p.role || p.category || '—') + '</td>' +
                         '<td><span class="squad-cat ' + catClass + '">' + (p.category || '—').replace('_', ' ').toUpperCase() + '</span></td>' +
                         '<td class="squad-price">₹' + parseFloat(p.purchase_price).toFixed(2) + 'Cr</td>' +
+                        '<td style="font-size:0.75rem;color:var(--text-dim);">' + (p.session_name || '—') + '</td>' +
                     '</tr>';
                 });
             }
@@ -1975,7 +1958,7 @@ function openSquadModal() {
                     '</div>' +
                 '</div>' +
                 '<table class="squad-table">' +
-                    '<thead><tr><th>S.No</th><th>Player</th><th>Role</th><th>Category</th><th>Bought</th></tr></thead>' +
+                    '<thead><tr><th>S.No</th><th>Player</th><th>Role</th><th>Category</th><th>Bought</th><th>Session</th></tr></thead>' +
                     '<tbody>' + squadHtml + '</tbody>' +
                 '</table>' +
             '</div>';
