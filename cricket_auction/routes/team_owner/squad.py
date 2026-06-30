@@ -31,26 +31,26 @@ def view_squad():
         flash('Unauthorized')
         return redirect('/')
     
+    # FIX: Must have active_auction_id set via dashboard
+    auction_id = session.get('active_auction_id')
+    if not auction_id:
+        flash('Please select an auction from the dashboard first')
+        return redirect('/team-owner/dashboard')
+    
     db = get_db()
     cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
-        auction_id = session.get('active_auction_id')
-        
-        if auction_id:
-            user_team = get_user_team_by_ids(cursor, session['user_id'], auction_id)
-        else:
-            user_team = get_user_team_by_ids(cursor, session['user_id'])
+        user_team = get_user_team_by_ids(cursor, session['user_id'], auction_id)
         
         if not user_team:
-            flash('No team assigned')
-            return redirect('/team_owner/dashboard')
+            flash('No team assigned to this auction')
+            return redirect('/team-owner/dashboard')
         
         team_id = user_team['id']
-        auction_id = user_team['auction_id']
         
         # ============================================
-        # GET SQUAD: All players bought across ALL sessions
+        # GET SQUAD: All players bought across ALL sessions for THIS auction
         # ============================================
         cursor.execute("""
             SELECT 
@@ -138,7 +138,6 @@ def view_squad():
         total_spent = float(spent_result['total_spent'] or 0) if spent_result else 0
         
         # Reserved = 20% of (willing_price - purchase_price) for all players with willing price set
-        # ONLY the DIFFERENCE, not full willing price
         cursor.execute("""
             SELECT COALESCE(SUM((willing_price - purchase_price) * 0.20), 0) as total_reserved
             FROM session_team_players
@@ -149,7 +148,7 @@ def view_squad():
         reserved_result = cursor.fetchone()
         total_reserved = float(reserved_result['total_reserved'] or 0) if reserved_result else 0
         
-        # Also add active hidden max bids from current session (for players not yet bought)
+        # Also add active hidden max bids from current session
         cursor.execute("""
             SELECT COALESCE(SUM(max_bid), 0) as total_hidden
             FROM session_hidden_max_bids
