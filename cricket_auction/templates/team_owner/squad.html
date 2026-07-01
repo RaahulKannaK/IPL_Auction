@@ -407,7 +407,7 @@
     <!-- TOP BAR -->
     <div class="top-bar">
         <h1>👥 {{ team.team_name }} Squad</h1>
-        <a href="/team_owner/auction" class="nav-btn">⚡ Auction Room</a>
+        <a href="/team_owner/auction?auction_id={{ team.auction_id }}" class="nav-btn">⚡ Auction Room</a>
     </div>
 
     <!-- PURSE STATS - 4 CARDS -->
@@ -752,8 +752,7 @@
         <div class="icon">👥</div>
         <h2>Squad Empty</h2>
         <p>Start bidding in the auction room to build your squad</p>
-        <a href="/team_owner/auction" class="nav-btn" style="margin-top: 20px;">Go to Auction Room →</a>
-    </div>
+        <a href="/team_owner/auction?auction_id={{ team.auction_id }}" class="nav-btn" style="margin-top: 20px;">Go to Auction Room →</a>    </div>
     {% endif %}
 
 </div>
