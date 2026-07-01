@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, url_for, g
 from functools import wraps
+from database.db import get_db          # <-- ADD THIS LINE
+from functools import wraps
 
+bp = Blueprint('team_owner', __name__, url_prefix='/team-owner')
 bp = Blueprint('team_owner', __name__, url_prefix='/team-owner')
 
 # ============================================================
