@@ -193,10 +193,15 @@ def auction_page():
     
     active_auction_id = session.get('active_auction_id')
     active_team_id = session.get('active_team_id')
+    # If auction_id came from query param, we need to look up the team
+    if not active_team_id and active_auction_id:
+        cursor.execute("SELECT id FROM teams WHERE auction_id = %s AND owner_id = %s LIMIT 1", 
+                    (active_auction_id, session['user_id']))
+        team_row = cursor.fetchone()
+        if team_row:
+            active_team_id = team_row['id']
     
-    if not active_auction_id or not active_team_id:
-        flash('No active auction selected')
-        return redirect('/team-owner/dashboard')
+
     
     with db_transaction() as cursor:
         # === STEP 1: Verify team + get auction info ===

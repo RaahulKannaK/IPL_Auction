@@ -217,7 +217,7 @@ def auction_room():
     url_session_id = request.args.get('session', type=int)
     mode = request.args.get('mode') or session.get('session_mode', 'bid')
     active_session_id = url_session_id or session.get('active_session_id')
-    active_auction_id = session.get('active_auction_id')
+    active_auction_id = session.get('active_auction_id') or request.args.get('auction_id', type=int)
     
     db = get_db()
     cursor = db.cursor(dictionary=True, buffered=True)
