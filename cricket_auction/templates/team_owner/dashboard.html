@@ -129,6 +129,96 @@
     }
     .header-row h1 { margin: 0; }
 
+    /* ===== NO AUCTION SELECTED BANNER ===== */
+    .no-auction-banner {
+        background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
+        border: 1px solid rgba(245,158,11,0.25);
+        border-radius: 16px;
+        padding: 20px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        animation: bannerSlide 0.5s ease;
+    }
+    @keyframes bannerSlide {
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .no-auction-banner .icon {
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+    .no-auction-banner .text {
+        flex: 1;
+    }
+    .no-auction-banner .text h3 {
+        font-family: 'Space Grotesk';
+        font-size: 1.1rem;
+        color: #fbbf24;
+        margin-bottom: 4px;
+    }
+    .no-auction-banner .text p {
+        color: var(--ts);
+        font-size: 0.85rem;
+    }
+    .no-auction-banner .action {
+        flex-shrink: 0;
+    }
+
+    /* ===== MODAL OVERLAY ===== */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+        width: 90%;
+        max-width: 420px;
+        padding: 28px;
+        animation: modalPop 0.3s ease;
+    }
+    @keyframes modalPop {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal-box h3 {
+        font-family: 'Space Grotesk';
+        color: var(--tp);
+        margin-bottom: 16px;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+    .modal-box .modal-icon {
+        font-size: 3rem;
+        text-align: center;
+        margin-bottom: 12px;
+        opacity: 0.8;
+    }
+    .modal-box .modal-msg {
+        color: var(--ts);
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 20px;
+        line-height: 1.6;
+    }
+    .modal-box .modal-hint {
+        color: var(--td);
+        font-size: 0.75rem;
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px 14px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 10px;
+        border: 1px dashed rgba(100,120,200,0.2);
+    }
+
     /* ===== MOBILE RESPONSIVE OVERRIDES ===== */
     @media (max-width: 767px) {
         h1 { font-size: 1.4rem; }
@@ -157,6 +247,17 @@
             width: 100%;
         }
         .gp { padding: 18px; border-radius: 16px; }
+        .no-auction-banner {
+            flex-direction: column;
+            text-align: center;
+            padding: 16px;
+        }
+        .no-auction-banner .action {
+            width: 100%;
+        }
+        .no-auction-banner .action .ab {
+            width: 100%;
+        }
     }
 </style>
 
@@ -167,10 +268,26 @@
     </button>
 </div>
 
+<!-- No Auction Selected Banner (shown when user hasn't entered auction ID yet) -->
+{% if not session.get('active_auction_id') %}
+<div class="no-auction-banner" id="noAuctionBanner">
+    <div class="icon">🔒</div>
+    <div class="text">
+        <h3>No Active Auction Selected</h3>
+        <p>Enter an Auction ID below to unlock Squad, Playing XI & Auction Room</p>
+    </div>
+    <div class="action">
+        <a href="#enter-auction" class="ab ab-e btn-touch" style="width: auto; padding: 8px 18px; font-size: 0.8rem;">
+            Enter Auction ID ↓
+        </a>
+    </div>
+</div>
+{% endif %}
+
 <!-- Change Password Modal -->
-<div id="pwdModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
-    <div class="gp" style="width:90%; max-width:380px; padding:28px;">
-        <h3 style="font-family:'Space Grotesk'; color:var(--tp); margin-bottom:20px; text-align:center; font-size:1.2rem;">🔒 Change Password</h3>
+<div class="modal-overlay" id="pwdModal">
+    <div class="gp modal-box">
+        <h3>🔒 Change Password</h3>
         
         <label class="pwd-label">New Password</label>
         <input type="password" id="pwdNew" class="pwd-input" placeholder="Enter new password">
@@ -187,10 +304,28 @@
     </div>
 </div>
 
+<!-- Guard Modal for Squad / Playing XI / Auction Room -->
+<div class="modal-overlay" id="guardModal">
+    <div class="gp modal-box">
+        <div class="modal-icon">🔒</div>
+        <h3>Auction ID Required</h3>
+        <div class="modal-msg">
+            You need to enter an <strong>Auction ID</strong> first to access this feature.<br>
+            Each auction has different teams and leagues, so your squad data is tied to a specific auction.
+        </div>
+        <div class="modal-hint">
+            💡 <strong>Tip:</strong> Enter the Auction ID on your dashboard card below, then click <em>"View Sessions"</em> to proceed.
+        </div>
+        <button type="button" class="ab ab-e btn-touch" onclick="closeGuardModal()">
+            Got it, I'll Enter Auction ID
+        </button>
+    </div>
+</div>
+
 {% if teams %}
 <div class="tg" id="teamGrid">
     {% for team in teams %}
-    <div class="gp tc">
+    <div class="gp tc" id="enter-auction">
         <div class="lg">{{ team.league_name }}</div>
         <div class="nm">{{ team.team_name }}</div>
         
@@ -236,7 +371,6 @@
                 onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
                 inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             <div class="aerr" id="err-{{ team.auction_id }}">Wrong Auction ID</div>
-            <!-- FIX: Redirects to sessions page, not auction room -->
             <button type="button" class="ab ab-e btn-touch" id="btn-{{ team.auction_id }}"
                     onclick="eA({{ team.auction_id }})">
                 🚀 View Sessions →
@@ -254,6 +388,7 @@
 </div>
 
 <script>
+// ===== AUCTION ID ENTRY =====
 function eA(expectedId) {
     const input = document.getElementById('aid-' + expectedId);
     const btn = document.getElementById('btn-' + expectedId);
@@ -265,7 +400,6 @@ function eA(expectedId) {
     input.classList.remove('err');
     
     if (val === String(expectedId)) {
-        // FIX: Go to sessions page, not auction room
         window.location.href = '/team_owner/sessions?auction_id=' + expectedId;
     } else {
         err.style.display = 'block';
@@ -276,13 +410,15 @@ function eA(expectedId) {
     }
 }
 
+// ===== PASSWORD MODAL =====
 function openPwdModal() {
-    document.getElementById('pwdModal').style.display = 'flex';
+    document.getElementById('pwdModal').classList.add('open');
     document.getElementById('pwdNew').focus();
+    document.body.style.overflow = 'hidden';
 }
 
 function closePwdModal() {
-    document.getElementById('pwdModal').style.display = 'none';
+    document.getElementById('pwdModal').classList.remove('open');
     document.getElementById('pwdNew').value = '';
     document.getElementById('pwdConfirm').value = '';
     const msg = document.getElementById('pwdMsg');
@@ -291,6 +427,7 @@ function closePwdModal() {
     document.getElementById('pwdSubmitBtn').disabled = false;
     document.getElementById('pwdNew').classList.remove('err');
     document.getElementById('pwdConfirm').classList.remove('err');
+    document.body.style.overflow = '';
 }
 
 async function submitPwd() {
@@ -349,11 +486,52 @@ async function submitPwd() {
     }
 }
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closePwdModal();
+// ===== GUARD MODAL (Squad / Playing XI / Auction Room) =====
+function openGuardModal() {
+    document.getElementById('guardModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGuardModal() {
+    document.getElementById('guardModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// Hook nav links that require auction ID
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user has NOT entered an auction ID
+    const hasAuctionId = {{ 'true' if session.get('active_auction_id') else 'false' }};
+    
+    if (!hasAuctionId) {
+        // Find nav links for Squad, Playing XI, Auction Room
+        const guardedLinks = document.querySelectorAll(
+            'a[href*="/squad"], a[href*="/playing11"], a[href*="/auction"]'
+        );
+        
+        guardedLinks.forEach(function(link) {
+            // Skip if it's the auction room link inside active_auction_id block
+            if (link.closest('.nav-links') || link.closest('.mobile-nav-overlay')) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openGuardModal();
+                });
+            }
+        });
+    }
 });
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePwdModal();
+        closeGuardModal();
+    }
+});
+
 document.getElementById('pwdModal').addEventListener('click', function(e) {
     if (e.target === this) closePwdModal();
+});
+document.getElementById('guardModal').addEventListener('click', function(e) {
+    if (e.target === this) closeGuardModal();
 });
 </script>
 
