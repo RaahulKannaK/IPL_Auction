@@ -236,11 +236,15 @@
                 onkeypress="if(event.key==='Enter')eA({{ team.auction_id }})"
                 inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             <div class="aerr" id="err-{{ team.auction_id }}">Wrong Auction ID</div>
-            <!-- FIX: Redirects to sessions page, not auction room -->
+            <!-- FIX: Enter auction room (sets session) -->
             <button type="button" class="ab ab-e btn-touch" id="btn-{{ team.auction_id }}"
                     onclick="eA({{ team.auction_id }})">
-                🚀 View Sessions →
+                🚀 Enter Auction Room →
             </button>
+            <!-- FIX: View Squad button (uses session, no query param needed) -->
+            <a href="/team-owner/squad" class="ab ab-v btn-touch" style="margin-top:8px;">
+                👥 View My Squad
+            </a>
         </div>
         {% elif team.auction_status == 'completed' %}
         <a href="/team_owner/sessions?auction_id={{ team.auction_id }}" class="ab ab-v btn-touch">
@@ -265,8 +269,8 @@ function eA(expectedId) {
     input.classList.remove('err');
     
     if (val === String(expectedId)) {
-        // FIX: Go to sessions page, not auction room
-        window.location.href = '/team_owner/sessions?auction_id=' + expectedId;
+        // Enter auction room (sets active_auction_id in session)
+        window.location.href = '/team-owner/auction-room/' + expectedId;
     } else {
         err.style.display = 'block';
         input.classList.add('err');
