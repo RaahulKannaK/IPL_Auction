@@ -280,160 +280,6 @@
     .countdown-display p { color: #fca5a5; margin-top: 10px; font-size: 0.9rem; }
 
     .force-unsold-panel {
-        background: linear;
-        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.1);
-        border-radius: 18px; padding: 22px;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative; overflow: hidden; cursor: pointer;
-    }
-    .player-card::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-        background: linear-gradient(90deg, transparent, var(--cosmic-purple), var(--ice-blue), transparent);
-        opacity: 0; transition: opacity 0.3s;
-    }
-    .player-card:hover::before { opacity: 0.5; }
-    .player-card:hover {
-        border-color: rgba(124, 77, 255, 0.3);
-        transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    }
-    .player-card.selected {
-        border-color: #22c55e; background: rgba(6, 78, 59, 0.3);
-        box-shadow: 0 0 30px rgba(34, 197, 94, 0.15);
-    }
-    .player-card.selected::before { opacity: 1; background: linear-gradient(90deg, transparent, #22c55e, var(--ice-blue), transparent); }
-
-    .player-avatar {
-        width: 56px; height: 56px; border-radius: 50%;
-        background: linear-gradient(135deg, var(--cosmic-purple), var(--ice-blue));
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.6rem; margin-bottom: 15px;
-        box-shadow: 0 0 20px rgba(124, 77, 255, 0.3);
-    }
-    .player-name { font-weight: 700; color: var(--text-primary); font-size: 1.05rem; margin-bottom: 8px; }
-    .player-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .cat-badge {
-        padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1px;
-    }
-    .badge-batsman { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-    .badge-bowler { background: rgba(255, 42, 0, 0.15); color: #ff6b6b; border: 1px solid rgba(255, 42, 0, 0.2); }
-    .badge-all_rounder { background: rgba(184, 255, 106, 0.15); color: #b8ff6a; border: 1px solid rgba(184, 255, 106, 0.2); }
-    .badge-wicket_keeper { background: rgba(247, 181, 0, 0.15); color: var(--gold-light); border: 1px solid rgba(247, 181, 0, 0.2); }
-    .badge-overseas { background: rgba(139, 92, 246, 0.15); color: var(--cosmic-purple-light); border: 1px solid rgba(139, 92, 246, 0.2); }
-
-    .player-price { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 8px; }
-    .player-status { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-    .status-unsold { color: var(--text-dim); }
-    .status-sold { color: #22c55e; }
-    .status-in_auction { color: #f59e0b; }
-
-    .history-panel { max-height: 220px; overflow-y: auto; }
-    .history-panel::-webkit-scrollbar { width: 4px; }
-    .history-panel::-webkit-scrollbar-thumb { background: var(--cosmic-purple); border-radius: 2px; }
-    .history-item {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 12px 16px; border-radius: 12px; margin-bottom: 6px;
-        background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(100, 120, 200, 0.05);
-        transition: all 0.3s;
-    }
-    .history-item:hover { background: rgba(124, 77, 255, 0.04); border-color: rgba(124, 77, 255, 0.1); }
-    .history-bidder { color: var(--text-secondary); font-weight: 500; }
-    .history-amount { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); font-weight: 600; }
-    .history-auto { background: rgba(139, 92, 246, 0.15); color: var(--cosmic-purple-light); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; margin-left: 10px; }
-
-    .sold-toast {
-        position: fixed; top: 25px; right: 25px;
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.95), rgba(5, 8, 16, 0.95));
-        border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 20px;
-        padding: 25px 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-        z-index: 1000; display: none; backdrop-filter: blur(20px);
-    }
-    .sold-toast.show { display: block; animation: toastSlide 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-    @keyframes toastSlide { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    .sold-toast h3 { color: #22c55e; font-family: 'Space Grotesk'; margin-bottom: 8px; font-size: 1.2rem; }
-    .sold-toast p { color: var(--text-secondary); font-size: 0.95rem; }
-
-    .selected-player-bar {
-        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 78, 59, 0.3));
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        border-radius: 16px;
-        padding: 20px 30px;
-        margin-bottom: 25px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    .selected-player-bar .info { display: flex; align-items: center; gap: 15px; }
-    .selected-player-bar .avatar {
-        width: 50px; height: 50px; border-radius: 50%;
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem;
-    }
-    .selected-player-bar .name {
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #22c55e;
-    }
-    .selected-player-bar .meta { color: var(--text-dim); font-size: 0.9rem; }
-    .selected-player-bar .action { font-size: 0.85rem; color: var(--text-dim); }
-
-    .back-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 10px 20px; border-radius: 12px;
-        background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(100, 120, 200, 0.15);
-        color: var(--text-dim); cursor: pointer; font-weight: 600;
-        transition: all 0.3s; margin-bottom: 20px; text-decoration: none;
-    }
-    .back-btn:hover { border-color: var(--cosmic-purple); color: var(--cosmic-purple-light); background: rgba(124, 77, 255, 0.08); }
-
-    .sync-indicator {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 20px;
-        font-size: 0.75rem; font-weight: 600;
-        transition: all 0.3s;
-    }
-    .sync-active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
-    .sync-pending { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
-
-    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-
-    .skip-votes-panel {
-        background: linear-gradient(135deg, rgba(69, 10, 10, 0.4), rgba(127, 29, 29, 0.2));
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        border-radius: 16px;
-        padding: 20px;
-        margin-top: 20px;
-    }
-    .skip-votes-panel h4 { color: #fca5a5; font-size: 0.9rem; margin-bottom: 15px; letter-spacing: 2px; }
-    .skip-vote-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: 8px 12px; border-radius: 10px;
-        background: rgba(0,0,0,0.2); margin-bottom: 6px;
-    }
-    .skip-vote-item .team { color: var(--text-secondary); font-weight: 600; }
-    .skip-vote-item .reason { color: var(--text-dim); font-size: 0.8rem; }
-    .skip-vote-item .time { color: var(--text-dim); font-size: 0.75rem; margin-left: auto; }
-
-    .countdown-display {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(153, 27, 27, 0.3));
-        border: 2px solid rgba(239, 68, 68, 0.4);
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        margin-bottom: 20px;
-        display: none;
-    }
-    .countdown-display.active { display: block; animation: pulseRed 1s infinite; }
-    @keyframes pulseRed { 0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); } 50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.4); } }
-    .countdown-display h3 { color: #fca5a5; font-size: 1rem; margin-bottom: 10px; }
-    .countdown-value { font-family: 'JetBrains Mono'; font-size: 5rem; font-weight: 700; color: #ef4444; text-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
-    .countdown-display p { color: #fca5a5; margin-top: 10px; font-size: 0.9rem; }
-
-    .force-unsold-panel {
         background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(153, 27, 27, 0.1));
         border: 1px dashed rgba(239, 68, 68, 0.3);
         border-radius: 16px;
@@ -560,6 +406,390 @@
         color: #fbbf24;
         text-align: center;
         font-weight: 600;
+    }
+
+    /* ===== LIVE CHAT BOX ===== */
+    .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 900;
+        width: 400px;
+        max-width: calc(100vw - 40px);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .chat-widget.collapsed {
+        width: auto;
+    }
+    .chat-toggle-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 30px;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(180,83,9,0.15));
+        color: #fbbf24;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Space Grotesk', sans-serif;
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+    }
+    .chat-toggle-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
+    }
+    .chat-toggle-btn .chat-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
+        display: none;
+    }
+    .chat-toggle-btn .chat-badge.show { display: block; }
+    .chat-toggle-btn .chat-badge.ping {
+        animation: badgePing 1s infinite;
+    }
+    @keyframes badgePing {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+
+    .chat-panel {
+        background: var(--bg-panel);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 520px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(245, 158, 11, 0.08);
+        backdrop-filter: blur(20px);
+        margin-bottom: 10px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: bottom right;
+    }
+    .chat-widget.collapsed .chat-panel {
+        transform: scale(0);
+        opacity: 0;
+        pointer-events: none;
+        height: 0;
+        margin-bottom: 0;
+    }
+
+    .chat-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(245, 158, 11, 0.05);
+    }
+    .chat-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .chat-header-left .chat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+    .chat-header-left .chat-title {
+        font-family: 'Space Grotesk';
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+    }
+    .chat-header-left .chat-subtitle {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+    }
+    .chat-header .chat-live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+        animation: livePulse 2s infinite;
+    }
+    .chat-header .chat-close {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    .chat-header .chat-close:hover {
+        background: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 2px; }
+
+    .chat-msg {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        animation: msgSlide 0.3s ease;
+        word-break: break-word;
+    }
+    @keyframes msgSlide {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg.admin {
+        align-self: flex-end;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-bottom-right-radius: 4px;
+    }
+    .chat-msg.admin .msg-sender {
+        color: #fbbf24;
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-bottom: 3px;
+        text-align: right;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        justify-content: flex-end;
+    }
+    .chat-msg.admin .msg-sender::before {
+        content: '👑';
+        font-size: 0.8rem;
+    }
+    .chat-msg.admin .msg-text {
+        color: #fcd34d;
+    }
+
+    .chat-msg.self {
+        align-self: flex-end;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-bottom-right-radius: 4px;
+    }
+    .chat-msg.self .msg-sender {
+        color: #fbbf24;
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-bottom: 3px;
+        text-align: right;
+    }
+    .chat-msg.self .msg-text {
+        color: var(--text-primary);
+    }
+
+    .chat-msg.other {
+        align-self: flex-start;
+        background: rgba(0, 212, 255, 0.06);
+        border: 1px solid rgba(0, 212, 255, 0.15);
+        border-bottom-left-radius: 4px;
+    }
+    .chat-msg.other .msg-sender {
+        color: var(--ice-blue-light);
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-bottom: 3px;
+    }
+    .chat-msg.other .msg-text {
+        color: var(--text-secondary);
+    }
+
+    .chat-msg.system {
+        align-self: center;
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.15);
+        border-radius: 20px;
+        padding: 6px 16px;
+        font-size: 0.8rem;
+        color: #22c55e;
+        max-width: 90%;
+        text-align: center;
+    }
+    .chat-msg.system .msg-text {
+        color: #22c55e;
+    }
+
+    .chat-msg .msg-time {
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        margin-top: 4px;
+        opacity: 0.7;
+    }
+
+    .chat-input-area {
+        padding: 12px;
+        border-top: 1px solid rgba(100, 120, 200, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .chat-quick-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .chat-quick-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--text-dim);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .chat-quick-btn:hover {
+        border-color: #f59e0b;
+        color: #fbbf24;
+        background: rgba(245, 158, 11, 0.08);
+    }
+    .chat-quick-btn.skip { border-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .chat-quick-btn.skip:hover { background: rgba(239, 68, 68, 0.1); }
+    .chat-quick-btn.wait { border-color: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .chat-quick-btn.wait:hover { background: rgba(245, 158, 11, 0.1); }
+    .chat-quick-btn.over { border-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .chat-quick-btn.over:hover { background: rgba(34, 197, 94, 0.1); }
+
+    .chat-input-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    .chat-input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(100, 120, 200, 0.15);
+        border-radius: 14px;
+        padding: 10px 14px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        outline: none;
+        transition: all 0.3s;
+    }
+    .chat-input:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+    }
+    .chat-input::placeholder {
+        color: var(--text-dim);
+    }
+    .chat-send-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        flex-shrink: 0;
+    }
+    .chat-send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+    .chat-send-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .chat-typing {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        padding: 0 4px;
+        height: 18px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .chat-typing.show { opacity: 1; }
+
+    /* ===== CHAT NOTIFICATION ===== */
+    .chat-popup-notif {
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        z-index: 950;
+        background: var(--bg-panel);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 16px;
+        padding: 14px 18px;
+        max-width: 320px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        backdrop-filter: blur(20px);
+        animation: notifSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: none;
+    }
+    .chat-popup-notif.show { display: block; }
+    @keyframes notifSlide {
+        from { transform: translateX(100px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    .chat-popup-notif .notif-sender {
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-bottom: 4px;
+    }
+    .chat-popup-notif .notif-sender.admin { color: #fbbf24; }
+    .chat-popup-notif .notif-sender.other { color: var(--ice-blue-light); }
+    .chat-popup-notif .notif-text {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        line-height: 1.4;
+    }
+
+    /* Mobile responsive for chat */
+    @media (max-width: 767px) {
+        .chat-widget {
+            width: calc(100vw - 24px);
+            right: 12px;
+            bottom: 12px;
+        }
+        .chat-panel {
+            height: 60vh;
+            max-height: 450px;
+        }
+        .chat-toggle-btn {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+        }
     }
 </style>
 
@@ -768,6 +998,68 @@
     <p id="soldMessage"></p>
 </div>
 
+<!-- ===== LIVE CHAT WIDGET (ADMIN) ===== -->
+<div class="chat-widget collapsed" id="chatWidget">
+    <!-- Chat Panel -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <div class="chat-icon">👑</div>
+                <div>
+                    <div class="chat-title">Auction Control Chat</div>
+                    <div class="chat-subtitle">Communicate with Team Owners</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="chat-live-dot" title="Live"></div>
+                <div class="chat-close" onclick="toggleChat()" title="Close">✕</div>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages injected here -->
+        </div>
+        
+        <div class="chat-input-area">
+            <div class="chat-quick-actions">
+                <button class="chat-quick-btn" onclick="sendQuickChat('next')">⏭️ Next Player</button>
+                <button class="chat-quick-btn wait" onclick="sendQuickChat('wait')">⏳ Please Wait</button>
+                <button class="chat-quick-btn" onclick="sendQuickChat('pause')">⏸ Pause</button>
+                <button class="chat-quick-btn" onclick="sendQuickChat('resume')">▶ Resume</button>
+                <button class="chat-quick-btn skip" onclick="sendQuickChat('skip_ok')">✅ Skip OK</button>
+                <button class="chat-quick-btn over" onclick="sendQuickChat('sold')">✅ Sold!</button>
+            </div>
+            <div class="chat-typing" id="chatTyping"></div>
+            <div class="chat-input-row">
+                <input type="text" 
+                       class="chat-input" 
+                       id="chatInput" 
+                       placeholder="Broadcast to all teams..." 
+                       maxlength="120"
+                       onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button class="chat-send-btn" onclick="sendChatMessage()" id="chatSendBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toggle Button -->
+    <button class="chat-toggle-btn" onclick="toggleChat()" id="chatToggleBtn">
+        👑 Chat
+        <span class="chat-badge" id="chatBadge">0</span>
+    </button>
+</div>
+
+<!-- Chat Popup Notification -->
+<div class="chat-popup-notif" id="chatPopupNotif">
+    <div class="notif-sender" id="notifSender">Team</div>
+    <div class="notif-text" id="notifText">Message here</div>
+</div>
+
 <script>
 // ============================================================================
 // AUCTION SCRIPT - ADMIN ONLY - FIXED
@@ -800,6 +1092,224 @@ const AUCTION = {
 };
 
 // ============================================================================
+// LIVE CHAT SYSTEM (ADMIN)
+// ============================================================================
+const CHAT = {
+    messages: [],
+    unreadCount: 0,
+    isOpen: false,
+    lastMessageId: 0,
+    pollTimer: null,
+    pollDelay: 2500,
+    maxMessages: 100,
+    typingTimer: null,
+    
+    quickMessages: {
+        'next': '⏭️ Moving to next player',
+        'wait': '⏳ Please wait - reviewing bids',
+        'pause': '⏸ Auction paused',
+        'resume': '▶ Auction resumed',
+        'skip_ok': '✅ Skip acknowledged',
+        'sold': '✅ Player sold! Congratulations!'
+    }
+};
+
+function toggleChat() {
+    var widget = document.getElementById('chatWidget');
+    var panel = document.getElementById('chatPanel');
+    CHAT.isOpen = !CHAT.isOpen;
+    
+    if (CHAT.isOpen) {
+        widget.classList.remove('collapsed');
+        CHAT.unreadCount = 0;
+        updateChatBadge();
+        scrollToBottom();
+        document.getElementById('chatInput').focus();
+    } else {
+        widget.classList.add('collapsed');
+    }
+}
+
+function updateChatBadge() {
+    var badge = document.getElementById('chatBadge');
+    if (CHAT.unreadCount > 0) {
+        badge.textContent = CHAT.unreadCount > 99 ? '99+' : CHAT.unreadCount;
+        badge.classList.add('show');
+        if (CHAT.unreadCount <= 3) badge.classList.add('ping');
+    } else {
+        badge.classList.remove('show', 'ping');
+        badge.textContent = '0';
+    }
+}
+
+function sendQuickChat(type) {
+    var msg = CHAT.quickMessages[type];
+    if (!msg) return;
+    sendChatMessageText(msg);
+}
+
+function sendChatMessage() {
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if (!text) return;
+    
+    if (text.length > 120) {
+        showStatus('bidStatus', '❌ Message too long (max 120 chars)', '#ef4444');
+        return;
+    }
+    
+    sendChatMessageText(text);
+    input.value = '';
+}
+
+function sendChatMessageText(text) {
+    if (!AUCTION.sessionId) {
+        showStatus('bidStatus', '❌ Select a session first', '#ef4444');
+        return;
+    }
+    
+    var payload = {
+        auction_id: AUCTION.auctionId,
+        session_id: AUCTION.sessionId,
+        sender_id: 0,
+        sender_name: 'Admin',
+        sender_type: 'admin',
+        message: text,
+        msg_type: 'admin_chat'
+    };
+    
+    addChatMessage({
+        id: Date.now(),
+        sender: 'Admin (You)',
+        sender_type: 'admin',
+        text: text,
+        time: new Date().toISOString()
+    }, true);
+    
+    fetch('/admin/auction/chat/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            console.error('Chat send failed:', data.error);
+        }
+    })
+    .catch(function(err) {
+        console.error('Chat send error:', err);
+    });
+}
+
+function addChatMessage(msg, skipNotify) {
+    var container = document.getElementById('chatMessages');
+    if (!container) return;
+    
+    if (document.querySelector('.chat-msg[data-id="' + msg.id + '"]')) return;
+    
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + msg.sender_type;
+    div.setAttribute('data-id', msg.id);
+    
+    var timeStr = '';
+    if (msg.time) {
+        var d = new Date(msg.time);
+        timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+    
+    var senderHtml = '';
+    if (msg.sender_type !== 'system') {
+        senderHtml = '<div class="msg-sender">' + escapeHtml(msg.sender) + '</div>';
+    }
+    
+    div.innerHTML = senderHtml + 
+        '<div class="msg-text">' + escapeHtml(msg.text) + '</div>' +
+        '<div class="msg-time">' + timeStr + '</div>';
+    
+    container.appendChild(div);
+    
+    while (container.children.length > CHAT.maxMessages) {
+        container.removeChild(container.firstChild);
+    }
+    
+    scrollToBottom();
+    
+    if (!skipNotify && msg.sender_type !== 'admin' && !CHAT.isOpen) {
+        CHAT.unreadCount++;
+        updateChatBadge();
+        showChatPopup(msg.sender, msg.text, msg.sender_type);
+    }
+}
+
+function scrollToBottom() {
+    var container = document.getElementById('chatMessages');
+    if (container) container.scrollTop = container.scrollHeight;
+}
+
+function showChatPopup(sender, text, senderType) {
+    var popup = document.getElementById('chatPopupNotif');
+    var senderEl = document.getElementById('notifSender');
+    var textEl = document.getElementById('notifText');
+    
+    if (!popup || !senderEl || !textEl) return;
+    
+    senderEl.textContent = sender;
+    senderEl.className = 'notif-sender ' + (senderType === 'admin' ? 'admin' : 'other');
+    textEl.textContent = text.length > 60 ? text.substring(0, 60) + '...' : text;
+    
+    popup.classList.add('show');
+    
+    if (popup._timeout) clearTimeout(popup._timeout);
+    popup._timeout = setTimeout(function() {
+        popup.classList.remove('show');
+    }, 4000);
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============================================================================
+// CHAT POLLING
+// ============================================================================
+function startChatPolling() {
+    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
+    CHAT.pollTimer = setInterval(pollChatMessages, CHAT.pollDelay);
+}
+
+function stopChatPolling() {
+    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
+    CHAT.pollTimer = null;
+}
+
+async function pollChatMessages() {
+    if (!AUCTION.sessionId) return;
+    
+    try {
+        var res = await fetch('/admin/auction/chat/messages?auction_id=' + AUCTION.auctionId + 
+                              '&session_id=' + AUCTION.sessionId + 
+                              '&after_id=' + CHAT.lastMessageId);
+        var data = await res.json();
+        
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(function(msg) {
+                if (msg.id > CHAT.lastMessageId) {
+                    CHAT.lastMessageId = msg.id;
+                }
+                if (msg.sender_type !== 'admin') {
+                    addChatMessage(msg, false);
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Chat poll error:', err);
+    }
+}
+
+// ============================================================================
 // INIT
 // ============================================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -820,8 +1330,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // FIX #1: Don't clear display blindly. If server gave us a player on page load, render it.
-    // Otherwise, show waiting state. The first poll will also catch any active auction state.
     if (AUCTION.state.playerId && AUCTION.state.playerName) {
         console.log('Restoring player from server initial state:', AUCTION.state.playerName);
         renderDisplay();
@@ -830,17 +1338,17 @@ document.addEventListener('DOMContentLoaded', function() {
         clearDisplay();
     }
 
-    updateControls(); // Set initial button states
+    updateControls();
 
-    // FIX #2: Do an immediate poll on load to sync with server, then start interval
+    // Init chat
+    startChatPolling();
+    pollChatMessages();
+
     pollOnce().then(() => {
         startPolling();
     });
 });
 
-// ============================================================================
-// PLAYER SELECTION
-// ============================================================================
 function selectPlayer(card) {
     console.log('selectPlayer() called');
 
@@ -874,9 +1382,6 @@ function selectPlayer(card) {
     }
 }
 
-// ============================================================================
-// BROADCAST
-// ============================================================================
 // ============================================================================
 // BROADCAST (UPDATED WITH PROACTIVE BOT HANDLING)
 // ============================================================================
@@ -972,6 +1477,7 @@ async function broadcastPlayer() {
         AUCTION.state.isBroadcasting = false;
     }
 }
+
 // ============================================================================
 // POLLING
 // ============================================================================
@@ -986,6 +1492,7 @@ function stopPolling() {
     if (AUCTION.pollTimer) clearInterval(AUCTION.pollTimer);
     AUCTION.pollTimer = null;
 }
+
 // ============================================================================
 // BOT COUNTER-BID TRIGGER (ADMIN SIDE)
 // ============================================================================
@@ -1087,6 +1594,7 @@ async function pollOnce() {
         isPolling = false;
     }
 }
+
 // ============================================================================
 // DISPLAY & CONTROLS
 // ============================================================================
@@ -1441,8 +1949,13 @@ function showStatus(id, msg, color) {
     setTimeout(() => { el.textContent = ''; el.style.color = 'var(--text-dim)'; }, 4000);
 }
 
-window.addEventListener('beforeunload', () => { stopPolling(); });
+// ============================================================================
+// CLEANUP
+// ============================================================================
+window.addEventListener('beforeunload', () => { 
+    stopPolling(); 
+    stopChatPolling(); 
+});
 </script>
-
 
 {% endblock %}
