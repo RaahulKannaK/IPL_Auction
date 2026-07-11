@@ -1178,12 +1178,13 @@ function sendChatMessageText(text) {
         msg_type: 'admin_chat'
     };
     
+    // Optimistically add to UI (no time — will be filled by poll)
     addChatMessage({
-        id: Date.now(),
+        id: 'temp-' + Date.now(),
         sender: 'Admin (You)',
         sender_type: 'admin',
         text: text,
-        time: new Date().toISOString()
+        time: ''
     }, true);
     
     fetch('/admin/auction/chat/send', {

@@ -1733,13 +1733,13 @@ function sendChatMessageText(text) {
         msg_type: 'team_chat'
     };
     
-    // Optimistically add to UI
+    // Optimistically add to UI (no time — will be filled by poll)
     addChatMessage({
-        id: Date.now(),
+        id: 'temp-' + Date.now(),
         sender: AUCTION.teamName || 'You',
         sender_type: 'self',
         text: text,
-        time: new Date().toISOString()
+        time: ''
     }, true);
     
     fetch('/team_owner/auction/chat/send', {
@@ -1769,23 +1769,45 @@ function addChatMessage(msg, skipNotify) {
     div.className = 'chat-msg ' + msg.sender_type;
     div.setAttribute('data-id', msg.id);
     
-    // Convert server UTC time to IST (+5:30) for display
+    // Extract HH:MM from server time string (format: "17:22" or "2026-07-11T17:22:00")
     var timeStr = '';
     if (msg.time) {
-        var d = new Date(msg.time);
-        if (!isNaN(d.getTime())) {
-            // Add 5 hours 30 minutes for IST
-            var istOffset = 5.5 * 60 * 60 * 1000;
-            var istTime = new Date(d.getTime() + istOffset);
-            var hrs = istTime.getUTCHours();
-            var mins = istTime.getUTCMinutes().toString().padStart(2, '0');
-            var ampm = hrs >= 12 ? 'PM' : 'AM';
-            hrs = hrs % 12;
-            hrs = hrs ? hrs : 12;
-            timeStr = hrs + ':' + mins + ' ' + ampm;
+        // Try "HH:MM" format first (from backend strftime)
+        var simpleMatch = msg.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+        if (simpleMatch) {
+            timeStr = msg.time;
+        } else {
+            // Try ISO format: extract HH:MM from "2026-07-11T17:22:00"
+            var isoMatch = msg.time.match(/T(\d{2}):(\d{2})/);
+            if (isoMatch) {
+                var hrs = parseInt(isoMatch[1], 10);
+                var mins = isoMatch[2];
+                var ampm = hrs >= 12 ? 'PM' : 'AM';
+                hrs = hrs % 12;
+                hrs = hrs ? hrs : 12;
+                timeStr = hrs + ':' + mins + ' ' + ampm;
+            }
+        }
+    }    if (msg.time) {
+        // Try "HH:MM" format first (from backend strftime)
+        var simpleMatch = msg.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+        if (simpleMatch) {
+            timeStr = msg.time;
+        } else {
+            // Try ISO format: extract HH:MM from "2026-07-11T17:22:00"
+            var isoMatch = msg.time.match(/T(\d{2}):(\d{2})/);
+            if (isoMatch) {
+                var hrs = parseInt(isoMatch[1], 10);
+                var mins = isoMatch[2];
+                var ampm = hrs >= 12 ? 'PM' : 'AM';
+                hrs = hrs % 12;
+                hrs = hrs ? hrs : 12;
+                timeStr = hrs + ':' + mins + ' ' + ampm;
+            }
         }
     }
     
+
     var senderHtml = '';
     if (msg.sender_type !== 'system') {
         senderHtml = '<div class="msg-sender">' + escapeHtml(msg.sender) + '</div>';
