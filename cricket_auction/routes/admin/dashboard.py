@@ -57,6 +57,12 @@ def enter_auction(auction_id):
         flash('Unauthorized')
         return redirect('/')
     
+    # FIX: Clear stale session data when switching auctions
+    old_auction_id = session.get('active_auction_id')
+    if old_auction_id and old_auction_id != auction_id:
+        session.pop('active_session_id', None)
+        session.pop('active_team_id', None)
+    
     db = get_db()
     cursor = db.cursor(dictionary=True, buffered=True)
     

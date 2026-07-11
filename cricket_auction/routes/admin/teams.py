@@ -28,15 +28,28 @@ def list_teams():
             session['active_auction_id'] = auction['id']
             session['active_league_name'] = auction['league_name']
         
-        cursor.execute("""
-            SELECT t.*, 
-                   u.username as owner_name,
-                   a.league_name
-            FROM teams t 
-            LEFT JOIN users u ON t.owner_id = u.id
-            LEFT JOIN auctions a ON t.auction_id = a.id
-            ORDER BY t.created_at DESC
-        """)
+        # FIX: Only show teams for THIS auction
+        if auction:
+            cursor.execute("""
+                SELECT t.*, 
+                       u.username as owner_name,
+                       a.league_name
+                FROM teams t 
+                LEFT JOIN users u ON t.owner_id = u.id
+                LEFT JOIN auctions a ON t.auction_id = a.id
+                WHERE t.auction_id = %s
+                ORDER BY t.created_at DESC
+            """, (auction['id'],))
+        else:
+            cursor.execute("""
+                SELECT t.*, 
+                       u.username as owner_name,
+                       a.league_name
+                FROM teams t 
+                LEFT JOIN users u ON t.owner_id = u.id
+                LEFT JOIN auctions a ON t.auction_id = a.id
+                ORDER BY t.created_at DESC
+            """)
         teams = cursor.fetchall()
         
         # Parse owner_ids JSON and fetch all owner names

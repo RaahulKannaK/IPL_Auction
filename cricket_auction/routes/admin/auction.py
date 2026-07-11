@@ -39,6 +39,20 @@ def auction_room():
     active_session_id = url_session_id or session.get('active_session_id')
     active_auction_id = session.get('active_auction_id')
     
+    # FIX: Validate session belongs to current auction
+    if active_session_id and active_auction_id:
+        db = get_db()
+        cursor = db.cursor(dictionary=True, buffered=True)
+        try:
+            cursor.execute("SELECT auction_id FROM auction_sessions WHERE id = %s", (active_session_id,))
+            sess_check = cursor.fetchone()
+            if not sess_check or sess_check['auction_id'] != active_auction_id:
+                session.pop('active_session_id', None)
+                active_session_id = None
+        finally:
+            cursor.close()
+            db.close()
+    
     db = get_db()
     cursor = db.cursor(dictionary=True, buffered=True)
     
@@ -1294,6 +1308,18 @@ def shared_status():
     if not auction_id or not session_id:
         return jsonify({"error": "Missing auction_id or session_id"}), 400
     
+    # FIX: Validate session belongs to auction
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    try:
+        cursor.execute("SELECT auction_id FROM auction_sessions WHERE id = %s", (session_id,))
+        sess = cursor.fetchone()
+        if not sess or sess['auction_id'] != auction_id:
+            return jsonify({"error": "Session does not belong to this auction", "status": "invalid"}), 403
+    finally:
+        cursor.close()
+        db.close()
+    
     cache_key = f"status:{auction_id}:{session_id}:{team_id or 'all'}"
     
     def fetch_status():
@@ -1879,8 +1905,8 @@ def auto_counter_bid():
 @bp.route('/auction/players')
 def get_players():
     """Get available players for current session"""
-    auction_id = request.args.get('auction_id')
-    active_session_id = request.args.get('session_id') or session.get('active_session_id')
+    auction_id = request.args.get('auction_id', type=int) or session.get('active_auction_id')
+    active_session_id = request.args.get('session_id', type=int) or session.get('active_session_id')
     
     if not active_session_id:
         return jsonify({'error': 'No active session'}), 400
@@ -1889,6 +1915,13 @@ def get_players():
     cursor = db.cursor(dictionary=True, buffered=True)
     
     try:
+        # FIX: Validate session belongs to the requested auction
+        if auction_id:
+            cursor.execute("SELECT auction_id FROM auction_sessions WHERE id = %s", (active_session_id,))
+            sess = cursor.fetchone()
+            if not sess or sess['auction_id'] != auction_id:
+                return jsonify({'error': 'Session does not belong to this auction'}), 403
+        
         cursor.execute("""
             SELECT sp.id as session_player_id, sp.base_price, sp.status,
                    p.id as player_id, p.player_name, p.category, p.overseas
@@ -1910,7 +1943,6 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
-
 # ==================== CHAT SYSTEM ====================
 
 @bp.route('/auction/chat/send', methods=['POST'])
