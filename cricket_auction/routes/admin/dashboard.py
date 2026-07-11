@@ -108,3 +108,39 @@ def exit_auction():
     session.pop('active_team_id', None)
     session.pop('active_league_name', None)
     return redirect('/admin/')
+
+@bp.route('/auction/start', methods=['POST'])
+def start_auction():
+    """Create a new auction"""
+    if session.get('role') not in ['admin', 'auctioneer']:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+    
+    league_name = request.form.get('league_name', 'New Auction')
+    squad_size = int(request.form.get('squad_size', 18))
+    purse_limit = float(request.form.get('purse_limit', 100.0))
+    overseas_limit = int(request.form.get('overseas_limit', 8))
+    created_by = session.get('user_id')
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    
+    try:
+        cursor.execute("""
+            INSERT INTO auctions (league_name, squad_size, purse_limit, overseas_limit, created_by, status)
+            VALUES (%s, %s, %s, %s, %s, 'pending')
+        """, (league_name, squad_size, purse_limit, overseas_limit, created_by))
+        db.commit()
+        auction_id = cursor.lastrowid
+        
+        return jsonify({
+            'success': True,
+            'auction_id': auction_id,
+            'message': 'Auction created successfully'
+        })
+        
+    except Exception as e:
+        db.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cursor.close()
+        db.close()

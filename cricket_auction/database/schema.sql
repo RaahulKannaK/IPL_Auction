@@ -468,3 +468,22 @@ CREATE TABLE IF NOT EXISTS pending_willing_price (
     FOREIGN KEY (player_id) REFERENCES players(id),
     FOREIGN KEY (session_player_id) REFERENCES session_players(id)
 );
+
+CREATE TABLE IF NOT EXISTS auction_chat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auction_id INT NOT NULL,
+    session_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    sender_name VARCHAR(100) NOT NULL,
+    sender_type ENUM('admin', 'team', 'system') DEFAULT 'team',
+    team_id INT NULL,
+    message VARCHAR(120) NOT NULL,
+    msg_type VARCHAR(50) DEFAULT 'chat',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id),
+    FOREIGN KEY (session_id) REFERENCES auction_sessions(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (team_id) REFERENCES teams(id),
+    INDEX idx_chat_lookup (auction_id, session_id, created_at),
+    INDEX idx_chat_after (auction_id, session_id, id)
+);
