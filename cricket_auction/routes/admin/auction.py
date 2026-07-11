@@ -1282,8 +1282,10 @@ def deselect_player():
 
 # ==================== STATUS POLLING ====================
 
+# ==================== STATUS POLLING (CACHED) ====================
+
 def shared_status():
-    """Single optimized status endpoint for ALL clients — NO CACHING"""
+    """Single optimized status endpoint with aggressive caching."""
     start = time.time()
     auction_id = request.args.get('auction_id', type=int)
     session_id = request.args.get('session_id', type=int) or session.get('active_session_id')
@@ -1292,181 +1294,225 @@ def shared_status():
     if not auction_id or not session_id:
         return jsonify({"error": "Missing auction_id or session_id"}), 400
     
-    db = get_db()
-    cursor = db.cursor(dictionary=True, buffered=True)
+    cache_key = f"status:{auction_id}:{session_id}:{team_id or 'all'}"
     
-    try:
-        # FIX: Clear any lingering transaction and use READ COMMITTED
+    def fetch_status():
+        db = get_db()
+        cursor = db.cursor(dictionary=True, buffered=True)
+        
         try:
-            cursor.execute("ROLLBACK")
-        except:
-            pass
-        cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
-        
-        # ONE QUERY: Session + Auction + Current Player (NO current_bid from here)
-        cursor.execute("""
-            SELECT 
-                s.id as session_id, s.status as session_status, s.current_player_id,
-                s.team_ids,
-                a.id as auction_id, a.league_name, a.status as auction_status,
-                a.squad_size, a.purse_limit, a.overseas_limit,
-                p.player_name, p.category, p.overseas, sp.base_price
-            FROM auction_sessions s
-            JOIN auctions a ON s.auction_id = a.id
-            LEFT JOIN session_players sp ON sp.id = s.current_player_id AND sp.session_id = s.id
-            LEFT JOIN players p ON p.id = sp.player_id
-            WHERE s.id = %s AND a.id = %s
-        """, (session_id, auction_id))
-        
-        row = cursor.fetchone()
-        
-        if not row:
-            return jsonify({"status": "none", "error": "Session not found"}), 404
-        
-        # === CRITICAL: Always compute current_bid from session_bids table ===
-        # This is the SOURCE OF TRUTH - never trust auction_sessions.current_bid
-        computed_current_bid = 0
-        computed_current_bidder_id = None
-        computed_current_bidder_name = None
-        bid_history = []
-        
-        if row['current_player_id']:
-            # Get ALL bids for this player, ordered by amount DESC, then time DESC
-            cursor.execute("""
-                SELECT sb.bid_amount, sb.created_at, sb.team_id, t.team_name
-                FROM session_bids sb
-                JOIN teams t ON t.id = sb.team_id
-                WHERE sb.session_id = %s AND sb.session_player_id = %s
-                ORDER BY sb.bid_amount DESC, sb.created_at DESC
-                LIMIT 10
-            """, (session_id, row['current_player_id']))
-            bids = cursor.fetchall()
-            
-            bid_history = [{
-                "bidder": b['team_name'],
-                "amount": float(b['bid_amount']),
-                "time": b['created_at'].isoformat() if b['created_at'] else None
-            } for b in bids]
-            
-            # The highest bid is the first one (already ordered by bid_amount DESC)
-            if bids:
-                highest = bids[0]
-                computed_current_bid = float(highest['bid_amount'])
-                computed_current_bidder_id = highest['team_id']
-                computed_current_bidder_name = highest['team_name']
-        
-        # DEBUG LOG - show what we computed vs what auction_sessions says
-        cursor.execute("SELECT current_bid, current_bidder_id FROM auction_sessions WHERE id = %s", (session_id,))
-        db_row = cursor.fetchone()
-        print(f"[STATUS-DB] session_id={session_id}, DB_current_bid={db_row.get('current_bid') if db_row else 'NONE'}, COMPUTED_current_bid={computed_current_bid}, bid_history_count={len(bid_history)}")
-        
-        # ONE QUERY: All teams with counts
-        teams = []
-        if row['team_ids']:
+            # FIX: Clear any lingering transaction
             try:
-                team_ids = json.loads(row['team_ids']) if isinstance(row['team_ids'], str) else row['team_ids']
+                cursor.execute("ROLLBACK")
             except:
-                team_ids = []
+                pass
+            cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
             
-            if team_ids:
-                format_ids = ','.join(['%s'] * len(team_ids))
-                cursor.execute(f"""
-                    SELECT 
-                        t.id, t.team_name, t.purse_limit, t.spent, t.reserved,
-                        COUNT(stp.id) as squad_count,
-                        SUM(CASE WHEN p.overseas = TRUE THEN 1 ELSE 0 END) as overseas_count
-                    FROM teams t
-                    LEFT JOIN session_team_players stp ON stp.team_id = t.id
-                    LEFT JOIN session_players sp ON sp.id = stp.session_player_id AND sp.session_id = %s
-                    LEFT JOIN players p ON p.id = sp.player_id
-                    WHERE t.id IN ({format_ids})
-                    GROUP BY t.id
-                """, (session_id,) + tuple(team_ids))
-                teams = [{
-                    "id": t['id'],
-                    "name": t['team_name'],
-                    "purse": float(t['purse_limit']),
-                    "spent": float(t['spent'] or 0),
-                    "reserved": float(t['reserved'] or 0),
-                    "remaining": float(t['purse_limit'] - (t['spent'] or 0) - (t['reserved'] or 0)),
-                    "squad_count": t['squad_count'],
-                    "overseas_count": t['overseas_count'] or 0
-                } for t in cursor.fetchall()]
-        
-        # ONE QUERY: Skip count
-        skip_count = 0
-        total_teams = len(teams)
-        all_skipped = False
-        if row['current_player_id']:
+            # ONE QUERY: Session + Auction + Current Player
             cursor.execute("""
-                SELECT COUNT(DISTINCT team_id) as skip_count
-                FROM session_skips
-                WHERE session_id = %s AND session_player_id = %s
-            """, (session_id, row['current_player_id']))
-            skip_result = cursor.fetchone()
-            skip_count = skip_result['skip_count'] if skip_result else 0
-            all_skipped = skip_count >= total_teams and total_teams > 0
-        
-        # Team-specific data
-        my_team = None
-        is_current_bidder = False
-        remaining_purse = 0
-        if team_id:
-            cursor.execute("""
-                SELECT (purse_limit - COALESCE(spent, 0) - COALESCE(reserved, 0)) as remaining
-                FROM teams WHERE id = %s
-            """, (team_id,))
-            team_row = cursor.fetchone()
-            if team_row:
-                remaining_purse = float(team_row['remaining'] or 0)
-                is_current_bidder = (computed_current_bidder_id == team_id)
-                my_team = {
-                    "id": team_id,
-                    "remaining_purse": remaining_purse,
-                    "is_current_bidder": is_current_bidder,
-                    "has_skipped": False
-                }
-                if row['current_player_id']:
+                SELECT 
+                    s.id as session_id, s.status as session_status, s.current_player_id,
+                    s.team_ids,
+                    a.id as auction_id, a.league_name, a.status as auction_status,
+                    a.squad_size, a.purse_limit, a.overseas_limit,
+                    p.player_name, p.category, p.overseas, sp.base_price
+                FROM auction_sessions s
+                JOIN auctions a ON s.auction_id = a.id
+                LEFT JOIN session_players sp ON sp.id = s.current_player_id AND sp.session_id = s.id
+                LEFT JOIN players p ON p.id = sp.player_id
+                WHERE s.id = %s AND a.id = %s
+            """, (session_id, auction_id))
+            
+            row = cursor.fetchone()
+            if not row:
+                return {"status": "none", "error": "Session not found"}
+            
+            # === SOURCE OF TRUTH: Compute current_bid from session_bids ===
+            computed_current_bid = 0
+            computed_current_bidder_id = None
+            computed_current_bidder_name = None
+            bid_history = []
+            has_pending_willing = False
+            
+            if row['current_player_id']:
+                # Get top 10 bids (already sorted)
+                cursor.execute("""
+                    SELECT sb.bid_amount, sb.created_at, sb.team_id, t.team_name
+                    FROM session_bids sb
+                    JOIN teams t ON t.id = sb.team_id
+                    WHERE sb.session_id = %s AND sb.session_player_id = %s
+                    ORDER BY sb.bid_amount DESC, sb.created_at DESC
+                    LIMIT 10
+                """, (session_id, row['current_player_id']))
+                bids = cursor.fetchall()
+                
+                bid_history = [{
+                    "bidder": b['team_name'],
+                    "amount": float(b['bid_amount']),
+                    "time": b['created_at'].isoformat() if b['created_at'] else None
+                } for b in bids]
+                
+                if bids:
+                    highest = bids[0]
+                    computed_current_bid = float(highest['bid_amount'])
+                    computed_current_bidder_id = highest['team_id']
+                    computed_current_bidder_name = highest['team_name']
+                
+                # Check if this team has pending willing price popup
+                if team_id:
                     cursor.execute("""
-                        SELECT 1 FROM session_skips
-                        WHERE session_id = %s AND session_player_id = %s AND team_id = %s
+                        SELECT 1 FROM pending_willing_price
+                        WHERE team_id = %s AND session_player_id = %s AND popup_shown = 0
                         LIMIT 1
-                    """, (session_id, row['current_player_id'], team_id))
-                    my_team['has_skipped'] = cursor.fetchone() is not None
-        
-        # Build response using COMPUTED values (source of truth)
-        result = {
-            "status": row['auction_status'] or 'live',
-            "session_status": row['session_status'] or 'active',
-            "league_name": row['league_name'],
-            "auction_id": row['auction_id'],
-            "session_id": row['session_id'],
-            "current_player": row['player_name'] if row['current_player_id'] else None,
-            "player_category": row['category'],
-            "session_player_id": row['current_player_id'],
-            "base_price": float(row['base_price']) if row['base_price'] else 2.0,
-            "current_bid": computed_current_bid,
-            "current_bidder": computed_current_bidder_name,
-            "current_bidder_id": computed_current_bidder_id,
-            "overseas": bool(row['overseas']) if row['overseas'] is not None else False,
-            "has_bids": len(bid_history) > 0,
-            "skip_count": skip_count,
-            "all_skipped": all_skipped,
-            "total_teams": total_teams,
-            "remaining_purse": remaining_purse if team_id else None,
-            "is_current_bidder": is_current_bidder if team_id else False,
-            "bid_history": bid_history,
-            "teams": teams,
-        }
-        
-        # DEBUG LOG
-        print(f"[STATUS-OUT] session_id={session_id}, player={result.get('current_player')}, bid={result.get('current_bid')}, bidder={result.get('current_bidder')}, has_bids={result.get('has_bids')}, bid_history_count={len(bid_history)}")
-        
-        return jsonify(result)
-        
-    finally:
-        cursor.close()
-        db.close()
+                    """, (team_id, row['current_player_id']))
+                    has_pending_willing = cursor.fetchone() is not None
+            
+            # ONE QUERY: All teams with counts (only if needed)
+            teams = []
+            if row['team_ids']:
+                try:
+                    team_ids = json.loads(row['team_ids']) if isinstance(row['team_ids'], str) else row['team_ids']
+                except:
+                    team_ids = []
+                
+                if team_ids:
+                    format_ids = ','.join(['%s'] * len(team_ids))
+                    cursor.execute(f"""
+                        SELECT 
+                            t.id, t.team_name, t.purse_limit, t.spent, t.reserved,
+                            COUNT(stp.id) as squad_count,
+                            SUM(CASE WHEN p.overseas = TRUE THEN 1 ELSE 0 END) as overseas_count
+                        FROM teams t
+                        LEFT JOIN session_team_players stp ON stp.team_id = t.id
+                        LEFT JOIN session_players sp ON sp.id = stp.session_player_id AND sp.session_id = %s
+                        LEFT JOIN players p ON p.id = sp.player_id
+                        WHERE t.id IN ({format_ids})
+                        GROUP BY t.id
+                    """, (session_id,) + tuple(team_ids))
+                    teams = [{
+                        "id": t['id'],
+                        "name": t['team_name'],
+                        "purse": float(t['purse_limit']),
+                        "spent": float(t['spent'] or 0),
+                        "reserved": float(t['reserved'] or 0),
+                        "remaining": float(t['purse_limit'] - (t['spent'] or 0) - (t['reserved'] or 0)),
+                        "squad_count": t['squad_count'],
+                        "overseas_count": t['overseas_count'] or 0
+                    } for t in cursor.fetchall()]
+            
+            # ONE QUERY: Skip count
+            skip_count = 0
+            total_teams = len(teams)
+            all_skipped = False
+            
+            if row['current_player_id']:
+                cursor.execute("""
+                    SELECT COUNT(DISTINCT team_id) as skip_count
+                    FROM session_skips
+                    WHERE session_id = %s AND session_player_id = %s
+                """, (session_id, row['current_player_id']))
+                skip_result = cursor.fetchone()
+                skip_count = skip_result['skip_count'] if skip_result else 0
+                all_skipped = skip_count >= total_teams and total_teams > 0
+            
+            # Team-specific data
+            my_team = None
+            is_current_bidder = False
+            remaining_purse = 0
+            if team_id:
+                cursor.execute("""
+                    SELECT (purse_limit - COALESCE(spent, 0) - COALESCE(reserved, 0)) as remaining
+                    FROM teams WHERE id = %s
+                """, (team_id,))
+                team_row = cursor.fetchone()
+                if team_row:
+                    remaining_purse = float(team_row['remaining'] or 0)
+                    is_current_bidder = (computed_current_bidder_id == team_id)
+                    my_team = {
+                        "id": team_id,
+                        "remaining_purse": remaining_purse,
+                        "is_current_bidder": is_current_bidder,
+                        "has_skipped": False
+                    }
+                    if row['current_player_id']:
+                        cursor.execute("""
+                            SELECT 1 FROM session_skips
+                            WHERE session_id = %s AND session_player_id = %s AND team_id = %s
+                            LIMIT 1
+                        """, (session_id, row['current_player_id'], team_id))
+                        my_team['has_skipped'] = cursor.fetchone() is not None
+            
+            # Get last 5 chat messages (merged into status!)
+            chat_messages = []
+            cursor.execute("""
+                SELECT id, sender_name, sender_type, message, msg_type, created_at
+                FROM auction_chat
+                WHERE auction_id = %s AND session_id = %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT 5
+            """, (auction_id, session_id))
+            chat_rows = cursor.fetchall()
+            
+            for msg in chat_rows:
+                created_at = msg['created_at']
+                time_str = ''
+                if created_at:
+                    from datetime import timezone, timedelta
+                    ist = timezone(timedelta(hours=5, minutes=30))
+                    if hasattr(created_at, 'tzinfo') and created_at.tzinfo is not None:
+                        created_at = created_at.astimezone(ist)
+                    else:
+                        created_at = created_at.replace(tzinfo=timezone.utc).astimezone(ist)
+                    time_str = created_at.strftime('%I:%M %p')
+                
+                chat_messages.append({
+                    'id': msg['id'],
+                    'sender': msg['sender_name'],
+                    'sender_type': msg['sender_type'],
+                    'text': msg['message'],
+                    'msg_type': msg['msg_type'],
+                    'time': time_str
+                })
+            
+            return {
+                "status": row['auction_status'] or 'live',
+                "session_status": row['session_status'] or 'active',
+                "league_name": row['league_name'],
+                "auction_id": row['auction_id'],
+                "session_id": row['session_id'],
+                "current_player": row['player_name'] if row['current_player_id'] else None,
+                "player_category": row['category'],
+                "session_player_id": row['current_player_id'],
+                "base_price": float(row['base_price']) if row['base_price'] else 2.0,
+                "current_bid": computed_current_bid,
+                "current_bidder": computed_current_bidder_name,
+                "current_bidder_id": computed_current_bidder_id,
+                "overseas": bool(row['overseas']) if row['overseas'] is not None else False,
+                "has_bids": len(bid_history) > 0,
+                "skip_count": skip_count,
+                "all_skipped": all_skipped,
+                "total_teams": total_teams,
+                "remaining_purse": remaining_purse if team_id else None,
+                "is_current_bidder": is_current_bidder if team_id else False,
+                "bid_history": bid_history,
+                "teams": teams,
+                "chat_messages": chat_messages,        # ← MERGED: no separate chat poll
+                "has_pending_willing": has_pending_willing,  # ← MERGED: no separate willing poll
+                "server_time": time.time()
+            }
+            
+        finally:
+            cursor.close()
+            db.close()
+    
+    # Use cache with 500ms TTL
+    result = get_cached(cache_key, fetch_status, ttl_seconds=0.5)
+    
+    # If it's an error dict, return proper response
+    if isinstance(result, dict) and result.get("error"):
+        return jsonify(result), 404 if result.get("status") == "none" else 400
+    
+    return jsonify(result)
 
 @bp.route('/auction/status')
 def get_status():

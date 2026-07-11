@@ -2,12 +2,13 @@ import mysql.connector
 from mysql.connector import pooling
 from config import Config
 import time
+import threading
 
 # FIXED: pool_reset_session=True ensures clean state on every checkout
 connection_pool = pooling.MySQLConnectionPool(
     pool_name="cricket_pool",
-    pool_size=10,
-    pool_reset_session=True,  # ← FIXED: Reset session on every reuse
+    pool_size=15,              # ← INCREASED: handle more concurrent polls
+    pool_reset_session=True,   # ← FIXED: Reset session on every reuse
     host=Config.DB_HOST,
     port=Config.DB_PORT,
     user=Config.DB_USER,
@@ -30,37 +31,40 @@ def get_db():
     return conn
 
 
-# === SIMPLE IN-MEMORY CACHE (process-local, fast) ===
+# === SIMPLE IN-MEMORY CACHE (process-local, fast, thread-safe) ===
 _cache = {}
+_cache_lock = threading.RLock()
 _cache_hits = 0
 _cache_misses = 0
 
-def get_cached(key, fetch_fn, ttl_seconds=1):
-    """Get from cache or fetch. Shorter TTL for live auction data."""
+def get_cached(key, fetch_fn, ttl_seconds=0.5):
+    """Get from cache or fetch. 500ms TTL for live auction data = 2 updates/sec max."""
     global _cache_hits, _cache_misses
     now = time.time()
     
-    if key in _cache:
-        value, expiry = _cache[key]
-        if now < expiry:
-            _cache_hits += 1
-            return value
-    
-    _cache_misses += 1
-    value = fetch_fn()
-    _cache[key] = (value, now + ttl_seconds)
-    return value
+    with _cache_lock:
+        if key in _cache:
+            value, expiry = _cache[key]
+            if now < expiry:
+                _cache_hits += 1
+                return value
+        
+        _cache_misses += 1
+        value = fetch_fn()
+        _cache[key] = (value, now + ttl_seconds)
+        return value
 
 def clear_cache(key=None):
     """Clear cache by key, prefix, or all."""
     global _cache
-    if key is None:
-        _cache = {}
-        return
-    
-    keys_to_remove = [k for k in _cache.keys() if k == key or k.startswith(key)]
-    for k in keys_to_remove:
-        _cache.pop(k, None)
+    with _cache_lock:
+        if key is None:
+            _cache = {}
+            return
+        
+        keys_to_remove = [k for k in list(_cache.keys()) if k == key or k.startswith(key)]
+        for k in keys_to_remove:
+            _cache.pop(k, None)
 
 def cache_stats():
     """Debug: cache hit rate."""
@@ -73,15 +77,7 @@ def cache_stats():
 
 # === CONNECTION CONTEXT MANAGER (safer, cleaner) ===
 class db_transaction:
-    """Context manager for safe DB transactions. Use this everywhere.
-    
-    Usage:
-        with db_transaction() as cursor:
-            cursor.execute("SELECT ...")
-            rows = cursor.fetchall()
-            cursor.execute("UPDATE ...")
-        # Auto-commits on success, rolls back on exception
-    """
+    """Context manager for safe DB transactions."""
     
     def __init__(self, cursor_dict=True):
         self.cursor_dict = cursor_dict
@@ -90,7 +86,7 @@ class db_transaction:
     
     def __enter__(self):
         self.conn = get_db()
-        self.cursor = self.conn.cursor(dictionary=self.cursor_dict)
+        self.cursor = self.conn.cursor(dictionary=self.cursor_dict, buffered=True)
         return self.cursor
     
     def __exit__(self, exc_type, exc_val, exc_tb):

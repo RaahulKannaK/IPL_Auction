@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
-from flask import Flask
+from flask import Flask,jsonify
+import time
 
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cricket-auction-secret-2024')
@@ -45,6 +46,11 @@ app.register_blueprint(team_owner_dashboard.bp)
 app.register_blueprint(team_owner_auction.bp)
 app.register_blueprint(team_owner_squad.bp)
 app.register_blueprint(team_owner_playing11.bp)
+
+@app.route('/health')
+def health():
+    """Lightweight health check for keep-alive."""
+    return jsonify({'status': 'ok', 'time': time.time()}), 200
 
 # === VIEWER ROUTES ===
 import routes.viewer.dashboard as viewer_dashboard

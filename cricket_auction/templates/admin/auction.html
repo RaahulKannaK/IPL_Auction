@@ -1083,7 +1083,9 @@ const AUCTION = {
         selectedId: null,
         isBroadcasting: false,
         pendingAction: false,
-        bidHistory: []
+        bidHistory: [],
+        lastPollTime: 0,       // ← ADD THIS
+        chatLastId: 0          // ← ADD THIS
     },
     isBroadcasting: false,
     pendingAction: false,
@@ -1268,44 +1270,6 @@ function escapeHtml(text) {
 }
 
 // ============================================================================
-// CHAT POLLING
-// ============================================================================
-function startChatPolling() {
-    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
-    CHAT.pollTimer = setInterval(pollChatMessages, CHAT.pollDelay);
-}
-
-function stopChatPolling() {
-    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
-    CHAT.pollTimer = null;
-}
-
-async function pollChatMessages() {
-    if (!AUCTION.sessionId) return;
-    
-    try {
-        var res = await fetch('/admin/auction/chat/messages?auction_id=' + AUCTION.auctionId + 
-                              '&session_id=' + AUCTION.sessionId + 
-                              '&after_id=' + CHAT.lastMessageId);
-        var data = await res.json();
-        
-        if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(function(msg) {
-                if (msg.id > CHAT.lastMessageId) {
-                    CHAT.lastMessageId = msg.id;
-                }
-                // Show all messages (admin sees everything)
-                // Skip only if it's our own message that we already added optimistically
-                // But since we now wait for server response, we show all
-                addChatMessage(msg, false);
-            });
-        }
-    } catch (err) {
-        console.error('Chat poll error:', err);
-    }
-}
-
-// ============================================================================
 // INIT
 // ============================================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1473,24 +1437,45 @@ async function broadcastPlayer() {
         AUCTION.state.isBroadcasting = false;
     }
 }
+// ============================================================================
+// POLLING — FIXED: setTimeout chain + AbortController (no timer leak)
+// ============================================================================
 
-// ============================================================================
-// POLLING
-// ============================================================================
-let isPolling = false;
+AUCTION.isPolling = false;
+AUCTION.pollAbortController = null;
 
 function startPolling() {
-    if (AUCTION.pollTimer) clearInterval(AUCTION.pollTimer);
-    AUCTION.pollTimer = setInterval(pollOnce, AUCTION.pollDelay);
+    stopPolling();
+    console.log('[ADMIN POLL] Starting fresh');
+    scheduleNextPoll(0);
 }
 
 function stopPolling() {
-    if (AUCTION.pollTimer) clearInterval(AUCTION.pollTimer);
-    AUCTION.pollTimer = null;
+    if (AUCTION.pollAbortController) {
+        AUCTION.pollAbortController.abort();
+        AUCTION.pollAbortController = null;
+    }
+    if (AUCTION.pollTimer) {
+        clearTimeout(AUCTION.pollTimer);
+        AUCTION.pollTimer = null;
+    }
+    AUCTION.isPolling = false;
+}
+
+function scheduleNextPoll(delayMs) {
+    AUCTION.pollTimer = setTimeout(function() {
+        pollOnce().then(function() {
+            var elapsed = Date.now() - AUCTION.state.lastPollTime;
+            var nextDelay = Math.max(AUCTION.pollDelay - elapsed, 100);
+            scheduleNextPoll(nextDelay);
+        }).catch(function() {
+            scheduleNextPoll(2000);
+        });
+    }, delayMs);
 }
 
 // ============================================================================
-// BOT COUNTER-BID TRIGGER (ADMIN SIDE)
+// BOT COUNTER-BID TRIGGER (ADMIN SIDE) — keep as-is
 // ============================================================================
 function callAdminAutoBid() {
     if (!AUCTION.state.playerId) return;
@@ -1516,17 +1501,38 @@ function callAdminAutoBid() {
 }
 
 async function pollOnce() {
-    if (isPolling) return;
+    if (AUCTION.isPolling) return;
     if (!AUCTION.sessionId) return;
     
-    isPolling = true;
+    AUCTION.isPolling = true;
+    AUCTION.state.lastPollTime = Date.now();
+    AUCTION.pollAbortController = new AbortController();
     
     try {
         const url = `/admin/auction/status?auction_id=${AUCTION.auctionId}&session_id=${AUCTION.sessionId}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { 
+            signal: AUCTION.pollAbortController.signal,
+            cache: 'no-store'
+        });
         const data = await res.json();
-        console.log('POLL RAW DATA:', JSON.stringify(data));
+        
+        if (data.error) {
+            console.warn('[ADMIN POLL] Error:', data.error);
+            return;
+        }
+        
         setSyncStatus(true);
+        
+        // Process merged chat messages from status
+        if (data.chat_messages && data.chat_messages.length > 0) {
+            data.chat_messages.reverse();
+            data.chat_messages.forEach(function(msg) {
+                if (msg.id > CHAT.lastMessageId) {
+                    CHAT.lastMessageId = msg.id;
+                    addChatMessage(msg, false);
+                }
+            });
+        }
 
         const serverPlayerId = data.session_player_id || null;
         const serverPlayerName = data.current_player || null;
@@ -1534,7 +1540,7 @@ async function pollOnce() {
         const hasPlayer = serverPlayerId && serverPlayerId > 0 && serverPlayerName;
         
         if (!hasPlayer && AUCTION.state.playerId) {
-            console.log('Server has no valid active player, clearing display');
+            console.log('[ADMIN POLL] Server has no valid active player, clearing display');
             AUCTION.state.playerId = null;
             AUCTION.state.playerName = null;
             AUCTION.state.currentBid = 0;
@@ -1543,13 +1549,11 @@ async function pollOnce() {
             clearDisplay();
             updateControls();
             document.querySelectorAll('.player-card').forEach(c => c.classList.remove('in-auction'));
-            isPolling = false;
             return;
         }
 
         if (!hasPlayer && !AUCTION.state.playerId) {
             updateControls();
-            isPolling = false;
             return;
         }
 
@@ -1558,7 +1562,6 @@ async function pollOnce() {
         const bidderChanged = (data.current_bidder || null) !== AUCTION.state.currentBidder;
 
         if (!playerChanged && !bidChanged && !bidderChanged) {
-            isPolling = false;
             return;
         }
 
@@ -1568,7 +1571,6 @@ async function pollOnce() {
                 AUCTION.state.playerName = serverPlayerName;
                 AUCTION.state.category = data.player_category || data.category || null;
                 AUCTION.state.basePrice = data.base_price > 0 ? parseFloat(data.base_price) : 2.0;
-                // Don't reset bid here - poll will pick up bot bid if exists
                 AUCTION.state.selectedId = null;
                 flashPlayerUpdate();
             }
@@ -1584,13 +1586,17 @@ async function pollOnce() {
         }
 
     } catch (err) {
-        console.error('Poll failed:', err);
-        setSyncStatus(false);
+        if (err.name === 'AbortError') {
+            console.log('[ADMIN POLL] Aborted (expected on stop)');
+        } else {
+            console.error('Poll failed:', err);
+            setSyncStatus(false);
+        }
     } finally {
-        isPolling = false;
+        AUCTION.isPolling = false;
+        AUCTION.pollAbortController = null;
     }
 }
-
 // ============================================================================
 // DISPLAY & CONTROLS
 // ============================================================================
