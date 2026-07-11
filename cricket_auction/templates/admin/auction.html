@@ -1070,7 +1070,7 @@ const AUCTION = {
     auctionId: {{ auction.id }},
     sessionId: {% if session_id is not none and session_id != '' %}{{ session_id }}{% else %}null{% endif %},
     teamId: null,
-    pollDelay: 1000,
+    pollDelay: 3000,
     state: {
         playerId: {% if current_player and current_player.id %}{{ current_player.id }}{% else %}null{% endif %},
         playerName: {% if current_player and current_player.player_name %}{{ current_player.player_name|tojson }}{% else %}null{% endif %},
@@ -1083,9 +1083,7 @@ const AUCTION = {
         selectedId: null,
         isBroadcasting: false,
         pendingAction: false,
-        bidHistory: [],
-        lastPollTime: 0,       // ← ADD THIS
-        chatLastId: 0          // ← ADD THIS
+        bidHistory: []
     },
     isBroadcasting: false,
     pendingAction: false,
@@ -1270,6 +1268,43 @@ function escapeHtml(text) {
 }
 
 // ============================================================================
+// CHAT POLLING
+// ============================================================================
+function startChatPolling() {
+    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
+    CHAT.pollTimer = setInterval(pollChatMessages, CHAT.pollDelay);
+}
+
+function stopChatPolling() {
+    if (CHAT.pollTimer) clearInterval(CHAT.pollTimer);
+    CHAT.pollTimer = null;
+}
+
+async function pollChatMessages() {
+    if (!AUCTION.sessionId) return;
+    
+    try {
+        var res = await fetch('/admin/auction/chat/messages?auction_id=' + AUCTION.auctionId + 
+                              '&session_id=' + AUCTION.sessionId + 
+                              '&after_id=' + CHAT.lastMessageId);
+        var data = await res.json();
+        
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(function(msg) {
+                if (msg.id > CHAT.lastMessageId) {
+                    CHAT.lastMessageId = msg.id;
+                }
+                // Show all messages (admin sees everything)
+                // Skip only if it's our own message that we already added optimistically
+                // But since we now wait for server response, we show all
+                addChatMessage(msg, false);
+            });
+        }
+    } catch (err) {
+        console.error('Chat poll error:', err);
+    }
+}
+// ============================================================================
 // INIT
 // ============================================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1437,45 +1472,24 @@ async function broadcastPlayer() {
         AUCTION.state.isBroadcasting = false;
     }
 }
-// ============================================================================
-// POLLING — FIXED: setTimeout chain + AbortController (no timer leak)
-// ============================================================================
 
-AUCTION.isPolling = false;
-AUCTION.pollAbortController = null;
+// ============================================================================
+// POLLING
+// ============================================================================
+let isPolling = false;
 
 function startPolling() {
-    stopPolling();
-    console.log('[ADMIN POLL] Starting fresh');
-    scheduleNextPoll(0);
+    if (AUCTION.pollTimer) clearInterval(AUCTION.pollTimer);
+    AUCTION.pollTimer = setInterval(pollOnce, AUCTION.pollDelay);
 }
 
 function stopPolling() {
-    if (AUCTION.pollAbortController) {
-        AUCTION.pollAbortController.abort();
-        AUCTION.pollAbortController = null;
-    }
-    if (AUCTION.pollTimer) {
-        clearTimeout(AUCTION.pollTimer);
-        AUCTION.pollTimer = null;
-    }
-    AUCTION.isPolling = false;
-}
-
-function scheduleNextPoll(delayMs) {
-    AUCTION.pollTimer = setTimeout(function() {
-        pollOnce().then(function() {
-            var elapsed = Date.now() - AUCTION.state.lastPollTime;
-            var nextDelay = Math.max(AUCTION.pollDelay - elapsed, 100);
-            scheduleNextPoll(nextDelay);
-        }).catch(function() {
-            scheduleNextPoll(2000);
-        });
-    }, delayMs);
+    if (AUCTION.pollTimer) clearInterval(AUCTION.pollTimer);
+    AUCTION.pollTimer = null;
 }
 
 // ============================================================================
-// BOT COUNTER-BID TRIGGER (ADMIN SIDE) — keep as-is
+// BOT COUNTER-BID TRIGGER (ADMIN SIDE)
 // ============================================================================
 function callAdminAutoBid() {
     if (!AUCTION.state.playerId) return;
@@ -1501,38 +1515,17 @@ function callAdminAutoBid() {
 }
 
 async function pollOnce() {
-    if (AUCTION.isPolling) return;
+    if (isPolling) return;
     if (!AUCTION.sessionId) return;
     
-    AUCTION.isPolling = true;
-    AUCTION.state.lastPollTime = Date.now();
-    AUCTION.pollAbortController = new AbortController();
+    isPolling = true;
     
     try {
         const url = `/admin/auction/status?auction_id=${AUCTION.auctionId}&session_id=${AUCTION.sessionId}`;
-        const res = await fetch(url, { 
-            signal: AUCTION.pollAbortController.signal,
-            cache: 'no-store'
-        });
+        const res = await fetch(url);
         const data = await res.json();
-        
-        if (data.error) {
-            console.warn('[ADMIN POLL] Error:', data.error);
-            return;
-        }
-        
+        console.log('POLL RAW DATA:', JSON.stringify(data));
         setSyncStatus(true);
-        
-        // Process merged chat messages from status
-        if (data.chat_messages && data.chat_messages.length > 0) {
-            data.chat_messages.reverse();
-            data.chat_messages.forEach(function(msg) {
-                if (msg.id > CHAT.lastMessageId) {
-                    CHAT.lastMessageId = msg.id;
-                    addChatMessage(msg, false);
-                }
-            });
-        }
 
         const serverPlayerId = data.session_player_id || null;
         const serverPlayerName = data.current_player || null;
@@ -1540,21 +1533,22 @@ async function pollOnce() {
         const hasPlayer = serverPlayerId && serverPlayerId > 0 && serverPlayerName;
         
         if (!hasPlayer && AUCTION.state.playerId) {
-            console.log('[ADMIN POLL] Player cleared by server');
+            console.log('Server has no valid active player, clearing display');
             AUCTION.state.playerId = null;
             AUCTION.state.playerName = null;
             AUCTION.state.currentBid = 0;
             AUCTION.state.currentBidder = null;
-            AUCTION.state.bidderId = null;
             AUCTION.state.hasBids = false;
             clearDisplay();
+            updateControls();
             document.querySelectorAll('.player-card').forEach(c => c.classList.remove('in-auction'));
-            updateControls();  // ← Update controls AFTER clearing state
+            isPolling = false;
             return;
         }
 
         if (!hasPlayer && !AUCTION.state.playerId) {
             updateControls();
+            isPolling = false;
             return;
         }
 
@@ -1563,81 +1557,75 @@ async function pollOnce() {
         const bidderChanged = (data.current_bidder || null) !== AUCTION.state.currentBidder;
 
         if (!playerChanged && !bidChanged && !bidderChanged) {
+            isPolling = false;
             return;
         }
 
-        console.log('[ADMIN POLL] Update — playerChanged:', playerChanged, 
-                    'bidChanged:', bidChanged, 'bidderChanged:', bidderChanged,
-                    'newBid:', data.current_bid, 'newBidder:', data.current_bidder);
-
         if (hasPlayer) {
-            // Update ALL state BEFORE any rendering
-            AUCTION.state.currentBid = parseFloat(data.current_bid || 0);
-            AUCTION.state.currentBidder = data.current_bidder || 'No bids yet';
-            AUCTION.state.bidderId = data.current_bidder_id || null;
-            AUCTION.state.hasBids = AUCTION.state.currentBid > 0;
-
             if (playerChanged) {
                 AUCTION.state.playerId = serverPlayerId;
                 AUCTION.state.playerName = serverPlayerName;
                 AUCTION.state.category = data.player_category || data.category || null;
                 AUCTION.state.basePrice = data.base_price > 0 ? parseFloat(data.base_price) : 2.0;
+                // Don't reset bid here - poll will pick up bot bid if exists
                 AUCTION.state.selectedId = null;
                 flashPlayerUpdate();
             }
 
-            // Render in correct order: display first, then controls
+            AUCTION.state.currentBid = parseFloat(data.current_bid || 0);
+            AUCTION.state.currentBidder = data.current_bidder || 'No bids yet';
+            AUCTION.state.bidderId = data.current_bidder_id || null;
+            AUCTION.state.hasBids = AUCTION.state.currentBid > 0;
+
             renderDisplay();
             highlightPlayer(serverPlayerId);
-            updateControls();  // ← This updates bid/bidder text
-            
-            // Force bid display update even if updateControls missed it
-            forceUpdateBidDisplay();
+            updateControls();
         }
 
     } catch (err) {
-        if (err.name === 'AbortError') {
-            console.log('[ADMIN POLL] Aborted (expected on stop)');
-        } else {
-            console.error('[ADMIN POLL] Error:', err);
-            setSyncStatus(false);
-        }
+        console.error('Poll failed:', err);
+        setSyncStatus(false);
     } finally {
-        AUCTION.isPolling = false;
-        AUCTION.pollAbortController = null;
+        isPolling = false;
     }
 }
+
 // ============================================================================
 // DISPLAY & CONTROLS
 // ============================================================================
 function renderDisplay() {
-    const display = document.getElementById('currentPlayerDisplay');
-    if (!display) return;
+    const s = AUCTION.state;
     
-    const hasPlayer = AUCTION.state.playerId && AUCTION.state.playerName;
+    console.log('renderDisplay called:', s.playerName, s.currentBid, s.category, s.basePrice);
     
-    if (!hasPlayer) {
-        display.innerHTML = `
-            <div class="no-player">
-                <p>No player selected</p>
-                <p>Select a player from the list below</p>
-            </div>
-        `;
-        return;
-    }
+    const cards = document.querySelectorAll('.display-card');
     
-    // Only update player info, NOT bid info (bid is updated by updateControls)
-    const nameEl = display.querySelector('.player-name') || display.querySelector('[data-field="playerName"]');
-    if (nameEl) nameEl.textContent = AUCTION.state.playerName;
+    cards.forEach(card => {
+        const label = card.querySelector('.label')?.textContent?.trim();
+        const valueEl = card.querySelector('.value');
+        const sublabelEl = card.querySelector('.sublabel');
+        
+        if (!label) return;
+        
+        const lowerLabel = label.toLowerCase();
+        
+        if (lowerLabel === 'current player') {
+            if (valueEl) valueEl.textContent = s.playerName || 'Waiting...';
+            if (sublabelEl) sublabelEl.textContent = s.category || '--';
+        }
+        else if (lowerLabel === 'current bid') {
+            // Try .bid-value-gold first, then .value
+            const bidEl = card.querySelector('.bid-value-gold') || valueEl;
+            if (bidEl) bidEl.textContent = '₹' + (s.currentBid || 0).toFixed(2) + 'Cr';
+            if (sublabelEl) sublabelEl.textContent = 'Base: ₹' + (s.basePrice || 2.0).toFixed(2) + 'Cr';
+        }
+        else if (lowerLabel === 'current bidder') {
+            if (valueEl) valueEl.textContent = s.currentBidder || 'No bids yet';
+            if (sublabelEl) sublabelEl.textContent = (s.bidHistory?.length || 0) + ' bids placed';
+        }
+    });
     
-    const catEl = display.querySelector('.player-category') || display.querySelector('[data-field="category"]');
-    if (catEl) catEl.textContent = (AUCTION.state.category || '').toUpperCase();
-    
-    const baseEl = display.querySelector('.base-price') || display.querySelector('[data-field="basePrice"]');
-    if (baseEl) baseEl.textContent = 'Base: ₹' + (AUCTION.state.basePrice || 2.0).toFixed(2) + 'Cr';
-    
-    // Do NOT touch bid/bidder elements here — updateControls() handles that
-    console.log('[RENDER] Player display updated:', AUCTION.state.playerName);
+    updateControls(); // Update button states after rendering
 }
 
 function clearDisplay() {
@@ -1672,99 +1660,33 @@ function clearDisplay() {
 
 // NEW: Controls button state management
 function updateControls() {
-    const hasPlayer = AUCTION.state.playerId && AUCTION.state.playerName;
-    const hasBids = AUCTION.state.hasBids;
+    const s = AUCTION.state;
+    const hasPlayer = s.playerId && s.playerId > 0;
+    const hasBids = s.currentBid > 0;
     
-    // Update sell button state
-    const sellBtn = document.getElementById('sellPlayerBtn');
-    if (sellBtn) {
-        sellBtn.disabled = !hasPlayer || !hasBids;
+    const rebidBtn = document.getElementById('rebidBtn');
+    const deselectBtn = document.getElementById('deselectBtn');
+    const unsoldBtn = document.getElementById('unsoldBtn');
+    
+    if (rebidBtn) {
+        rebidBtn.disabled = !hasPlayer || !hasBids;
+        rebidBtn.style.opacity = (!hasPlayer || !hasBids) ? '0.3' : '1';
+        rebidBtn.style.cursor = (!hasPlayer || !hasBids) ? 'not-allowed' : 'pointer';
     }
     
-    // Update unsold button state  
-    const unsoldBtn = document.getElementById('unsoldPlayerBtn');
+    if (deselectBtn) {
+        deselectBtn.disabled = !hasPlayer;
+        deselectBtn.style.opacity = !hasPlayer ? '0.3' : '1';
+        deselectBtn.style.cursor = !hasPlayer ? 'not-allowed' : 'pointer';
+    }
+    
     if (unsoldBtn) {
         unsoldBtn.disabled = !hasPlayer;
+        unsoldBtn.style.opacity = !hasPlayer ? '0.3' : '1';
+        unsoldBtn.style.cursor = !hasPlayer ? 'not-allowed' : 'pointer';
     }
-    
-    // Update pause/resume button
-    const pauseBtn = document.getElementById('pauseAuctionBtn');
-    if (pauseBtn) {
-        pauseBtn.textContent = AUCTION.state.status === 'paused' ? '▶️ Resume' : '⏸️ Pause';
-    }
-    
-    // === FIX: Always update bid display text ===
-    const bidDisplay = document.getElementById('currentBidDisplay') || 
-                       document.getElementById('currentBid') ||
-                       document.querySelector('.current-bid');
-    if (bidDisplay) {
-        bidDisplay.textContent = '₹' + (AUCTION.state.currentBid || 0).toFixed(2) + 'Cr';
-    }
-    
-    const bidderDisplay = document.getElementById('currentBidderDisplay') ||
-                          document.getElementById('currentBidder') ||
-                          document.querySelector('.current-bidder');
-    if (bidderDisplay) {
-        bidderDisplay.textContent = AUCTION.state.currentBidder || 'No bids yet';
-    }
-    
-    // Update base price display
-    const baseDisplay = document.getElementById('basePriceDisplay') ||
-                        document.querySelector('.base-price');
-    if (baseDisplay && hasPlayer) {
-        baseDisplay.textContent = 'Base: ₹' + (AUCTION.state.basePrice || 2.0).toFixed(2) + 'Cr';
-    }
-    
-    console.log('[CONTROLS] Updated — bid:', AUCTION.state.currentBid, 
-                'bidder:', AUCTION.state.currentBidder);
 }
 
-// ============================================================================
-// FORCE BID DISPLAY UPDATE — Ensures bid/bidder text always updates
-// ============================================================================
-function forceUpdateBidDisplay() {
-    // Try multiple possible selectors since templates vary
-    const bidSelectors = [
-        '#currentBidDisplay',
-        '#currentBid', 
-        '.current-bid',
-        '[data-field="currentBid"]',
-        '#bidAmount'
-    ];
-    const bidderSelectors = [
-        '#currentBidderDisplay',
-        '#currentBidder',
-        '.current-bidder',
-        '[data-field="currentBidder"]',
-        '#bidderName'
-    ];
-    
-    let bidEl = null;
-    for (const sel of bidSelectors) {
-        bidEl = document.querySelector(sel);
-        if (bidEl) break;
-    }
-    
-    let bidderEl = null;
-    for (const sel of bidderSelectors) {
-        bidderEl = document.querySelector(sel);
-        if (bidderEl) break;
-    }
-    
-    if (bidEl) {
-        bidEl.textContent = '₹' + AUCTION.state.currentBid.toFixed(2) + 'Cr';
-        console.log('[BID DISPLAY] Updated bid to:', bidEl.textContent);
-    } else {
-        console.warn('[BID DISPLAY] No bid element found! Tried:', bidSelectors);
-    }
-    
-    if (bidderEl) {
-        bidderEl.textContent = AUCTION.state.currentBidder || 'No bids yet';
-        console.log('[BID DISPLAY] Updated bidder to:', bidderEl.textContent);
-    } else {
-        console.warn('[BID DISPLAY] No bidder element found! Tried:', bidderSelectors);
-    }
-}
 function updateStatusBadge(status) {
     const el = document.getElementById('roomStatus');
     if (!el) return;
