@@ -1769,10 +1769,26 @@ function addChatMessage(msg, skipNotify) {
     div.className = 'chat-msg ' + msg.sender_type;
     div.setAttribute('data-id', msg.id);
     
+    // FIX: Display server time as-is, no client timezone conversion
     var timeStr = '';
     if (msg.time) {
-        var d = new Date(msg.time);
-        timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        // Parse the ISO string and extract HH:MM directly
+        var isoStr = msg.time;
+        if (typeof isoStr === 'string') {
+            // Handle "2026-07-11T16:59:00" or "2026-07-11T16:59:00.000Z" formats
+            var match = isoStr.match(/T(\d{2}):(\d{2})/);
+            if (match) {
+                timeStr = match[1] + ':' + match[2];
+            } else {
+                // Fallback: try Date object but force UTC display
+                var d = new Date(isoStr);
+                if (!isNaN(d.getTime())) {
+                    var hrs = d.getUTCHours().toString().padStart(2, '0');
+                    var mins = d.getUTCMinutes().toString().padStart(2, '0');
+                    timeStr = hrs + ':' + mins;
+                }
+            }
+        }
     }
     
     var senderHtml = '';
