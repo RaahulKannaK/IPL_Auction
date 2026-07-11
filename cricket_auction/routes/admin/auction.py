@@ -1945,7 +1945,7 @@ def admin_chat_messages():
                 'sender_type': msg['sender_type'],
                 'text': msg['message'],
                 'msg_type': msg['msg_type'],
-                'time': msg['created_at'].isoformat() if msg['created_at'] else None
+                'time': msg['created_at'].strftime('%I:%M %p') if msg['created_at'] else ''
             })
         
     finally:

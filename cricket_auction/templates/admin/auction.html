@@ -1213,13 +1213,16 @@ function addChatMessage(msg, skipNotify) {
     div.className = 'chat-msg ' + msg.sender_type;
     div.setAttribute('data-id', msg.id);
     
-    // Extract HH:MM directly from server ISO string - no timezone conversion
+    // Convert server UTC time to IST (+5:30) for display
     var timeStr = '';
     if (msg.time) {
-        var match = msg.time.match(/T(\d{2}):(\d{2})/);
-        if (match) {
-            var hrs = parseInt(match[1], 10);
-            var mins = match[2];
+        var d = new Date(msg.time);
+        if (!isNaN(d.getTime())) {
+            // Add 5 hours 30 minutes for IST
+            var istOffset = 5.5 * 60 * 60 * 1000;
+            var istTime = new Date(d.getTime() + istOffset);
+            var hrs = istTime.getUTCHours();
+            var mins = istTime.getUTCMinutes().toString().padStart(2, '0');
             var ampm = hrs >= 12 ? 'PM' : 'AM';
             hrs = hrs % 12;
             hrs = hrs ? hrs : 12;
