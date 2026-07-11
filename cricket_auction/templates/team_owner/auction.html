@@ -2364,10 +2364,12 @@ async function placeBid() {
             s.isPlacingBid = false;
             s.pendingBid = 0;
             s.selectedAmount = 0;
-            AUCTION.remainingPurse -= amount;
+            // REMOVED: AUCTION.remainingPurse -= amount; 
+            // Bid does NOT reduce available purse — only SOLD reduces it!
             addHistory(AUCTION.teamName || 'Your Team', amount, false, true);
             showStatus('bidStatus', '✅ Bid placed: ₹' + amount.toFixed(2) + 'Cr', '#22c55e');
-            updatePurseDisplay();
+            // REMOVED: updatePurseDisplay(); 
+            // Purse display will update on next poll with correct server value
             clearActiveChips();
             
             if (data.check_auto === true) {
