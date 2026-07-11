@@ -1864,3 +1864,93 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
+
+# ==================== CHAT SYSTEM ====================
+
+@bp.route('/auction/chat/send', methods=['POST'])
+def admin_chat_send():
+    """Admin broadcasts a message to all teams in the session"""
+    if session.get('role') not in ['admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    auction_id = data.get('auction_id')
+    session_id = data.get('session_id')
+    message = data.get('message', '').strip()
+    msg_type = data.get('msg_type', 'admin_chat')
+    
+    if not message or len(message) > 120:
+        return jsonify({'error': 'Invalid message'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    
+    try:
+        cursor.execute("""
+            INSERT INTO auction_chat 
+            (auction_id, session_id, sender_id, sender_name, sender_type, message, msg_type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            auction_id, 
+            session_id,
+            session.get('user_id'),
+            'Admin',
+            'admin',
+            message,
+            msg_type
+        ))
+        db.commit()
+        
+        msg_id = cursor.lastrowid
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'message_id': msg_id})
+
+
+@bp.route('/auction/chat/messages')
+def admin_chat_messages():
+    """Get chat messages for admin (sees ALL messages including team chats)"""
+    if session.get('role') not in ['admin', 'auctioneer']:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    auction_id = request.args.get('auction_id', type=int)
+    session_id = request.args.get('session_id', type=int)
+    after_id = request.args.get('after_id', type=int, default=0)
+    
+    if not auction_id or not session_id:
+        return jsonify({'error': 'Missing IDs'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    
+    try:
+        cursor.execute("""
+            SELECT id, sender_id, sender_name, sender_type, message, msg_type, created_at
+            FROM auction_chat
+            WHERE auction_id = %s AND session_id = %s AND id > %s
+            ORDER BY created_at ASC
+            LIMIT 50
+        """, (auction_id, session_id, after_id))
+        
+        messages = cursor.fetchall()
+        
+        result = []
+        for msg in messages:
+            result.append({
+                'id': msg['id'],
+                'sender': msg['sender_name'],
+                'sender_type': msg['sender_type'],
+                'text': msg['message'],
+                'msg_type': msg['msg_type'],
+                'time': msg['created_at'].isoformat() if msg['created_at'] else None
+            })
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'messages': result})
+

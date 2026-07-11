@@ -1301,3 +1301,122 @@ def get_players():
         db.close()
     
     return jsonify({'players': players})
+
+# ==================== CHAT SYSTEM ====================
+
+@bp.route('/auction/chat/send', methods=['POST'])
+def team_chat_send():
+    """Team owner sends a message to admin/other teams"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    auction_id = data.get('auction_id')
+    session_id = data.get('session_id')
+    team_id = data.get('team_id')
+    team_name = data.get('team_name', 'Team').strip()
+    message = data.get('message', '').strip()
+    msg_type = data.get('msg_type', 'team_chat')
+    
+    if not message or len(message) > 120:
+        return jsonify({'error': 'Invalid message'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    
+    try:
+        # Verify team belongs to user
+        user_team = get_user_team_by_ids(cursor, session['user_id'], auction_id)
+        if not user_team or user_team['id'] != team_id:
+            return jsonify({'error': 'Unauthorized team'}), 403
+        
+        cursor.execute("""
+            INSERT INTO auction_chat 
+            (auction_id, session_id, sender_id, sender_name, sender_type, team_id, message, msg_type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            auction_id, 
+            session_id,
+            session.get('user_id'),
+            team_name,
+            'team',
+            team_id,
+            message,
+            msg_type
+        ))
+        db.commit()
+        
+        msg_id = cursor.lastrowid
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'message_id': msg_id})
+
+
+@bp.route('/auction/chat/messages')
+def team_chat_messages():
+    """Get chat messages for team owner (sees admin + their own + other teams)"""
+    if not session.get('user_id'):
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    if session.get('role') != 'team_owner':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    auction_id = request.args.get('auction_id', type=int)
+    session_id = request.args.get('session_id', type=int)
+    after_id = request.args.get('after_id', type=int, default=0)
+    
+    if not auction_id or not session_id:
+        return jsonify({'error': 'Missing IDs'}), 400
+    
+    db = get_db()
+    cursor = db.cursor(dictionary=True, buffered=True)
+    
+    try:
+        # Get user's team for this auction
+        user_team = get_user_team_by_ids(cursor, session['user_id'], auction_id)
+        user_team_id = user_team['id'] if user_team else None
+        
+        cursor.execute("""
+            SELECT id, sender_id, sender_name, sender_type, team_id, message, msg_type, created_at
+            FROM auction_chat
+            WHERE auction_id = %s AND session_id = %s AND id > %s
+            ORDER BY created_at ASC
+            LIMIT 50
+        """, (auction_id, session_id, after_id))
+        
+        messages = cursor.fetchall()
+        
+        result = []
+        for msg in messages:
+            # Determine sender_type for frontend rendering
+            sender_type = msg['sender_type']
+            
+            # If it's a team message and it's from the user's own team, mark as 'self'
+            if sender_type == 'team' and user_team_id and msg['team_id'] == user_team_id:
+                sender_type = 'self'
+            # If it's from another team, keep as 'other'
+            elif sender_type == 'team':
+                sender_type = 'other'
+            # Admin stays 'admin'
+            
+            result.append({
+                'id': msg['id'],
+                'sender': msg['sender_name'],
+                'sender_type': sender_type,
+                'text': msg['message'],
+                'msg_type': msg['msg_type'],
+                'time': msg['created_at'].isoformat() if msg['created_at'] else None
+            })
+        
+    finally:
+        cursor.close()
+        db.close()
+    
+    return jsonify({'success': True, 'messages': result})
+
