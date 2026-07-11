@@ -1351,12 +1351,42 @@ def team_chat_send():
         
         msg_id = cursor.lastrowid
         
+        # Get the inserted message with created_at for response
+        cursor.execute("""
+            SELECT id, sender_id, sender_name, sender_type, team_id, message, msg_type, created_at
+            FROM auction_chat
+            WHERE id = %s
+        """, (msg_id,))
+        msg = cursor.fetchone()
+        
+        # Format time in IST (UTC+5:30)
+        created_at = msg['created_at']
+        time_str = ''
+        if created_at:
+            from datetime import timezone, timedelta
+            ist = timezone(timedelta(hours=5, minutes=30))
+            if hasattr(created_at, 'tzinfo') and created_at.tzinfo is not None:
+                created_at = created_at.astimezone(ist)
+            else:
+                created_at = created_at.replace(tzinfo=timezone.utc).astimezone(ist)
+            time_str = created_at.strftime('%I:%M %p')
+        
     finally:
         cursor.close()
         db.close()
     
-    return jsonify({'success': True, 'message_id': msg_id})
-
+    return jsonify({
+        'success': True, 
+        'message_id': msg_id,
+        'message': {
+            'id': msg['id'],
+            'sender': msg['sender_name'],
+            'sender_type': 'self',
+            'text': msg['message'],
+            'msg_type': msg['msg_type'],
+            'time': time_str
+        }
+    })
 
 @bp.route('/auction/chat/messages')
 def team_chat_messages():
@@ -1386,8 +1416,8 @@ def team_chat_messages():
             SELECT id, sender_id, sender_name, sender_type, team_id, message, msg_type, created_at
             FROM auction_chat
             WHERE auction_id = %s AND session_id = %s AND id > %s
-            ORDER BY created_at ASC
-            LIMIT 50
+            ORDER BY created_at ASC, id ASC
+            LIMIT 200
         """, (auction_id, session_id, after_id))
         
         messages = cursor.fetchall()
@@ -1405,13 +1435,25 @@ def team_chat_messages():
                 sender_type = 'other'
             # Admin stays 'admin'
             
+            # Format time in IST (UTC+5:30)
+            created_at = msg['created_at']
+            time_str = ''
+            if created_at:
+                from datetime import timezone, timedelta
+                ist = timezone(timedelta(hours=5, minutes=30))
+                if hasattr(created_at, 'tzinfo') and created_at.tzinfo is not None:
+                    created_at = created_at.astimezone(ist)
+                else:
+                    created_at = created_at.replace(tzinfo=timezone.utc).astimezone(ist)
+                time_str = created_at.strftime('%I:%M %p')
+            
             result.append({
                 'id': msg['id'],
                 'sender': msg['sender_name'],
                 'sender_type': sender_type,
                 'text': msg['message'],
                 'msg_type': msg['msg_type'],
-                'time': msg['created_at'].strftime('%I:%M %p') if msg['created_at'] else ''
+                'time': time_str
             })
         
     finally:
