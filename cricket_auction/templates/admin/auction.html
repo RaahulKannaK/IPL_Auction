@@ -1070,7 +1070,7 @@ const AUCTION = {
     auctionId: {{ auction.id }},
     sessionId: {% if session_id is not none and session_id != '' %}{{ session_id }}{% else %}null{% endif %},
     teamId: null,
-    pollDelay: 3000,
+    pollDelay: 1000,
     state: {
         playerId: {% if current_player and current_player.id %}{{ current_player.id }}{% else %}null{% endif %},
         playerName: {% if current_player and current_player.player_name %}{{ current_player.player_name|tojson }}{% else %}null{% endif %},
