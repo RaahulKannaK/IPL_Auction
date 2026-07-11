@@ -1213,17 +1213,16 @@ function addChatMessage(msg, skipNotify) {
     div.className = 'chat-msg ' + msg.sender_type;
     div.setAttribute('data-id', msg.id);
     
+    // Extract HH:MM directly from server ISO string - no timezone conversion
     var timeStr = '';
     if (msg.time) {
-        // msg.time comes as "2026-07-11T16:59:00" or "2026-07-11T16:59:00.000Z"
-        // Just extract the HH:MM part directly - no timezone conversion
         var match = msg.time.match(/T(\d{2}):(\d{2})/);
         if (match) {
             var hrs = parseInt(match[1], 10);
             var mins = match[2];
             var ampm = hrs >= 12 ? 'PM' : 'AM';
             hrs = hrs % 12;
-            hrs = hrs ? hrs : 12; // 0 becomes 12
+            hrs = hrs ? hrs : 12;
             timeStr = hrs + ':' + mins + ' ' + ampm;
         }
     }
@@ -1239,14 +1238,12 @@ function addChatMessage(msg, skipNotify) {
     
     container.appendChild(div);
     
-    // Trim old messages
     while (container.children.length > CHAT.maxMessages) {
         container.removeChild(container.firstChild);
     }
     
     scrollToBottom();
     
-    // Notification for non-self messages when chat is closed
     if (!skipNotify && msg.sender_type !== 'self' && !CHAT.isOpen) {
         CHAT.unreadCount++;
         updateChatBadge();
