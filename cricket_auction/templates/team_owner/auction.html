@@ -297,32 +297,56 @@
     }
     .view-squad-btn:hover { box-shadow: 0 8px 20px rgba(124, 77, 255, 0.15); }
 
-    /* ===== MODAL ===== */
     .modal-overlay {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
-        z-index: 2000; display: none; align-items: center; justify-content: center;
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(7, 11, 22, 0.9); z-index: 1000;
+        justify-content: center; align-items: flex-start; /* CHANGED: center -> flex-start */
+        backdrop-filter: blur(10px);
         padding: 20px;
+        overflow-y: auto; /* ADDED: allow overlay to scroll */
     }
     .modal-overlay.show { display: flex; }
-    .modal-content {
-        background: var(--bg-panel); border: 1px solid rgba(100, 120, 200, 0.2);
-        border-radius: 24px; max-width: 900px; width: 100%; max-height: 85vh;
-        overflow: hidden; display: flex; flex-direction: column;
+    .modal-box {
+        background: var(--bg-panel); backdrop-filter: blur(30px);
+        border: 1px solid rgba(124, 77, 255, 0.25); border-radius: 24px;
+        max-width: 500px; width: 100%;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        max-height: 85vh; /* CHANGED: 90vh -> 85vh */
+        overflow: hidden; /* CHANGED: auto -> hidden */
+        display: flex; /* ADDED */
+        flex-direction: column; /* ADDED */
+        margin: 20px auto; /* ADDED: center with top margin */
     }
     .modal-header {
-        padding: 25px 30px; border-bottom: 1px solid rgba(100, 120, 200, 0.1);
         display: flex; justify-content: space-between; align-items: center;
+        padding: 20px 25px; /* CHANGED: margin-bottom -> padding */
+        border-bottom: 1px solid rgba(100, 120, 200, 0.1); /* ADDED */
+        position: sticky; /* ADDED */
+        top: 0; /* ADDED */
+        background: var(--bg-panel); /* ADDED */
+        z-index: 10; /* ADDED */
+        flex-shrink: 0; /* ADDED */
     }
-    .modal-header h2 { font-family: 'Space Grotesk'; color: var(--text-primary); font-size: 1.3rem; }
+    .modal-title { font-family: 'Space Grotesk'; font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
     .modal-close {
-        background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); 
-        color: #fca5a5; font-size: 1.3rem; font-weight: 700;
-        cursor: pointer; width: 44px; height: 44px; border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        transition: all 0.3s; flex-shrink: 0;
+        font-size: 1.8rem; color: var(--text-dim); cursor: pointer; transition: color 0.3s;
+        background: rgba(239, 68, 68, 0.15); /* ADDED */
+        border: 1px solid rgba(239, 68, 68, 0.3); /* ADDED */
+        width: 44px; /* ADDED */
+        height: 44px; /* ADDED */
+        border-radius: 12px; /* ADDED */
+        display: flex; /* ADDED */
+        align-items: center; /* ADDED */
+        justify-content: center; /* ADDED */
     }
-    .modal-close:hover { background: rgba(239, 68, 68, 0.3); color: #ef4444; }
+    .modal-close:hover { color: #ef4444; background: rgba(239, 68, 68, 0.25); } /* ADDED background */
+    
+    /* ADDED: scrollable body */
+    .modal-body-scroll {
+        padding: 25px;
+        overflow-y: auto;
+        flex: 1;
+    }
     .modal-body { padding: 25px 30px; overflow-y: auto; flex: 1; }
 
     .squad-team-card {
@@ -1158,11 +1182,17 @@
         /* Modals compact */
         .modal-content {
             border-radius: 16px;
-            max-height: 90vh;
+            max-height: 85vh;
+            margin: 10px auto;
+            width: calc(100% - 20px);
         }
         .modal-header {
             padding: 14px 16px;
-            position: relative;
+            position: sticky;
+            top: 0;
+            background: var(--bg-panel);
+            z-index: 10;
+            flex-shrink: 0;
         }
         .modal-header h2 {
             font-size: 1rem;
@@ -1495,7 +1525,7 @@
             <h2>👥 All Teams Squads</h2>
             <button class="modal-close" onclick="closeSquadModal()">✕</button>
         </div>
-        <div class="modal-body" id="squadModalBody">
+        <div class="modal-body-scroll" id="squadModalBody">
             <div class="empty-squad">Loading squads...</div>
         </div>
     </div>
